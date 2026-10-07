@@ -38,17 +38,15 @@
   .wrap { max-width: 980px; margin: 0 auto; padding-inline: 20px; }
 
   header { padding-block: 32px 28px; }
-  .brand { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 20px 28px; flex-wrap: wrap; }
   .logo { display: flex; flex-direction: column; line-height: 1; }
   .logo-mark { font: 400 3.4rem/0.9 var(--display); letter-spacing: -0.02em; }
   .logo-mark span { color: var(--teal); }
   .logo-name { margin-top: 8px; font-weight: 700; letter-spacing: 0.42em; font-size: 0.95rem; }
   .logo-sub { color: var(--teal); letter-spacing: 0.3em; font-size: 0.72rem; font-weight: 700; margin-top: 4px; }
-  .partner {
-    font-size: 0.8rem; font-weight: 600; color: var(--muted); text-align: right;
-    border: 2px solid var(--ink); border-radius: 999px; padding: 8px 16px;
-  }
-  .partner b { color: var(--ink); display: block; font-size: 0.95rem; }
+  .brand .x { font: 400 2rem/1 var(--display); color: var(--muted); }
+  .esaf { height: 64px; width: auto; }
+  .os { height: 112px; width: auto; }
 
   .hero { display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px; align-items: end; margin-top: 32px; }
   .hero > * { min-width: 0; }
@@ -125,14 +123,19 @@
 
   @media (max-width: 760px) {
     .hero, .band-grid { grid-template-columns: 1fr; }
-    .partner { text-align: left; }
   }
   @media (max-width: 480px) {
     form { grid-template-columns: 1fr; }
     .facts { grid-template-columns: 1fr 1fr; }
     .fact.venue { grid-column: 1 / -1; border-left: 0; padding-left: 0; border-top: 3px solid var(--line); }
     .card { padding: 18px; box-shadow: 5px 5px 0 var(--ink); }
-    .logo-mark { font-size: 2.8rem; }
+    .logo-mark { font-size: 2.2rem; }
+    .brand { flex-wrap: nowrap; gap: 8px; }
+    .logo-name { letter-spacing: 0.3em; font-size: 0.75rem; }
+    .logo-sub { letter-spacing: 0.2em; font-size: 0.6rem; }
+    .brand .x { font-size: 1.1rem; }
+    .esaf { height: 30px; min-width: 0; }
+    .os { height: 64px; }
   }
   @media (prefers-reduced-motion: reduce) { button { transition: none; } }
 </style>
@@ -140,13 +143,16 @@
 <body>
 
 <header class="wrap">
-  <div class="brand">
+  <div class="brand" aria-label="Guwahati Run and Rave in collaboration with ESAF Foundation Open Streets">
     <div class="logo" aria-label="Guwahati Run and Rave">
       <div class="logo-mark">G<span>R</span>R</div>
       <div class="logo-name">GUWAHATI</div>
       <div class="logo-sub">RUN &amp; RAVE</div>
     </div>
-    <div class="partner">In association with<b>ESAF Foundation · Open Streets</b></div>
+    <span class="x" aria-hidden="true">&times;</span>
+    <img class="esaf" src="assets/esaf-foundation.png" alt="ESAF Foundation, since 1992" width="600" height="226">
+    <span class="x" aria-hidden="true">&times;</span>
+    <img class="os" src="assets/open-streets.png" alt="ESAF Foundation Open Streets: Opening the path for friendly streets" width="600" height="599">
   </div>
 
   <div class="hero">
