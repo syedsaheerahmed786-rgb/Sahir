@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Guwahati Run &amp; Rave – Register</title>
+<meta name="description" content="Free registration for Guwahati Run & Rave – Run for All. Sunday 11 October 2026, 6:00 AM at Jyoti Bishnu Prekhyagriha Auditorium. Limited slots.">
+<meta property="og:title" content="Guwahati Run & Rave – Run for All">
+<meta property="og:description" content="Free easy run, fun games and prizes. Sun 11 Oct, 6:00 AM, Jyoti Bishnu Prekhyagriha Auditorium. Register now, limited slots.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Archivo:wght@400;500;600;700;800&display=swap">
+<style>
+  /* Layout: poster-style header (cream) with event facts table, blue band holding the registration form. */
+  :root {
+    --cream: #f4f3ea;
+    --ink: #17213a;
+    --teal: #1f8a70;
+    --blue: #1584cf;
+    --blue-deep: #0f6aa8;
+    --yellow: #ffd23f;
+    --line: #17213a;
+    --muted: #4b5568;
+    --field: #ffffff;
+    --error: #b42318;
+    --display: "Bowlby One", "Arial Black", Impact, sans-serif;
+    --body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font: 16px/1.5 var(--body);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding-inline: 20px; }
+
+  header { padding-block: 32px 28px; }
+  .brand { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .logo { display: flex; flex-direction: column; line-height: 1; }
+  .logo-mark { font: 400 3.4rem/0.9 var(--display); letter-spacing: -0.02em; }
+  .logo-mark span { color: var(--teal); }
+  .logo-name { margin-top: 8px; font-weight: 700; letter-spacing: 0.42em; font-size: 0.95rem; }
+  .logo-sub { color: var(--teal); letter-spacing: 0.3em; font-size: 0.72rem; font-weight: 700; margin-top: 4px; }
+  .partner {
+    font-size: 0.8rem; font-weight: 600; color: var(--muted); text-align: right;
+    border: 2px solid var(--ink); border-radius: 999px; padding: 8px 16px;
+  }
+  .partner b { color: var(--ink); display: block; font-size: 0.95rem; }
+
+  .hero { display: grid; grid-template-columns: 1.2fr 1fr; gap: 28px; align-items: end; margin-top: 32px; }
+  .hero > * { min-width: 0; }
+  .free { font: 800 1rem var(--body); letter-spacing: 0.25em; color: #3b4a8f; }
+  h1 {
+    font: 400 clamp(2.8rem, 9vw, 5.4rem)/0.92 var(--display);
+    margin: 6px 0 0; color: var(--yellow);
+    -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill;
+    text-shadow: 4px 4px 0 var(--ink);
+    text-wrap: balance;
+  }
+  .tagline { margin: 16px 0 0; font-size: 1.1rem; font-weight: 600; max-width: 32ch; }
+
+  .facts { border-top: 3px solid var(--line); border-bottom: 3px solid var(--line); display: grid; grid-template-columns: auto auto 1fr; }
+  .fact { padding: 14px 16px; border-left: 3px solid var(--line); }
+  .fact:first-child { border-left: 0; padding-left: 0; }
+  .fact .k { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .fact .v { font: 400 1.25rem/1.1 var(--display); margin-top: 4px; }
+  .fact .v small { display: block; font: 600 0.8rem var(--body); color: var(--muted); margin-top: 4px; }
+  .changed {
+    display: inline-block; margin-top: 14px; background: var(--ink); color: var(--yellow);
+    font-weight: 700; font-size: 0.85rem; padding: 6px 12px; border-radius: 4px;
+  }
+
+  .band { background: var(--blue); padding-block: 40px 56px; }
+  .band-grid { display: grid; grid-template-columns: 1fr 1.35fr; gap: 32px; align-items: start; }
+  .band-grid > * { min-width: 0; }
+  .pitch { color: #fff; }
+  .pitch h2 { font: 400 clamp(1.6rem, 4vw, 2.2rem)/1.05 var(--display); color: var(--yellow); margin: 0; text-wrap: balance; }
+  .pitch ul { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 10px; }
+  .pitch li { padding-left: 26px; position: relative; font-weight: 500; }
+  .pitch li::before { content: ""; position: absolute; left: 0; top: 0.45em; width: 12px; height: 12px; background: var(--yellow); border-radius: 50%; }
+  .slots { margin-top: 22px; font-weight: 700; color: #fff; background: var(--blue-deep); padding: 12px 14px; border-radius: 8px; }
+  .slots[hidden] { display: none; }
+
+  .card { background: var(--cream); border: 3px solid var(--ink); border-radius: 14px; padding: 24px; box-shadow: 8px 8px 0 var(--ink); }
+  .card h3 { margin: 0 0 4px; font: 400 1.5rem var(--display); }
+  .card .hint { margin: 0 0 18px; color: var(--muted); font-size: 0.9rem; }
+  form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+  .full { grid-column: 1 / -1; }
+  label { display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px; }
+  label .opt { font-weight: 500; color: var(--muted); }
+  input, select {
+    width: 100%; font: 500 1rem var(--body); color: var(--ink); background: var(--field);
+    border: 2px solid var(--ink); border-radius: 8px; padding: 10px 12px; min-height: 46px;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+  input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--error); }
+  .err { color: var(--error); font-size: 0.8rem; font-weight: 600; margin-top: 4px; min-height: 0; }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-weight: 500; font-size: 0.88rem; }
+  .check input { width: 20px; height: 20px; min-height: 0; margin-top: 2px; flex: none; accent-color: var(--teal); }
+  .hp { position: absolute; left: -9999px; }
+  button {
+    font: 400 1.15rem var(--display); letter-spacing: 0.02em; cursor: pointer;
+    background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); border-radius: 10px;
+    padding: 14px 18px; box-shadow: 4px 4px 0 var(--ink); transition: transform .08s, box-shadow .08s;
+  }
+  button:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
+  button:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  button[disabled] { opacity: 0.6; cursor: progress; }
+  .form-msg { font-weight: 600; font-size: 0.9rem; }
+  .form-msg.bad { color: var(--error); }
+
+  .done { text-align: left; }
+  .ticket { border: 2px dashed var(--ink); border-radius: 10px; padding: 16px; margin: 16px 0; display: grid; gap: 8px; }
+  .ticket .id { font: 400 1.8rem var(--display); color: var(--teal); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+  .ticket dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; font-size: 0.92rem; }
+  .ticket dt { color: var(--muted); font-weight: 600; }
+  .ticket dd { margin: 0; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn-link {
+    display: inline-block; text-decoration: none; color: var(--ink); font-weight: 700; font-size: 0.9rem;
+    border: 2px solid var(--ink); border-radius: 8px; padding: 10px 14px; background: #fff;
+  }
+
+  footer { padding-block: 28px 40px; font-size: 0.85rem; color: var(--muted); }
+  footer p { margin: 0 0 6px; }
+
+  @media (max-width: 760px) {
+    .hero, .band-grid { grid-template-columns: 1fr; }
+    .partner { text-align: left; }
+  }
+  @media (max-width: 480px) {
+    form { grid-template-columns: 1fr; }
+    .facts { grid-template-columns: 1fr 1fr; }
+    .fact.venue { grid-column: 1 / -1; border-left: 0; padding-left: 0; border-top: 3px solid var(--line); }
+    .card { padding: 18px; box-shadow: 5px 5px 0 var(--ink); }
+    .logo-mark { font-size: 2.8rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { button { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <div class="brand">
+    <div class="logo" aria-label="Guwahati Run and Rave">
+      <div class="logo-mark">G<span>R</span>R</div>
+      <div class="logo-name">GUWAHATI</div>
+      <div class="logo-sub">RUN &amp; RAVE</div>
+    </div>
+    <div class="partner">In association with<b>ESAF Foundation · Open Streets</b></div>
+  </div>
+
+  <div class="hero">
+    <div>
+      <div class="free">FREE ENTRY</div>
+      <h1>Run for All</h1>
+      <p class="tagline">Easy run, fun games and prizes to win. Bring your friends and family.</p>
+    </div>
+    <div>
+      <div class="facts">
+        <div class="fact"><div class="k">Date</div><div class="v">Oct 11<small>Sunday</small></div></div>
+        <div class="fact"><div class="k">Time</div><div class="v">6:00 AM<small>Sharp start</small></div></div>
+        <div class="fact venue"><div class="k">Venue</div><div class="v">Jyoti Bishnu Prekhyagriha<small>Auditorium, Guwahati</small></div></div>
+      </div>
+      <span class="changed">New date: Sunday 11 October (moved from 10 October)</span>
+    </div>
+  </div>
+</header>
+
+<section class="band" id="register">
+  <div class="wrap band-grid">
+    <div class="pitch">
+      <h2>Limited slots. Register now.</h2>
+      <ul>
+        <li>Free for everyone, all ages and fitness levels</li>
+        <li>An easy-paced run, open streets and fun games</li>
+        <li>Prizes to win on the day</li>
+        <li>Show your registration ID at the check-in desk</li>
+      </ul>
+      <p class="slots" id="slots" hidden></p>
+    </div>
+
+    <div class="card" id="card">
+      <div id="formView">
+        <h3>Book your spot</h3>
+        <p class="hint">Takes under a minute. One form per participant.</p>
+        <form id="regForm" novalidate>
+          <div class="full">
+            <label for="name">Full name</label>
+            <input id="name" name="name" autocomplete="name" required maxlength="80">
+            <div class="err" id="name-err"></div>
+          </div>
+          <div>
+            <label for="phone">Mobile number</label>
+            <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="10-digit number" required maxlength="14">
+            <div class="err" id="phone-err"></div>
+          </div>
+          <div>
+            <label for="email">Email <span class="opt">(optional)</span></label>
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="120">
+            <div class="err" id="email-err"></div>
+          </div>
+          <div>
+            <label for="age">Age</label>
+            <input id="age" name="age" type="number" inputmode="numeric" min="5" max="99" required>
+            <div class="err" id="age-err"></div>
+          </div>
+          <div>
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender" required>
+              <option value="">Select</option>
+              <option>Female</option>
+              <option>Male</option>
+              <option>Other</option>
+              <option>Prefer not to say</option>
+            </select>
+            <div class="err" id="gender-err"></div>
+          </div>
+          <div class="full">
+            <label for="emergency">Emergency contact number <span class="opt">(optional)</span></label>
+            <input id="emergency" name="emergency" type="tel" inputmode="numeric" maxlength="14">
+            <div class="err" id="emergency-err"></div>
+          </div>
+          <input class="hp" id="website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <div class="full">
+            <label class="check" for="consent">
+              <input id="consent" name="consent" type="checkbox" required>
+              <span>I am fit to take part in an easy run, and I agree to follow the organisers' instructions on the day. Under-18s attend with a parent's permission.</span>
+            </label>
+            <div class="err" id="consent-err"></div>
+          </div>
+          <div class="full actions">
+            <button type="submit" id="submitBtn">Register free</button>
+          </div>
+          <div class="full form-msg" id="formMsg" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+
+      <div class="done" id="doneView" hidden>
+        <h3>You're registered!</h3>
+        <p class="hint">See you on Sunday 11 October at 6:00 AM. Take a screenshot of this ticket.</p>
+        <div class="ticket">
+          <div class="k" style="font-size:.7rem;font-weight:700;letter-spacing:.14em;color:var(--muted)">REGISTRATION ID</div>
+          <div class="id" id="tId"></div>
+          <dl>
+            <dt>Name</dt><dd id="tName"></dd>
+            <dt>Mobile</dt><dd id="tPhone"></dd>
+            <dt>When</dt><dd>Sun 11 Oct 2026, 6:00 AM</dd>
+            <dt>Where</dt><dd>Jyoti Bishnu Prekhyagriha Auditorium, Guwahati</dd>
+          </dl>
+        </div>
+        <div class="actions">
+          <a class="btn-link" id="calLink" target="_blank" rel="noopener">Add to Google Calendar</a>
+          <a class="btn-link" id="mapLink" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&amp;query=Jyoti+Chitraban+Bishnu+Prekshagriha+Guwahati">Open venue in Maps</a>
+          <a class="btn-link" id="againLink" href="#register">Register another person</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <p><b>Guwahati Run &amp; Rave</b> · Run for All · Sunday 11 October 2026, 6:00 AM</p>
+  <p>Your details are used only to manage this event.</p>
+</footer>
+
+<script>
+/* ===================== ORGANISER SETTINGS ===================== */
+const CONFIG = {
+  // Google Sheet web-app URL from apps-script/Code.gs (see README). Registrations are saved here.
+  sheetEndpoint: "",
+  // Organiser WhatsApp number with country code, digits only, e.g. "919876543210".
+  // Used only when sheetEndpoint is empty: the guest sends their registration to you on WhatsApp.
+  whatsappNumber: "",
+  // Total slots. Set to 0 to hide the slot counter. Must match CAPACITY in Code.gs.
+  capacity: 0
+};
+/* ============================================================== */
+
+const $ = (id) => document.getElementById(id);
+const form = $("regForm");
+
+function makeId() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s = "";
+  const r = crypto.getRandomValues(new Uint32Array(5));
+  for (const n of r) s += chars[n % chars.length];
+  return "GRR-" + s;
+}
+
+function digits(v) { return (v || "").replace(/\D/g, ""); }
+function normPhone(v) {
+  let d = digits(v);
+  if (d.length === 12 && d.startsWith("91")) d = d.slice(2);
+  if (d.length === 11 && d.startsWith("0")) d = d.slice(1);
+  return d;
+}
+
+function setErr(field, msg) {
+  $(field + "-err").textContent = msg || "";
+  const el = $(field);
+  if (el) el.setAttribute("aria-invalid", msg ? "true" : "false");
+  return !msg;
+}
+
+function validate() {
+  const v = Object.fromEntries(new FormData(form));
+  let ok = true;
+  ok = setErr("name", v.name.trim().length < 2 ? "Enter your full name." : "") && ok;
+  ok = setErr("phone", !/^[6-9]\d{9}$/.test(normPhone(v.phone)) ? "Enter a valid 10-digit mobile number." : "") && ok;
+  ok = setErr("email", v.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email) ? "Check the email address, or leave it empty." : "") && ok;
+  const age = Number(v.age);
+  ok = setErr("age", !(age >= 5 && age <= 99) ? "Enter an age between 5 and 99." : "") && ok;
+  ok = setErr("gender", !v.gender ? "Choose an option." : "") && ok;
+  ok = setErr("emergency", v.emergency && !/^\d{10}$/.test(normPhone(v.emergency)) ? "Enter a 10-digit number, or leave it empty." : "") && ok;
+  ok = setErr("consent", !$("consent").checked ? "Tick this box to continue." : "") && ok;
+  return ok ? v : null;
+}
+
+function showSlots(count) {
+  if (!CONFIG.capacity || typeof count !== "number") return;
+  const left = Math.max(0, CONFIG.capacity - count);
+  const el = $("slots");
+  el.hidden = false;
+  if (left === 0) {
+    el.textContent = "All slots are taken. Registration is closed.";
+    $("submitBtn").disabled = true;
+    $("submitBtn").textContent = "Registration closed";
+  } else {
+    el.textContent = left + " of " + CONFIG.capacity + " slots left";
+  }
+}
+
+async function loadCount() {
+  if (!CONFIG.sheetEndpoint || !CONFIG.capacity) return;
+  try {
+    const res = await fetch(CONFIG.sheetEndpoint + "?action=count");
+    const data = await res.json();
+    showSlots(data.count);
+  } catch (e) { /* counter is optional */ }
+}
+
+function calendarUrl() {
+  const p = new URLSearchParams({
+    action: "TEMPLATE",
+    text: "Guwahati Run & Rave – Run for All",
+    dates: "20261011T003000Z/20261011T033000Z",
+    location: "Jyoti Bishnu Prekhyagriha Auditorium, Guwahati",
+    details: "Free easy run, fun games and prizes. Starts 6:00 AM."
+  });
+  return "https://calendar.google.com/calendar/render?" + p.toString();
+}
+
+function showDone(rec) {
+  $("tId").textContent = rec.id;
+  $("tName").textContent = rec.name;
+  $("tPhone").textContent = rec.phone;
+  $("calLink").href = calendarUrl();
+  $("formView").hidden = true;
+  $("doneView").hidden = false;
+  $("card").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+$("againLink").addEventListener("click", (e) => {
+  e.preventDefault();
+  form.reset();
+  $("formMsg").textContent = "";
+  $("doneView").hidden = true;
+  $("formView").hidden = false;
+  $("name").focus();
+});
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = $("formMsg");
+  msg.className = "full form-msg";
+  msg.textContent = "";
+  if ($("website").value) return; // bot trap
+  const v = validate();
+  if (!v) {
+    msg.className = "full form-msg bad";
+    msg.textContent = "Please fix the highlighted fields.";
+    return;
+  }
+  const rec = {
+    id: makeId(),
+    name: v.name.trim(),
+    phone: normPhone(v.phone),
+    email: (v.email || "").trim(),
+    age: v.age,
+    gender: v.gender,
+    emergency: v.emergency ? normPhone(v.emergency) : "",
+    submittedAt: new Date().toISOString()
+  };
+
+  const btn = $("submitBtn");
+  btn.disabled = true;
+  btn.textContent = "Registering…";
+
+  try {
+    if (CONFIG.sheetEndpoint) {
+      // text/plain keeps this a simple request, so Google Apps Script accepts it without a CORS preflight.
+      const res = await fetch(CONFIG.sheetEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(rec)
+      });
+      const data = await res.json();
+      if (data.status === "full") {
+        showSlots(CONFIG.capacity);
+        throw new Error("All slots are taken. Registration is closed.");
+      }
+      if (data.status === "duplicate") {
+        rec.id = data.id;
+        showDone(rec);
+        msg.textContent = "";
+        return;
+      }
+      if (data.status !== "ok") throw new Error("We couldn't save your registration. Please try again.");
+      if (typeof data.count === "number") showSlots(data.count);
+      showDone(rec);
+    } else if (CONFIG.whatsappNumber) {
+      const text = [
+        "Registration – Guwahati Run & Rave (Run for All), Sun 11 Oct, 6:00 AM",
+        "ID: " + rec.id,
+        "Name: " + rec.name,
+        "Mobile: " + rec.phone,
+        rec.email ? "Email: " + rec.email : "",
+        "Age: " + rec.age,
+        "Gender: " + rec.gender,
+        rec.emergency ? "Emergency contact: " + rec.emergency : ""
+      ].filter(Boolean).join("\n");
+      window.open("https://wa.me/" + CONFIG.whatsappNumber + "?text=" + encodeURIComponent(text), "_blank", "noopener");
+      showDone(rec);
+      msg.textContent = "";
+    } else {
+      throw new Error("Online registration isn't open yet. Please check back soon.");
+    }
+  } catch (err) {
+    msg.className = "full form-msg bad";
+    msg.textContent = err.message && !/fetch|JSON|network/i.test(err.message)
+      ? err.message
+      : "We couldn't reach the registration server. Check your connection and try again.";
+  } finally {
+    if (!(CONFIG.capacity && $("slots").textContent.startsWith("All slots"))) {
+      btn.disabled = false;
+      btn.textContent = "Register free";
+    }
+  }
+});
+
+loadCount();
+</script>
+</body>
+</html>
