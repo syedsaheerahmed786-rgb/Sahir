@@ -13,8 +13,10 @@ function sheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) {
-    sh = ss.insertSheet(SHEET_NAME);
-    sh.appendRow(HEADERS);
+    // Use the first tab, so a Sheet that already has the header row keeps working.
+    sh = ss.getSheets()[0];
+    sh.setName(SHEET_NAME);
+    if (sh.getLastRow() === 0) sh.appendRow(HEADERS);
     sh.setFrozenRows(1);
     sh.getRange('C:C').setNumberFormat('@'); // keep phone numbers as text
     sh.getRange('G:G').setNumberFormat('@');
