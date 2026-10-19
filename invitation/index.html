@@ -739,6 +739,11 @@
     window.print();
   };
 
+  // Hide the phone "See your card" button while the card is on screen.
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(([e]) => { $(".jump").hidden = e.isIntersecting; }).observe($("#out"));
+  }
+
   // ---------- Start ----------
   form.invocation.value = T.communities[form.community.value].invocation;
   restore();
