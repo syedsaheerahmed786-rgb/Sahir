@@ -32,3 +32,9 @@ Each registration becomes a row in the **Registrations** tab: ID, name, mobile, 
 `https://syedsaheerahmed786-rgb.github.io/Sahir/`. The QR code in this repo already points to that address.
 
 **Option B: the GRR website.** Upload `index.html` as a page, for example `yoursite.com/register`. You can also add a "Register" button that links to the GitHub Pages address. If you use the GRR website, make a new QR code for that address.
+
+## Assamese wedding invitation writer
+
+`invitation/index.html` is a separate page where customers fill in basic details (bride, groom, parents, date, venue, ceremonies, hosts). As they type, it writes the invitation wording in Assamese, English or both. It works out the Assamese date, weekday and time words (for example "বুধবাৰে সন্ধিয়া ৭:৩০ বজাত") and lists the programme (জোৰণ, পানী তোলা, নোওনি…). Customers can copy the text, download it, print the card, or send a short WhatsApp version. On GitHub Pages it is at `https://syedsaheerahmed786-rgb.github.io/Sahir/invitation/`.
+
+All of the wording is in `invitation/templates.js`: opening lines, tradition (Hindu, Vaishnav, Muslim, general), honorifics, relations, ceremonies and each paragraph. To change what the generator writes, or add more wordings for "Another wording" to cycle through, edit that file. You don't need to touch the page.

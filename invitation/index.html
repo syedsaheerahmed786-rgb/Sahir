@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="as">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>বিয়াৰ নিমন্ত্ৰণ – Assamese Wedding Invitation Writer</title>
+<meta name="description" content="Fill in a few details and get ready-to-print Assamese and English wording for your wedding invitation card, plus a WhatsApp message.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@500;700&family=Cormorant+Garamond:wght@500;600;700&display=swap">
+<style>
+  /* Layout: gamosa-bordered header, form on the left, live card preview on the right (stacked on phones). */
+  :root {
+    --paper: #fbf6ec;
+    --card: #fffdf8;
+    --ink: #2a1a14;
+    --muted: #6b5a4e;
+    --red: #a3161d;
+    --red-deep: #7c0f14;
+    --gold: #a87b22;
+    --line: #e2d3ba;
+    --field: #ffffff;
+    --warn: #b45309;
+    --serif-as: "Noto Serif Bengali", Georgia, serif;
+    --serif-en: "Cormorant Garamond", Georgia, serif;
+    --sans: "Noto Sans Bengali", "Helvetica Neue", Arial, sans-serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--paper); color: var(--ink); font: 16px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; }
+
+  .gamosa {
+    height: 26px;
+    background:
+      linear-gradient(var(--red), var(--red)) top / 100% 4px no-repeat,
+      linear-gradient(var(--red), var(--red)) bottom / 100% 4px no-repeat,
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26'%3E%3Cpath d='M13 7 L19 13 L13 19 L7 13Z' fill='none' stroke='%23a3161d' stroke-width='1.6'/%3E%3Cpath d='M13 11 L15 13 L13 15 L11 13Z' fill='%23a3161d'/%3E%3C/svg%3E") center / 26px 26px repeat-x;
+  }
+
+  header { padding-block: 28px 24px; }
+  header .kicker { font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.75rem; color: var(--red); }
+  header h1 { font: 700 clamp(1.9rem, 5vw, 2.8rem)/1.15 var(--serif-as); margin: 6px 0 0; color: var(--red-deep); }
+  header p { margin: 10px 0 0; color: var(--muted); max-width: 62ch; }
+
+  main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 28px; align-items: start; padding-block: 24px 64px; }
+
+  fieldset { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 18px 18px 20px; margin: 0 0 18px; min-width: 0; }
+  legend { font: 700 1.05rem var(--serif-as); color: var(--red-deep); padding: 0 6px; }
+  .hint { color: var(--muted); font-size: 0.85rem; margin: 0 0 12px; }
+  label, .lbl { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 5px; }
+  .row { display: grid; gap: 12px; margin-bottom: 12px; }
+  .row:last-child { margin-bottom: 0; }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  input[type=text], input[type=tel], input[type=url], input[type=date], input[type=time], select, textarea {
+    width: 100%; font: inherit; font-size: 1rem; color: var(--ink); background: var(--field);
+    border: 1px solid #cdbb9c; border-radius: 8px; padding: 9px 11px; min-height: 42px;
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--red); outline-offset: 1px; border-color: var(--red); }
+  input.warn { border-color: var(--warn); background: #fff8ec; }
+
+  /* Bilingual inputs: one box per output language. */
+  .pair { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
+  .pair > div { min-width: 0; }
+  .pair .tag { display: block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; }
+  body.lang-as [data-lang=en], body.lang-en [data-lang=as] { display: none; }
+  body.lang-as .pair, body.lang-en .pair { grid-template-columns: 1fr; }
+  body.lang-as .pair .tag, body.lang-en .pair .tag { display: none; }
+  .late { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+  .script-warn { color: var(--warn); font-size: 0.78rem; margin-top: 4px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; }
+  .chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .chip span { display: inline-block; padding: 8px 14px; border: 1px solid #cdbb9c; border-radius: 999px; background: var(--field); font-weight: 600; font-size: 0.9rem; }
+  .chip input:checked + span { background: var(--red); border-color: var(--red); color: #fff; }
+  .chip input:focus-visible + span { outline: 2px solid var(--red); outline-offset: 2px; }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-weight: 500; font-size: 0.92rem; margin-bottom: 10px; }
+  .check input { margin-top: 4px; accent-color: var(--red); width: 16px; height: 16px; flex: none; }
+  [hidden] { display: none !important; }
+
+  .add-events { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .add-events button, .btn {
+    font: inherit; font-weight: 600; font-size: 0.85rem; border-radius: 999px; cursor: pointer;
+    border: 1px dashed var(--red); background: transparent; color: var(--red); padding: 6px 12px; min-height: 34px;
+  }
+  .event { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: #fffaf0; }
+  .event .top { display: flex; gap: 8px; align-items: end; }
+  .event .top .pair { flex: 1; }
+  .event .rm { border: 0; background: none; color: var(--muted); font-size: 1.4rem; line-height: 1; cursor: pointer; padding: 6px 8px; min-height: 42px; }
+  .event .row { margin: 10px 0 0; }
+
+  /* Output panel */
+  .out { position: sticky; top: 16px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .seg { display: inline-flex; border: 1px solid var(--red); border-radius: 999px; overflow: hidden; }
+  .seg button { font: inherit; font-weight: 600; font-size: 0.85rem; border: 0; background: var(--field); color: var(--red); padding: 7px 14px; cursor: pointer; min-height: 36px; }
+  .seg button[aria-pressed=true] { background: var(--red); color: #fff; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .actions .btn { border-style: solid; }
+  .actions .btn.primary { background: var(--red); color: #fff; }
+  .status { min-height: 1.4em; font-size: 0.85rem; color: var(--muted); margin-top: 8px; }
+
+  .invite {
+    background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 0 0 4px;
+    box-shadow: 0 1px 0 var(--line), 0 18px 40px -24px rgba(90, 30, 10, 0.35);
+  }
+  .invite .inner { padding: 26px clamp(18px, 5vw, 40px) 22px; text-align: center; }
+  .invite.en .inner { font-family: var(--serif-en); font-size: 1.15rem; }
+  .invite .b { margin: 0 0 14px; white-space: pre-line; }
+  .invite .invocation { color: var(--red); font: 600 0.95rem var(--serif-as); letter-spacing: 0.02em; }
+  .invite.en .invocation { font-family: var(--serif-en); font-size: 1.05rem; font-style: italic; }
+  .invite .title { font: 700 clamp(1.7rem, 4.5vw, 2.3rem)/1.2 var(--serif-as); color: var(--red-deep); margin-bottom: 4px; }
+  .invite.en .title { font-family: var(--serif-en); letter-spacing: 0.02em; }
+  .invite .names { font: 700 clamp(1.25rem, 3.5vw, 1.6rem)/1.3 var(--serif-as); color: var(--gold); margin-bottom: 18px; }
+  .invite.en .names { font-family: var(--serif-en); font-size: clamp(1.5rem, 4vw, 1.9rem); }
+  .invite .names .amp { color: var(--red); padding-inline: 8px; }
+  .invite .salutation, .invite .body, .invite .closing { text-align: left; }
+  .invite .body { text-align: justify; hyphens: auto; }
+  .invite .program { text-align: left; border-block: 1px solid var(--line); padding-block: 12px; }
+  .invite .program .h, .invite .sign .h { font-weight: 700; color: var(--red-deep); }
+  .invite .extra { font-style: italic; color: var(--muted); }
+  .invite .sign { text-align: right; }
+  .invite mark { background: #fde9b8; color: var(--warn); border-radius: 3px; padding: 0 2px; }
+  .wa { background: #e7f6e9; border: 1px solid #b9dfbf; border-radius: 12px; padding: 16px 18px; white-space: pre-wrap; font-size: 0.98rem; overflow-wrap: anywhere; }
+  .wa mark { background: #fde9b8; color: var(--warn); }
+
+  footer { color: var(--muted); font-size: 0.85rem; padding-block: 0 32px; }
+  footer a { color: var(--red); }
+
+  .jump { display: none; }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    .out { position: static; scroll-margin-top: 12px; }
+    .jump {
+      display: block; position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 5;
+      background: var(--red); color: #fff; font-weight: 700; font-size: 0.9rem; text-decoration: none;
+      padding: 10px 16px; border-radius: 999px; box-shadow: 0 6px 18px -6px rgba(90, 20, 10, 0.5);
+    }
+  }
+  @media (max-width: 520px) {
+    .cols-2, .cols-3, .pair { grid-template-columns: 1fr; }
+    fieldset { padding: 14px; }
+  }
+
+  @media print {
+    body { background: #fff; }
+    header, form, .jump, .toolbar, .actions, .status, footer, .gamosa.page { display: none !important; }
+    main { display: block; padding: 0; }
+    .wrap { max-width: none; padding: 0; }
+    .invite { box-shadow: none; border: 0; }
+  }
+</style>
+</head>
+<body class="lang-as">
+
+<div class="gamosa page" aria-hidden="true"></div>
+<header class="wrap">
+  <div class="kicker">Assamese wedding invitation writer</div>
+  <h1>বিয়াৰ নিমন্ত্ৰণ পত্ৰ</h1>
+  <p>Fill in the basic details and the wording for your card appears on the right as you type, in Assamese, English or both. Copy it, download it, or send the short version on WhatsApp.</p>
+</header>
+
+<main class="wrap">
+  <form id="f" autocomplete="off" novalidate>
+
+    <fieldset>
+      <legend>১. Card style</legend>
+      <div class="row">
+        <span class="lbl">Who is sending the card?</span>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="side" value="bride" checked><span>Bride's family</span></label>
+          <label class="chip"><input type="radio" name="side" value="groom"><span>Groom's family</span></label>
+          <label class="chip"><input type="radio" name="side" value="couple"><span>The couple</span></label>
+        </div>
+      </div>
+      <div class="row">
+        <span class="lbl">Language of the card</span>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="lang" value="as" checked><span>অসমীয়া</span></label>
+          <label class="chip"><input type="radio" name="lang" value="en"><span>English</span></label>
+          <label class="chip"><input type="radio" name="lang" value="both"><span>Both</span></label>
+        </div>
+      </div>
+      <div class="row cols-3">
+        <div><label for="community">Tradition</label><select id="community" name="community"></select></div>
+        <div><label for="invocation">Opening line</label><select id="invocation" name="invocation"></select></div>
+        <div><label for="tone">Tone</label>
+          <select id="tone" name="tone">
+            <option value="traditional">Traditional / পৰম্পৰাগত</option>
+            <option value="modern">Warm &amp; modern / আধুনিক</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>২. কইনা · Bride</legend>
+      <p class="hint" data-lang="as">Type names in Assamese script for the Assamese card (e.g. with Gboard's Assamese keyboard).</p>
+      <div class="row"><span class="lbl">Bride's name</span>
+        <div class="pair">
+          <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="bride_as" data-script="as" placeholder="প্ৰিয়াংকা দাস"></div>
+          <div data-lang="en"><span class="tag">English</span><input type="text" name="bride_en" placeholder="Priyanka Das"></div>
+        </div>
+      </div>
+      <div class="row cols-2">
+        <div><span class="lbl">Father's name</span>
+          <div class="pair">
+            <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="brideFather_as" data-script="as" placeholder="ৰমেশ দাস"></div>
+            <div data-lang="en"><span class="tag">English</span><input type="text" name="brideFather_en" placeholder="Ramesh Das"></div>
+          </div>
+          <label class="late"><input type="checkbox" name="brideFather_late"> Late (স্বৰ্গীয়)</label>
+        </div>
+        <div><span class="lbl">Mother's name</span>
+          <div class="pair">
+            <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="brideMother_as" data-script="as" placeholder="অনিতা দাস"></div>
+            <div data-lang="en"><span class="tag">English</span><input type="text" name="brideMother_en" placeholder="Anita Das"></div>
+          </div>
+          <label class="late"><input type="checkbox" name="brideMother_late"> Late (স্বৰ্গীয়া)</label>
+        </div>
+      </div>
+      <div class="row"><span class="lbl">Home town</span>
+        <div class="pair">
+          <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="bridePlace_as" placeholder="গুৱাহাটী"></div>
+          <div data-lang="en"><span class="tag">English</span><input type="text" name="bridePlace_en" placeholder="Guwahati"></div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>৩. দৰা · Groom</legend>
+      <div class="row"><span class="lbl">Groom's name</span>
+        <div class="pair">
+          <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="groom_as" data-script="as" placeholder="ৰাহুল শৰ্মা"></div>
+          <div data-lang="en"><span class="tag">English</span><input type="text" name="groom_en" placeholder="Rahul Sharma"></div>
+        </div>
+      </div>
+      <div class="row cols-2">
+        <div><span class="lbl">Father's name</span>
+          <div class="pair">
+            <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="groomFather_as" data-script="as" placeholder="দিলীপ শৰ্মা"></div>
+            <div data-lang="en"><span class="tag">English</span><input type="text" name="groomFather_en" placeholder="Dilip Sharma"></div>
+          </div>
+          <label class="late"><input type="checkbox" name="groomFather_late"> Late (স্বৰ্গীয়)</label>
+        </div>
+        <div><span class="lbl">Mother's name</span>
+          <div class="pair">
+            <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="groomMother_as" data-script="as" placeholder="মীনা শৰ্মা"></div>
+            <div data-lang="en"><span class="tag">English</span><input type="text" name="groomMother_en" placeholder="Meena Sharma"></div>
+          </div>
+          <label class="late"><input type="checkbox" name="groomMother_late"> Late (স্বৰ্গীয়া)</label>
+        </div>
+      </div>
+      <div class="row"><span class="lbl">Home town</span>
+        <div class="pair">
+          <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="groomPlace_as" placeholder="যোৰহাট"></div>
+          <div data-lang="en"><span class="tag">English</span><input type="text" name="groomPlace_en" placeholder="Jorhat"></div>
+        </div>
+      </div>
+      <div class="row" id="relRow">
+        <label for="relation" id="relLabel">The bride is the hosts'…</label>
+        <select id="relation" name="relation"></select>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>৪. বিয়া · Wedding day</legend>
+      <div class="row cols-2">
+        <div><label for="date">Date</label><input type="date" id="date" name="date"></div>
+        <div><label for="time">Time</label><input type="time" id="time" name="time"></div>
+      </div>
+      <div class="row"><span class="lbl">Venue</span>
+        <div class="pair">
+          <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="venue_as" placeholder="শ্ৰীমন্ত শংকৰদেৱ কলাক্ষেত্ৰ"></div>
+          <div data-lang="en"><span class="tag">English</span><input type="text" name="venue_en" placeholder="Srimanta Sankaradeva Kalakshetra"></div>
+        </div>
+      </div>
+      <div class="row"><span class="lbl">Venue address (optional)</span>
+        <div class="pair">
+          <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="address_as" placeholder="পাঞ্জাবাৰী, গুৱাহাটী"></div>
+          <div data-lang="en"><span class="tag">English</span><input type="text" name="address_en" placeholder="Panjabari, Guwahati"></div>
+        </div>
+      </div>
+      <div class="row cols-2">
+        <div><label for="map">Google Maps link (optional)</label><input type="url" id="map" name="map" placeholder="https://maps.app.goo.gl/…"></div>
+        <div data-lang="as"><label for="asDate">Assamese date (optional)</label><input type="text" id="asDate" name="asDate" placeholder="যেনে: ৯ আঘোণ"></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>৫. কাৰ্যসূচী · Other ceremonies</legend>
+      <p class="hint">Add the ceremonies you want listed on the card. The wedding itself is listed automatically.</p>
+      <div class="add-events" id="eventButtons"></div>
+      <div id="events"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>৬. নিমন্ত্ৰক · Hosts &amp; contact</legend>
+      <p class="hint" id="hostsHint">The living parents of the sending side are signed automatically. Add anyone else here, one name per line (grandparents, uncles, "and family").</p>
+      <div class="row"><span class="lbl">More names to sign the card</span>
+        <div class="pair">
+          <div data-lang="as"><span class="tag">অসমীয়া</span><textarea name="hosts_as" placeholder="শ্ৰী হৰেন দাস (ককা)&#10;আৰু পৰিয়ালবৰ্গ"></textarea></div>
+          <div data-lang="en"><span class="tag">English</span><textarea name="hosts_en" placeholder="Mr. Haren Das (grandfather)&#10;and family"></textarea></div>
+        </div>
+      </div>
+      <div class="row"><span class="lbl">Hosts' address (optional)</span>
+        <div class="pair">
+          <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="hostAddress_as" placeholder="ঘৰ নং ১২, বেলতলা, গুৱাহাটী-২৮"></div>
+          <div data-lang="en"><span class="tag">English</span><input type="text" name="hostAddress_en" placeholder="House No. 12, Beltola, Guwahati-28"></div>
+        </div>
+      </div>
+      <div class="row"><label for="contact">Phone numbers for RSVP (optional)</label><input type="tel" id="contact" name="contact" placeholder="98640 00000, 70020 00000"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>৭. Extras</legend>
+      <label class="check"><input type="checkbox" name="guestLine" checked> Leave a blank line to write each guest's name</label>
+      <label class="check"><input type="checkbox" name="honorifics" checked> Add শ্ৰী / শ্ৰীমতী / শ্ৰীমান before names</label>
+      <label class="check" data-lang="as"><input type="checkbox" name="asDigits" checked> Use Assamese numerals (০১২৩) for dates and times</label>
+      <label class="check"><input type="checkbox" name="noGifts"> Add "no gifts, please"</label>
+      <label class="check"><input type="checkbox" name="kidsOn" id="kidsOn"> Add a line from the children of the family</label>
+      <div id="kidsBox" hidden>
+        <div class="row"><span class="lbl">Children's names</span>
+          <div class="pair">
+            <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="kids_as" placeholder="ৰিয়া আৰু অয়ন"></div>
+            <div data-lang="en"><span class="tag">English</span><input type="text" name="kids_en" placeholder="Riya and Ayan"></div>
+          </div>
+        </div>
+        <div class="row"><span class="lbl">They are inviting you to their…</span>
+          <div class="pair">
+            <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" name="kidsRel_as" placeholder="মাহী / খুৰা / মামা / বাইদেউ"></div>
+            <div data-lang="en"><span class="tag">English</span><input type="text" name="kidsRel_en" placeholder="aunt / uncle / sister"></div>
+          </div>
+        </div>
+      </div>
+    </fieldset>
+  </form>
+
+  <a class="jump" href="#out">See your card ↓</a>
+  <section class="out" id="out" aria-label="Your invitation">
+    <div class="toolbar">
+      <div class="seg" id="langTabs" role="group" aria-label="Language" hidden>
+        <button type="button" data-l="as" aria-pressed="true">অসমীয়া</button>
+        <button type="button" data-l="en" aria-pressed="false">English</button>
+      </div>
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" data-view="card" aria-pressed="true">Card text</button>
+        <button type="button" data-view="wa" aria-pressed="false">WhatsApp message</button>
+      </div>
+    </div>
+
+    <div id="preview" aria-live="polite"></div>
+
+    <div class="actions">
+      <button type="button" class="btn primary" id="copy">Copy text</button>
+      <button type="button" class="btn" id="again">↻ Another wording</button>
+      <button type="button" class="btn" id="download">Download .txt</button>
+      <button type="button" class="btn" id="whatsapp">Send on WhatsApp</button>
+      <button type="button" class="btn" id="print">Print card</button>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p>Please check names and dates carefully before printing. Your details stay in this browser and are not sent anywhere.</p>
+</footer>
+<div class="gamosa page" aria-hidden="true"></div>
+
+<script src="templates.js"></script>
+<script>
+(() => {
+  const T = window.INVITE;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const form = $("#f");
+  const STORE = "assamese-invite-draft";
+
+  const MONTHS = {
+    as: ["জানুৱাৰী", "ফেব্ৰুৱাৰী", "মাৰ্চ", "এপ্ৰিল", "মে'", "জুন", "জুলাই", "আগষ্ট", "ছেপ্টেম্বৰ", "অক্টোবৰ", "নৱেম্বৰ", "ডিচেম্বৰ"],
+    en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  };
+  const DAYS = {
+    as: ["দেওবাৰ", "সোমবাৰ", "মঙলবাৰ", "বুধবাৰ", "বৃহস্পতিবাৰ", "শুকুৰবাৰ", "শনিবাৰ"],
+    en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+  };
+
+  let variant = 0, activeLang = "as", view = "card", current = null;
+
+  // ---------- Form setup ----------
+  for (const [k, v] of Object.entries(T.communities)) $("#community").add(new Option(v.label, k));
+  for (const [k, v] of Object.entries(T.invocations)) $("#invocation").add(new Option(v.label, k));
+  for (const [k, v] of Object.entries(T.relations)) $("#relation").add(new Option(v.label, k));
+
+  function addEvent(data = {}) {
+    const el = document.createElement("div");
+    el.className = "event";
+    el.innerHTML = `
+      <div class="top">
+        <div class="pair">
+          <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" data-k="as" aria-label="Ceremony name in Assamese" placeholder="অনুষ্ঠানৰ নাম"></div>
+          <div data-lang="en"><span class="tag">English</span><input type="text" data-k="en" aria-label="Ceremony name in English" placeholder="Ceremony"></div>
+        </div>
+        <button type="button" class="rm" aria-label="Remove ceremony">×</button>
+      </div>
+      <div class="row cols-2">
+        <div><input type="date" data-k="date" aria-label="Date"></div>
+        <div><input type="time" data-k="time" aria-label="Time"></div>
+      </div>
+      <div class="row pair">
+        <div data-lang="as"><span class="tag">অসমীয়া</span><input type="text" data-k="place_as" aria-label="Place in Assamese" placeholder="স্থান (ঐচ্ছিক)"></div>
+        <div data-lang="en"><span class="tag">English</span><input type="text" data-k="place_en" aria-label="Place in English" placeholder="Place (optional)"></div>
+      </div>`;
+    for (const inp of $$("[data-k]", el)) inp.value = data[inp.dataset.k] || "";
+    $(".rm", el).onclick = () => { el.remove(); update(); };
+    $("#events").append(el);
+    return el;
+  }
+
+  function renderEventButtons() {
+    const side = form.side.value, community = form.community.value;
+    const box = $("#eventButtons");
+    box.textContent = "";
+    for (const e of T.events) {
+      if (e.for && !e.for.includes(side)) continue;
+      if (e.only && !e.only.includes(community)) continue;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = "+ " + e.as + " · " + e.en;
+      b.onclick = () => { $("input[data-k=date]", addEvent({ as: e.as, en: e.en })).focus(); update(); };
+      box.append(b);
+    }
+    const custom = document.createElement("button");
+    custom.type = "button";
+    custom.textContent = "+ Other";
+    custom.onclick = () => { $("input", addEvent()).focus(); };
+    box.append(custom);
+  }
+
+  // ---------- Read, save, restore ----------
+  function readForm() {
+    const f = {};
+    for (const el of form.elements) {
+      if (!el.name) continue;
+      if (el.type === "checkbox") f[el.name] = el.checked;
+      else if (el.type === "radio") { if (el.checked) f[el.name] = el.value; }
+      else f[el.name] = el.value.trim();
+    }
+    f.events = $$(".event").map(el => Object.fromEntries($$("[data-k]", el).map(i => [i.dataset.k, i.value.trim()])));
+    return f;
+  }
+
+  function save(f) { try { localStorage.setItem(STORE, JSON.stringify(f)); } catch (e) {} }
+
+  function restore() {
+    let f;
+    try { f = JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) {}
+    if (!f) return;
+    for (const el of form.elements) {
+      if (!el.name || !(el.name in f)) continue;
+      if (el.type === "checkbox") el.checked = !!f[el.name];
+      else if (el.type === "radio") el.checked = el.value === f[el.name];
+      else el.value = f[el.name];
+    }
+    (f.events || []).forEach(e => addEvent(e));
+  }
+
+  // ---------- Formatting helpers ----------
+  const asNum = s => String(s).replace(/[0-9]/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+
+  function parseDate(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || "");
+    return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+  }
+  function fmtDate(d, L, f) {
+    if (L === "en") return `${d.getDate()} ${MONTHS.en[d.getMonth()]} ${d.getFullYear()}`;
+    const s = `${d.getDate()} ${MONTHS.as[d.getMonth()]}, ${d.getFullYear()}`;
+    return f.asDigits ? asNum(s) : s;
+  }
+  function fmtTime(t, L, f) {
+    const m = /^(\d{1,2}):(\d{2})/.exec(t || "");
+    if (!m) return "";
+    const h = +m[1], min = m[2], h12 = h % 12 || 12;
+    if (L === "en") return `${h12}:${min} ${h < 12 ? "AM" : "PM"}`;
+    const part = h >= 4 && h < 12 ? "পুৱা" : h < 15 && h >= 12 ? "দুপৰীয়া" : h >= 15 && h < 17 ? "আবেলি" : h >= 17 && h < 20 ? "সন্ধিয়া" : "নিশা";
+    const s = `${part} ${h12}${min === "00" ? "" : ":" + min} বজা`;
+    return f.asDigits ? asNum(s) : s;
+  }
+
+  const lines = s => (s || "").split("\n").map(x => x.trim()).filter(Boolean);
+  const hon = (h, name) => h ? `${h} ${name}` : name;
+
+  // ---------- Build the context for one language ----------
+  function context(L, f) {
+    const cm = T.communities[f.community] || T.communities.hindu;
+    const P = T.placeholders[L];
+    const ph = k => `[${P[k]}]`;
+    const val = k => f[k + "_" + L] || "";
+    const H = f.honorifics ? cm.honorific[L] : { m: "", f: "", groom: "", bride: "" };
+    const gen = L === "as" ? s => s + "ৰ" : s => s;
+
+    const parent = (k, sex) => {
+      const n = val(k);
+      if (!n) return "";
+      return f[k + "_late"] ? `${cm.late[L][sex]} ${n}` : hon(H[sex], n);
+    };
+    const parentsOf = who => [parent(who + "Father", "m"), parent(who + "Mother", "f")].filter(Boolean).join(L === "as" ? " আৰু " : " and ");
+
+    const brideName = val("bride") || ph("bride");
+    const groomName = val("groom") || ph("groom");
+    const bride = hon(H.bride, brideName), groom = hon(H.groom, groomName);
+
+    const side = f.side;
+    const hostWho = side === "groom" ? "groom" : "bride";
+    const otherWho = hostWho === "bride" ? "groom" : "bride";
+    const hostSex = hostWho === "bride" ? "f" : "m";
+    const otherSex = hostSex === "f" ? "m" : "f";
+    const rel = T.relations[f.relation] || T.relations.child;
+
+    // The other family's child, introduced with parents and home town.
+    const otherParents = parentsOf(otherWho);
+    const otherPlace = val(otherWho + "Place");
+    const otherChildWord = T.relations.child[otherSex][L];
+    const otherFull = otherWho === "groom" ? groom : bride;
+    let partner;
+    if (L === "as") {
+      partner = (otherPlace ? otherPlace + " নিবাসী " : "") + (otherParents ? `${gen(otherParents)} ${otherChildWord} ` : "") + otherFull;
+    } else {
+      partner = otherFull + (otherParents ? `, ${otherChildWord} of ${otherParents}` : "") + (otherPlace ? ` of ${otherPlace}` : "");
+    }
+
+    // Date and time
+    const d = parseDate(f.date);
+    const date = d ? fmtDate(d, L, f) + (L === "as" && f.asDate ? ` (${f.asDate})` : "") : ph("date");
+    const weekday = d ? DAYS[L][d.getDay()] : "";
+    const time = fmtTime(f.time, L, f) || ph("time");
+    const when = L === "as"
+      ? `${date} তাৰিখে${weekday ? ", " + weekday + "ে" : ""} ${time}ত`
+      : `${weekday ? weekday + ", " : ""}${date} at ${time}`;
+
+    // Hosts: the couple, or the sending side's living parents, plus any extra names.
+    let hosts;
+    if (side === "couple") hosts = [bride, groom];
+    else hosts = ["Father", "Mother"].filter(p => !f[hostWho + p + "_late"] && val(hostWho + p)).map(p => hon(H[p === "Father" ? "m" : "f"], val(hostWho + p)));
+    hosts = hosts.concat(lines(val("hosts")));
+    if (!hosts.length) hosts = [ph("hosts")];
+
+    const venueName = val("venue") || ph("venue");
+    const address = val("address");
+    const grace = cm.grace[L];
+    const kids = val("kids");
+
+    return {
+      L, f, side, cm,
+      grace, graceLead: grace ? grace + " " : "",
+      lead: rest => grace ? `${grace}, ${rest}` : rest.charAt(0).toUpperCase() + rest.slice(1),
+      wedding: cm.wedding[L], weddingCasual: cm.weddingCasual[L],
+      blessing: cm.blessing[L], blessVerb: cm.blessVerb[L], greeting: cm.greeting[L],
+      rel: rel[hostSex][L],
+      child: hostWho === "bride" ? bride : groom,
+      childName: hostWho === "bride" ? brideName : groomName,
+      partner, other: otherFull, partnerName: otherWho === "groom" ? groomName : brideName,
+      bride, groom, brideName, groomName,
+      date, weekday, time, when, d,
+      venueName, address, venue: [venueName, address].filter(Boolean).join(", "),
+      map: f.map || "", contact: f.contact || "",
+      hosts, hostsShort: hosts.join(", "), hostAddress: val("hostAddress"),
+      guestLine: f.guestLine,
+      kids, kidsRel: val("kidsRel"), kidsMany: /,| আৰু | and |&/.test(kids)
+    };
+  }
+
+  // ---------- Generate the card for one language ----------
+  function pick(list) { return list[variant % list.length]; }
+
+  function generate(L, f) {
+    const c = context(L, f);
+    const W = T[L], tone = f.tone === "modern" ? "modern" : "traditional";
+    const tidy = s => s.replace(/[ \t]{2,}/g, " ").replace(/ ,/g, ",").trim();
+    const blocks = [];
+    const add = (cls, text) => { if (text) blocks.push({ cls, text: tidy(text) }); };
+
+    const inv = T.invocations[f.invocation];
+    add("invocation", inv && inv[L]);
+    add("title", c.cm.title[L]);
+    blocks.push({ cls: "names", names: [c.child, c.other] });
+    add("salutation", W.salutation[tone](c));
+    add("body", pick((c.side === "couple" ? W.bodyCouple : W.body)[tone])(c));
+
+    // Programme: the wedding plus any other ceremonies, in date order.
+    const items = f.events.filter(e => e[L]).map(e => ({ label: e[L], date: e.date, time: e.time, place: e["place_" + L] }));
+    if (items.length) {
+      items.push({ label: c.cm.wedding[L].replace(/^./, s => s.toUpperCase()), date: f.date, time: f.time, place: c.venueName, main: true });
+      items.sort((a, b) => (a.date || "9999") .localeCompare(b.date || "9999") || (a.time || "").localeCompare(b.time || ""));
+      const rows = items.map(e => {
+        const d = parseDate(e.date);
+        const when = [d && fmtDate(d, L, f), d && DAYS[L][d.getDay()], fmtTime(e.time, L, f)].filter(Boolean).join(", ");
+        return `• ${e.label}${when ? ": " + when : ""}${e.place ? " — " + e.place : ""}`;
+      });
+      blocks.push({ cls: "program", heading: W.programHeading, text: rows.join("\n") });
+    }
+
+    add("venue", `${W.venueLabel}: ${c.venue}` + (c.map ? `\n${W.mapLabel}: ${c.map}` : ""));
+    if (f.noGifts) add("extra", W.noGifts);
+    if (f.kidsOn && c.kids && c.kidsRel) add("extra", W.kids(c));
+    add("closing", pick(W.closing[tone]));
+    blocks.push({ cls: "sign", heading: W.signoff[tone] + ",", text: c.hosts.join("\n") + (c.hostAddress ? `\n${W.addressLabel}: ${c.hostAddress}` : "") });
+    if (c.contact) add("contact", `${W.contactLabel}: ${c.contact}`);
+
+    const text = blocks.map(b => b.names ? b.names.join(L === "as" ? "  ❤  " : "  &  ") : (b.heading ? b.heading + "\n" : "") + b.text).join("\n\n");
+    const wa = pick(W.whatsapp)(c).filter(Boolean).map(tidy).join("\n\n");
+    return { blocks, text, wa };
+  }
+
+  // ---------- Render ----------
+  function withMarks(parent, text) {
+    for (const part of text.split(/(\[[^\]]+\])/)) {
+      if (!part) continue;
+      if (/^\[.*\]$/.test(part)) { const m = document.createElement("mark"); m.textContent = part; parent.append(m); }
+      else parent.append(part);
+    }
+  }
+
+  function render() {
+    const out = $("#preview");
+    out.textContent = "";
+    const g = current[activeLang];
+    if (view === "wa") {
+      const box = document.createElement("div");
+      box.className = "wa";
+      withMarks(box, g.wa);
+      out.append(box);
+      return;
+    }
+    const card = document.createElement("article");
+    card.className = "invite " + activeLang;
+    card.lang = activeLang;
+    card.innerHTML = '<div class="gamosa" aria-hidden="true"></div><div class="inner"></div><div class="gamosa" aria-hidden="true"></div>';
+    const inner = $(".inner", card);
+    for (const b of g.blocks) {
+      const p = document.createElement("p");
+      p.className = "b " + b.cls;
+      if (b.names) {
+        withMarks(p, b.names[0]);
+        const amp = document.createElement("span");
+        amp.className = "amp";
+        amp.textContent = activeLang === "as" ? "❤" : "&";
+        p.append(document.createElement("br"), amp, document.createElement("br"));
+        withMarks(p, b.names[1]);
+      } else {
+        if (b.heading) { const h = document.createElement("span"); h.className = "h"; h.textContent = b.heading; p.append(h, "\n"); }
+        withMarks(p, b.text);
+      }
+      inner.append(p);
+    }
+    out.append(card);
+  }
+
+  function update() {
+    const f = readForm();
+    save(f);
+    const lang = f.lang || "as";
+    document.body.className = "lang-" + lang;
+    if (lang !== "both") activeLang = lang;
+    $("#langTabs").hidden = lang !== "both";
+    $$("#langTabs button").forEach(b => b.setAttribute("aria-pressed", b.dataset.l === activeLang));
+
+    const isCouple = f.side === "couple";
+    $("#relRow").hidden = isCouple;
+    $("#relLabel").textContent = f.side === "groom" ? "The groom is the hosts'…" : "The bride is the hosts'…";
+    $("#hostsHint").textContent = isCouple
+      ? "The couple's names are signed automatically. Add anyone else here, one name per line."
+      : "The living parents of the sending side are signed automatically. Add anyone else here, one name per line (grandparents, uncles, \"and family\").";
+    $("#kidsBox").hidden = !f.kidsOn;
+
+    // Gentle nudge when Assamese name fields contain English letters.
+    for (const inp of $$("input[data-script=as]")) {
+      const bad = /[A-Za-z]/.test(inp.value);
+      inp.classList.toggle("warn", bad);
+      let note = inp.nextElementSibling;
+      if (bad && !note) { note = document.createElement("div"); note.className = "script-warn"; note.textContent = "Please type this in Assamese script."; inp.after(note); }
+      if (!bad && note) note.remove();
+    }
+
+    current = { as: generate("as", f), en: generate("en", f) };
+    render();
+  }
+
+  // ---------- Events ----------
+  let timer;
+  form.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(update, 120); });
+  form.addEventListener("change", e => {
+    if (e.target.name === "community") form.invocation.value = T.communities[e.target.value].invocation;
+    if (e.target.name === "side" || e.target.name === "community") renderEventButtons();
+    update();
+  });
+
+  $("#langTabs").addEventListener("click", e => { const l = e.target.dataset.l; if (l) { activeLang = l; update(); } });
+  $$("[data-view]").forEach(b => b.onclick = () => {
+    view = b.dataset.view;
+    $$("[data-view]").forEach(x => x.setAttribute("aria-pressed", x === b));
+    render();
+  });
+
+  const status = msg => { $("#status").textContent = msg; clearTimeout(status.t); status.t = setTimeout(() => $("#status").textContent = "", 4000); };
+  const outputText = () => {
+    const f = readForm(), g = current[activeLang];
+    if (view === "wa") return g.wa;
+    if (f.lang === "both") return current.as.text + "\n\n\n" + current.en.text;
+    return g.text;
+  };
+  const missingNote = t => /\[[^\]]+\]/.test(t) ? " Some details are still missing (highlighted)." : "";
+
+  $("#copy").onclick = async () => {
+    const t = outputText();
+    try { await navigator.clipboard.writeText(t); status("Copied." + missingNote(t)); }
+    catch (e) {
+      const ta = document.createElement("textarea"); ta.value = t; document.body.append(ta); ta.select();
+      try { document.execCommand("copy"); status("Copied." + missingNote(t)); } catch (_) { status("Couldn't copy. Please select the text and copy it."); }
+      ta.remove();
+    }
+  };
+  $("#again").onclick = () => { variant++; update(); status("Showing another wording."); };
+  $("#download").onclick = () => {
+    const t = outputText();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([t], { type: "text/plain;charset=utf-8" }));
+    a.download = view === "wa" ? "wedding-invitation-whatsapp.txt" : "wedding-invitation.txt";
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    status("Downloaded." + missingNote(t));
+  };
+  $("#whatsapp").onclick = () => window.open("https://wa.me/?text=" + encodeURIComponent(current[activeLang].wa), "_blank", "noopener");
+  $("#print").onclick = () => {
+    if (view !== "card") $("[data-view=card]").click();
+    window.print();
+  };
+
+  // ---------- Start ----------
+  form.invocation.value = T.communities[form.community.value].invocation;
+  restore();
+  renderEventButtons();
+  update();
+})();
+</script>
+</body>
+</html>
