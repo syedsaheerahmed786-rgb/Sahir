@@ -69,3 +69,44 @@ jobs:
               --notes "Latest build of the Meraki Insiders app. Download meraki-insiders.apk on your phone and open it to install." \
               --target "$GITHUB_SHA"
           gh release upload android-latest dist/meraki-insiders.apk dist/meraki-insiders.aab --clobber
+
+  # Installs the APK on an emulator, opens it, and fails if the app crashes.
+  smoke-test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: meraki-insiders
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: |
+            adb install -r meraki-insiders.apk
+            adb logcat -c
+            adb shell am start -W -n in.themerakievent.insiders/.MainActivity
+            sleep 20
+            adb exec-out screencap -p > screen.png
+            adb logcat -d -b crash > crash.txt || true
+            adb logcat -d | grep -iE "AndroidRuntime|merakievent|chromium" | tail -200 > logcat.txt || true
+            cat crash.txt
+            adb shell pidof in.themerakievent.insiders || (echo "App is not running: it crashed" && exit 1)
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-test
+          path: |
+            screen.png
+            crash.txt
+            logcat.txt
