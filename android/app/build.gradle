@@ -45,6 +45,8 @@ android {
 }
 
 dependencies {
+    // Lines up kotlin-stdlib-jdk7/jdk8 with kotlin-stdlib so their classes don't clash.
+    implementation platform("org.jetbrains.kotlin:kotlin-bom:1.8.22")
     implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
     implementation "androidx.core:core-splashscreen:1.0.1"
