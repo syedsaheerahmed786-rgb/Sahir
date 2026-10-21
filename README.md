@@ -32,3 +32,15 @@ Each registration becomes a row in the **Registrations** tab: ID, name, mobile, 
 `https://syedsaheerahmed786-rgb.github.io/Sahir/`. The QR code in this repo already points to that address.
 
 **Option B: the GRR website.** Upload `index.html` as a page, for example `yoursite.com/register`. You can also add a "Register" button that links to the GitHub Pages address. If you use the GRR website, make a new QR code for that address.
+
+## Meraki Insiders Android app
+
+`android/` holds an Android app that opens <https://themerakievent.in/meraki-insiders/> full screen. It includes the Meraki icon and splash screen, pull-to-refresh, a back button that steps back through pages, and an offline screen. Links to other sites, WhatsApp, phone numbers and email open in their own apps.
+
+GitHub Actions (`.github/workflows/android.yml`) builds the app whenever `android/` changes. To build it on demand, go to **Actions → Android app → Run workflow**. The newest build is always at:
+
+`https://github.com/syedsaheerahmed786-rgb/Sahir/releases/download/android-latest/meraki-insiders.apk`
+
+Open that link on an Android phone and install the file. Android asks you to allow installs from your browser the first time. The `.aab` file next to it is for uploading to the Google Play Console.
+
+**Signing.** With no key set, builds are signed with a throwaway debug key, so each new build has to be uninstalled before the next one installs. To publish on Play or ship updates, create a keystore once (`keytool -genkeypair -v -keystore meraki.jks -keyalg RSA -keysize 2048 -validity 10000 -alias meraki`). Then add these repository secrets: `ANDROID_KEYSTORE_BASE64` (output of `base64 -w0 meraki.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`. Keep the `.jks` file safe. Losing it means you can't update the app on Play.
