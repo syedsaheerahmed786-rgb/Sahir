@@ -53,8 +53,15 @@ function members_() {
 function memberObj_(r, i) {
   return {
     row: i + 2, username: String(r[0]), name: String(r[1]), phone: String(r[2]), role: String(r[3]),
-    active: String(r[4]) === 'TRUE', salt: String(r[5]), hash: String(r[6]), mustChange: String(r[7]) === 'TRUE'
+    active: yes_(r[4]), salt: String(r[5]), hash: String(r[6]), mustChange: yes_(r[7])
   };
+}
+
+// Sheets can turn the text TRUE into a checkbox value, so accept both.
+function yes_(v) { return String(v).toUpperCase() === 'TRUE'; }
+
+function day_(v) {
+  return v instanceof Date ? Utilities.formatDate(v, 'Asia/Kolkata', 'yyyy-MM-dd') : String(v);
 }
 
 function findMember_(username) {
@@ -70,7 +77,7 @@ function publicMember_(m, withPhone) {
 
 function txnObj_(r) {
   return {
-    id: String(r[0]), date: String(r[1]), type: String(r[2]), amount: Number(r[3]), description: String(r[4]),
+    id: String(r[0]), date: day_(r[1]), type: String(r[2]), amount: Number(r[3]), description: String(r[4]),
     category: String(r[5]), member: String(r[6]), mode: String(r[7]), reference: String(r[8]),
     receiptName: String(r[10]), hasReceipt: !!String(r[9]), recordedBy: String(r[11]), recordedAt: String(r[12]),
     status: String(r[13]) || 'ok', voidReason: String(r[14]), voidedBy: String(r[15]), voidedAt: String(r[16])
