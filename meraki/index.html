@@ -1,0 +1,681 @@
+<title>Meraki Growth Hub</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of working panels. Summary first (month KPIs + season), then where orders come from, then the action plan, then the order log. */
+:root {
+  --bg: #FAF6F5; --panel: #FFFFFF; --sunk: #F3ECEB; --ink: #2A1A1F; --muted: #6E5A60; --line: #E6DADB;
+  --accent: #A3192A; --accent-soft: #F6E3E5; --gold: #9A6F14; --gold-soft: #F5EBD6;
+  --ok: #2E7D4F; --ok-soft: #E2F1E8; --warn: #A8650F; --warn-soft: #FBEEDB; --bad: #B3261E; --bad-soft: #F9E1DF;
+  --f-display: "Marcellus", "Cormorant Garamond", Georgia, serif;
+  --f-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #171012; --panel: #21181B; --sunk: #2A1F23; --ink: #F3E9EA; --muted: #B5A2A7; --line: #3A2C31;
+  --accent: #E8667A; --accent-soft: #3D1D24; --gold: #D9AE52; --gold-soft: #3A2E17;
+  --ok: #62C08B; --ok-soft: #173325; --warn: #E7AA4E; --warn-soft: #3A2A12; --bad: #F07167; --bad-soft: #3D1A18;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #171012; --panel: #21181B; --sunk: #2A1F23; --ink: #F3E9EA; --muted: #B5A2A7; --line: #3A2C31;
+  --accent: #E8667A; --accent-soft: #3D1D24; --gold: #D9AE52; --gold-soft: #3A2E17;
+  --ok: #62C08B; --ok-soft: #173325; --warn: #E7AA4E; --warn-soft: #3A2A12; --bad: #F07167; --bad-soft: #3D1A18;
+  color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 28px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 400; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.45rem; }
+h3 { font-size: 1.1rem; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 20px; }
+.brand { display: flex; flex-direction: column; gap: 4px; }
+.brand h1 { font-size: clamp(2rem, 5vw, 2.8rem); letter-spacing: .02em; line-height: 1.05; }
+.brand h1 span { color: var(--accent); }
+.mode { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.dot.on { background: var(--ok); }
+
+/* panels */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 20px; }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.kpi { background: var(--panel); padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.kpi .val { font-family: var(--f-display); font-size: 2rem; line-height: 1.1; }
+.kpi .sub { font-size: .85rem; color: var(--muted); }
+.bar { height: 6px; background: var(--sunk); border-radius: 3px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width .4s; }
+.bar.gold > i { background: var(--gold); }
+.goal-btn { background: none; border: none; padding: 0; color: var(--accent); font-size: .85rem; text-decoration: underline; text-underline-offset: 2px; }
+.goal-edit { display: flex; gap: 6px; align-items: center; }
+.goal-edit input { width: 110px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+
+/* season strip */
+.season { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; }
+.mo { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: .72rem; color: var(--muted); }
+.mo .cell { width: 100%; height: 34px; border-radius: 5px; background: var(--sunk); position: relative; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+.mo.peak .cell { background: var(--accent-soft); }
+.mo.shoulder .cell { background: var(--gold-soft); }
+.mo .fill { position: absolute; left: 0; right: 0; bottom: 0; background: var(--accent); opacity: .55; }
+.mo .cnt { position: relative; font-family: var(--f-mono); font-size: .7rem; color: var(--ink); padding-bottom: 2px; }
+.mo.now span { color: var(--ink); font-weight: 700; }
+.mo.now .cell { outline: 2px solid var(--ink); outline-offset: 1px; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .8rem; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.callout { background: var(--gold-soft); border-radius: 8px; padding: 10px 14px; font-size: .9rem; }
+
+/* charts */
+.chart { width: 100%; min-height: 200px; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart text { fill: var(--muted); font-family: var(--f-mono); font-size: 11px; }
+.hbars { display: flex; flex-direction: column; gap: 10px; }
+.hb { display: grid; grid-template-columns: minmax(80px, 120px) 1fr auto; gap: 10px; align-items: center; font-size: .9rem; }
+.hb .track { height: 14px; background: var(--sunk); border-radius: 4px; overflow: hidden; }
+.hb .track i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.hb .meta { font-family: var(--f-mono); font-size: .8rem; color: var(--muted); white-space: nowrap; }
+.empty { border: 1px dashed var(--line); border-radius: 8px; padding: 22px; text-align: center; color: var(--muted); font-size: .9rem; }
+
+/* pills */
+.pill { display: inline-flex; align-items: center; gap: 4px; font-size: .75rem; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--sunk); color: var(--muted); white-space: nowrap; }
+.pill.enquiry { background: var(--gold-soft); color: var(--gold); }
+.pill.confirmed, .pill.designing, .pill.printing { background: var(--accent-soft); color: var(--accent); }
+.pill.delivered { background: var(--ok-soft); color: var(--ok); }
+.pill.lost { background: var(--sunk); color: var(--muted); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+
+/* pipeline */
+.funnel { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); gap: 8px; }
+.stage { background: var(--sunk); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.stage b { font-family: var(--f-display); font-weight: 400; font-size: 1.5rem; }
+.stage span { font-size: .78rem; color: var(--muted); }
+.follow { display: flex; flex-direction: column; gap: 0; }
+.follow li { list-style: none; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.follow ul { margin: 0; padding: 0; }
+
+/* plan */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 6px 14px; font-size: .88rem; display: inline-flex; gap: 8px; align-items: center; }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tab .num { font-size: .75rem; opacity: .75; }
+.tasks { margin: 0; padding: 0; display: flex; flex-direction: column; }
+.task { list-style: none; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; padding: 11px 0; border-top: 1px solid var(--line); }
+.task:first-child { border-top: none; }
+.task input[type=checkbox] { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); }
+.task.done .t-title { text-decoration: line-through; color: var(--muted); }
+.t-why { font-size: .85rem; color: var(--muted); }
+.icon-btn { background: none; border: none; color: var(--muted); padding: 2px 6px; border-radius: 6px; font-size: .85rem; }
+.icon-btn:hover { background: var(--sunk); color: var(--ink); }
+.icon-btn.danger { color: var(--bad); }
+.prio { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.progress-line { display: flex; align-items: center; gap: 10px; font-size: .85rem; color: var(--muted); }
+.progress-line .bar { flex: 1; }
+
+/* forms */
+.row-form { display: flex; flex-wrap: wrap; gap: 8px; }
+.row-form input, .row-form select { flex: 1 1 160px; min-width: 0; }
+.field { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--muted); min-width: 0; }
+input[type=text], input[type=number], input[type=date], select, textarea { padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); min-width: 0; width: 100%; box-sizing: border-box; }
+.order-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; }
+.btn { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 9px 16px; font-weight: 600; white-space: nowrap; }
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn:disabled { opacity: .5; cursor: default; }
+details.add > summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: .9rem; list-style: none; }
+details.add > summary::-webkit-details-marker { display: none; }
+details.add[open] > summary { margin-bottom: 12px; }
+
+/* table */
+.table-wrap { overflow-x: auto; margin: 0 -4px; }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; min-width: 760px; }
+th { text-align: left; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+td { padding: 9px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+td.r, th.r { text-align: right; }
+td select { padding: 4px 6px; font-size: .82rem; width: auto; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.filters select, .filters input { width: auto; flex: 0 1 180px; }
+
+/* coach */
+.coach-out { display: flex; flex-direction: column; gap: 10px; }
+.idea { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; padding: 12px 14px; background: var(--sunk); border-radius: 8px; }
+.toast { position: fixed; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 8px; font-size: .88rem; z-index: 20; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+@media (max-width: 520px) { .season .mo span { font-size: .6rem; } .hb { grid-template-columns: 80px 1fr; } .hb .meta { grid-column: 2; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow">Meraki Cards · Growth hub</span>
+      <h1>Grow <span>Meraki</span></h1>
+      <p class="muted">Sales, orders, SEO, brand and expansion in one place. Log every enquiry and work through the plan.</p>
+    </div>
+    <div class="mode" id="mode"><i class="dot" id="mode-dot"></i><span id="mode-text">Connecting…</span></div>
+  </header>
+
+  <section aria-labelledby="h-month" style="display:flex;flex-direction:column;gap:12px">
+    <div class="panel-head"><h2 id="h-month">This month · <span id="month-name"></span></h2><span class="small muted" id="month-note"></span></div>
+    <div class="kpis">
+      <div class="kpi">
+        <span class="eyebrow">Revenue booked</span>
+        <span class="val num" id="k-rev">₹0</span>
+        <div class="bar"><i id="k-rev-bar" style="width:0"></i></div>
+        <span class="sub" id="k-rev-goal"></span>
+      </div>
+      <div class="kpi">
+        <span class="eyebrow">Orders won</span>
+        <span class="val num" id="k-ord">0</span>
+        <div class="bar gold"><i id="k-ord-bar" style="width:0"></i></div>
+        <span class="sub" id="k-ord-goal"></span>
+      </div>
+      <div class="kpi">
+        <span class="eyebrow">Enquiry → order</span>
+        <span class="val num" id="k-conv">–</span>
+        <span class="sub" id="k-conv-sub">Last 90 days</span>
+      </div>
+      <div class="kpi">
+        <span class="eyebrow">Average order</span>
+        <span class="val num" id="k-aov">–</span>
+        <span class="sub" id="k-aov-sub">All won orders</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-season">
+    <div class="panel-head">
+      <h2 id="h-season">Wedding season</h2>
+      <div class="legend"><span><i style="background:var(--accent-soft)"></i>Peak</span><span><i style="background:var(--gold-soft)"></i>Shoulder</span><span><i style="background:var(--sunk)"></i>Quiet</span><span><i style="background:var(--accent);opacity:.55"></i>Your orders by wedding month</span></div>
+    </div>
+    <div class="season" id="season"></div>
+    <p class="callout" id="season-tip"></p>
+  </section>
+
+  <div class="grid-2">
+    <section class="panel" aria-labelledby="h-trend">
+      <div class="panel-head"><h2 id="h-trend">Revenue, last 6 months</h2><span class="small muted">Won orders, by order date</span></div>
+      <div class="chart" id="trend"></div>
+    </section>
+    <section class="panel" aria-labelledby="h-chan">
+      <div class="panel-head"><h2 id="h-chan">Where orders come from</h2><span class="small muted">Revenue · won / enquiries</span></div>
+      <div class="hbars" id="channels"></div>
+      <p class="small muted" id="chan-tip"></p>
+    </section>
+  </div>
+
+  <div class="grid-2">
+    <section class="panel" aria-labelledby="h-pipe">
+      <div class="panel-head"><h2 id="h-pipe">Order pipeline</h2></div>
+      <div class="funnel" id="funnel"></div>
+      <h3>Needs action today</h3>
+      <div class="follow" id="follow"></div>
+    </section>
+    <section class="panel" aria-labelledby="h-geo">
+      <div class="panel-head"><h2 id="h-geo">Expansion map</h2><span class="small muted">Won orders by city</span></div>
+      <div class="hbars" id="cities"></div>
+      <p class="small muted">Next targets: Dibrugarh, Jorhat, Tezpur, Silchar, Shillong, and Assamese families in Delhi and Bengaluru. Every new city in this list means the expansion work is paying off.</p>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-plan">
+    <div class="panel-head">
+      <h2 id="h-plan">Growth plan</h2>
+      <div class="progress-line" style="min-width:200px;flex:0 1 320px"><span id="plan-count">0 / 0 done</span><div class="bar"><i id="plan-bar" style="width:0"></i></div></div>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <ul class="tasks" id="tasks"></ul>
+    <details class="add">
+      <summary>+ Add an action</summary>
+      <form class="row-form" id="task-form">
+        <input type="text" id="task-title" placeholder="What will you do? e.g. Post a Reel of the Ahom-style card" required>
+        <select id="task-area" aria-label="Area"></select>
+        <select id="task-prio" aria-label="Priority"><option value="high">High priority</option><option value="normal" selected>Normal</option></select>
+        <button class="btn" type="submit">Add</button>
+      </form>
+    </details>
+  </section>
+
+  <section class="panel" aria-labelledby="h-coach" id="coach-panel">
+    <div class="panel-head">
+      <h2 id="h-coach">Growth coach</h2>
+      <button class="btn" id="coach-btn" type="button">Suggest this week's moves</button>
+    </div>
+    <p class="small muted">Claude reads your numbers above (totals only, no client names) and suggests five actions for this week. Add the good ones to your plan.</p>
+    <div class="coach-out" id="coach-out"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-seo">
+    <div class="panel-head"><h2 id="h-seo">SEO keywords</h2><span class="small muted">Search the keyword on Google in a private window and enter where Meraki shows up</span></div>
+    <div class="table-wrap"><table style="min-width:560px">
+      <thead><tr><th>Keyword</th><th>Where</th><th class="r">Position</th><th>Checked</th><th></th></tr></thead>
+      <tbody id="kw-body"></tbody>
+    </table></div>
+    <form class="row-form" id="kw-form">
+      <input type="text" id="kw-text" placeholder="New keyword, e.g. assamese biya card" required>
+      <select id="kw-where" aria-label="Where"><option>Google</option><option>Google Maps</option><option>Instagram</option><option>YouTube</option></select>
+      <button class="btn ghost" type="submit">Track keyword</button>
+    </form>
+  </section>
+
+  <section class="panel" aria-labelledby="h-orders">
+    <div class="panel-head">
+      <h2 id="h-orders">Order log</h2>
+      <div class="filters">
+        <input type="text" id="f-q" placeholder="Search client, ORD no, city" aria-label="Search orders">
+        <select id="f-status" aria-label="Filter by status"><option value="">All statuses</option></select>
+      </div>
+    </div>
+    <details class="add" id="order-details">
+      <summary>+ Log an enquiry or order</summary>
+      <form id="order-form" class="order-form">
+        <label class="field">Client name<input type="text" id="o-client" required placeholder="e.g. Priyanka & Rahul"></label>
+        <label class="field">Order no.<input type="text" id="o-ref" placeholder="ORD-1042"></label>
+        <label class="field">Enquiry date<input type="date" id="o-date" required></label>
+        <label class="field">Wedding date<input type="date" id="o-wedding"></label>
+        <label class="field">Cards (qty)<input type="number" id="o-qty" min="0" step="1" placeholder="300"></label>
+        <label class="field">Amount (₹)<input type="number" id="o-amount" min="0" step="1" placeholder="18000"></label>
+        <label class="field">Came from<select id="o-channel"></select></label>
+        <label class="field">City<input type="text" id="o-city" placeholder="Guwahati" list="city-list"></label>
+        <label class="field">Status<select id="o-status"></select></label>
+        <label class="field" style="justify-content:flex-end"><button class="btn" type="submit">Save</button></label>
+      </form>
+      <datalist id="city-list"></datalist>
+    </details>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Date</th><th>Client</th><th>Order</th><th>Wedding</th><th class="r">Qty</th><th class="r">Amount</th><th>Source</th><th>City</th><th>Status</th><th></th></tr></thead>
+      <tbody id="o-body"></tbody>
+    </table></div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function () {
+  const STATUSES = ["Enquiry", "Confirmed", "Designing", "Printing", "Delivered", "Lost"];
+  const WON = new Set(["Confirmed", "Designing", "Printing", "Delivered"]);
+  const CHANNELS = ["Instagram", "WhatsApp", "Referral", "Google", "Facebook", "Website", "Walk-in", "Wedding planner", "Other"];
+  const AREAS = [
+    { id: "sales", label: "Sales" }, { id: "seo", label: "SEO" }, { id: "brand", label: "Brand" },
+    { id: "orders", label: "Orders" }, { id: "expansion", label: "Expansion" }
+  ];
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  // Typical Assamese wedding months (Agrahayan, Magh, Phagun, Bohag, Jeth). Index = month 0-11.
+  const SEASON = ["peak", "peak", "shoulder", "peak", "peak", "peak", "quiet", "quiet", "quiet", "quiet", "peak", "peak"];
+
+  const S = { orders: [], tasks: [], keywords: [], goals: {}, area: "sales", coach: [] };
+  let db = null;
+  const LS = "meraki-growth-v1";
+  const $ = (id) => document.getElementById(id);
+  const inr = (n) => "₹" + Math.round(n || 0).toLocaleString("en-IN");
+  const todayISO = () => new Date().toISOString().slice(0, 10);
+  const el = (tag, attrs, ...kids) => {
+    const e = document.createElement(tag);
+    for (const k in attrs || {}) {
+      if (k === "class") e.className = attrs[k];
+      else if (k === "text") e.textContent = attrs[k];
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== undefined && attrs[k] !== null && attrs[k] !== false) e.setAttribute(k, attrs[k]);
+    }
+    for (const c of kids) if (c != null) e.append(c);
+    return e;
+  };
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2200); }
+
+  /* ---------- storage: shared db when available, this browser otherwise ---------- */
+  function saveLocal() { try { localStorage.setItem(LS, JSON.stringify({ orders: S.orders, tasks: S.tasks, keywords: S.keywords, goals: S.goals })); } catch (e) {} }
+  function loadLocal() {
+    try { const d = JSON.parse(localStorage.getItem(LS) || "null"); if (d) Object.assign(S, d); } catch (e) {}
+    if (!S.tasks.length) S.tasks = DEFAULT_TASKS.map((t, i) => ({ ...t, id: "t" + i, done: false, created: i }));
+    if (!S.keywords.length) S.keywords = DEFAULT_KW.map((k, i) => ({ id: "k" + i, keyword: k, where: "Google", rank: null, checked: null }));
+  }
+  const coll = { orders: "orders", tasks: "tasks", keywords: "keywords" };
+  async function put(kind, id, data) {
+    if (db) { await db.collection(coll[kind]).doc(id).set(data); return; }
+    const list = S[kind]; const i = list.findIndex((x) => x.id === id);
+    if (i >= 0) list[i] = { ...data, id }; else list.push({ ...data, id });
+    saveLocal(); render();
+  }
+  async function patch(kind, id, data) {
+    if (db) { await db.collection(coll[kind]).doc(id).update(data); return; }
+    const it = S[kind].find((x) => x.id === id); if (it) Object.assign(it, data);
+    saveLocal(); render();
+  }
+  async function remove(kind, id) {
+    if (db) { await db.collection(coll[kind]).doc(id).delete(); return; }
+    S[kind] = S[kind].filter((x) => x.id !== id); saveLocal(); render();
+  }
+  async function setGoals(g) {
+    if (db) { await db.doc("settings/goals").set(g); return; }
+    S.goals = g; saveLocal(); render();
+  }
+  const newId = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const safe = (p) => p.catch((e) => toast("Couldn't save: " + (e && e.message ? e.message : "check your access")));
+
+  /* ---------- derived numbers ---------- */
+  const amt = (o) => Number(o.amount) || 0;
+  const isWon = (o) => WON.has(o.status);
+  const ym = (d) => (d || "").slice(0, 7);
+  function daysAgo(d) { if (!d) return 0; return Math.floor((Date.now() - new Date(d + "T00:00:00").getTime()) / 864e5); }
+
+  /* ---------- render ---------- */
+  function render() {
+    renderKpis(); renderSeason(); renderTrend(); renderChannels(); renderPipeline(); renderCities();
+    renderPlan(); renderKeywords(); renderOrders(); renderCoach();
+  }
+
+  function renderKpis() {
+    const now = new Date(); const cur = now.toISOString().slice(0, 7);
+    $("month-name").textContent = now.toLocaleString("en-IN", { month: "long", year: "numeric" });
+    const monthWon = S.orders.filter((o) => isWon(o) && ym(o.date) === cur);
+    const rev = monthWon.reduce((a, o) => a + amt(o), 0);
+    $("k-rev").textContent = inr(rev);
+    $("k-ord").textContent = monthWon.length;
+    goalLine("revenue", rev, "k-rev-bar", "k-rev-goal", inr);
+    goalLine("orders", monthWon.length, "k-ord-bar", "k-ord-goal", (n) => String(n));
+    const recent = S.orders.filter((o) => daysAgo(o.date) <= 90);
+    const won = recent.filter(isWon).length;
+    $("k-conv").textContent = recent.length ? Math.round((won / recent.length) * 100) + "%" : "–";
+    $("k-conv-sub").textContent = recent.length ? `${won} of ${recent.length} enquiries, last 90 days` : "Log enquiries to see this";
+    const allWon = S.orders.filter(isWon);
+    $("k-aov").textContent = allWon.length ? inr(allWon.reduce((a, o) => a + amt(o), 0) / allWon.length) : "–";
+    const qty = allWon.filter((o) => Number(o.qty));
+    $("k-aov-sub").textContent = qty.length ? `About ${Math.round(qty.reduce((a, o) => a + Number(o.qty), 0) / qty.length)} cards per order` : "All won orders";
+    const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
+    $("month-note").textContent = daysLeft + " days left this month";
+  }
+  function goalLine(key, value, barId, subId, fmt) {
+    const goal = Number(S.goals[key]) || 0; const sub = $(subId); sub.textContent = "";
+    $(barId).style.width = goal ? Math.min(100, (value / goal) * 100) + "%" : "0";
+    if (goalLine.editing === key) {
+      const inp = el("input", { type: "number", min: "0", value: goal || "", "aria-label": "Monthly " + key + " goal", id: "goal-" + key });
+      const save = el("button", { class: "goal-btn", type: "button", text: "Save", onclick: () => {
+        goalLine.editing = null; safe(setGoals({ ...S.goals, [key]: Number(inp.value) || 0 })); render(); } });
+      sub.append(el("span", { class: "goal-edit" }, inp, save)); setTimeout(() => inp.focus(), 0); return;
+    }
+    if (goal) sub.append(`${Math.round((value / goal) * 100)}% of ${fmt(goal)} goal · `);
+    sub.append(el("button", { class: "goal-btn", type: "button", text: goal ? "Edit" : "Set a monthly goal", onclick: () => { goalLine.editing = key; renderKpis(); } }));
+  }
+
+  function renderSeason() {
+    const box = $("season"); box.replaceChildren();
+    const counts = Array(12).fill(0);
+    S.orders.forEach((o) => { if (isWon(o) && o.wedding) counts[Number(o.wedding.slice(5, 7)) - 1]++; });
+    const max = Math.max(1, ...counts); const nowM = new Date().getMonth();
+    MONTHS.forEach((m, i) => {
+      const cell = el("div", { class: "cell" });
+      if (counts[i]) { cell.append(el("div", { class: "fill", style: `height:${(counts[i] / max) * 100}%` }), el("span", { class: "cnt", text: counts[i] })); }
+      box.append(el("div", { class: `mo ${SEASON[i]}${i === nowM ? " now" : ""}`, title: `${m}: ${SEASON[i]} season, ${counts[i]} orders` }, cell, el("span", { text: m })));
+    });
+    // Couples book 6–8 weeks ahead; promotion should start ~2 months before a peak.
+    let nextPeak = -1;
+    for (let k = 0; k < 12; k++) { const m = (nowM + k) % 12; if (SEASON[m] === "peak") { nextPeak = m; break; } }
+    const promoBy = (nextPeak + 10) % 12;
+    let tip;
+    if (SEASON[nowM] === "peak") tip = `Peak season now. Reply to enquiries fast, keep printing slots open, and promote the next peak (${MONTHS[(nowM + 2) % 12]}) weddings today. Couples order cards 6–8 weeks ahead.`;
+    else tip = `Next peak starts in ${MONTHS[nextPeak]}. Couples order cards 6–8 weeks ahead, so your ads, Reels and early-bird offer should be live by ${MONTHS[promoBy]}.`;
+    $("season-tip").textContent = tip;
+  }
+
+  function renderTrend() {
+    const box = $("trend"); box.replaceChildren();
+    const months = []; const d = new Date(); d.setDate(1);
+    for (let i = 5; i >= 0; i--) { const x = new Date(d.getFullYear(), d.getMonth() - i, 1); months.push({ key: `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}`, label: MONTHS[x.getMonth()], rev: 0, n: 0 }); }
+    S.orders.filter(isWon).forEach((o) => { const m = months.find((mm) => mm.key === ym(o.date)); if (m) { m.rev += amt(o); m.n++; } });
+    if (!months.some((m) => m.n)) { box.append(el("div", { class: "empty", text: "No won orders in the last 6 months yet. Log orders below and this chart fills in." })); return; }
+    const W = Math.max(300, box.clientWidth || 480), H = 220, padL = 52, padB = 26, padT = 22, padR = 8;
+    const max = Math.max(...months.map((m) => m.rev)) || 1;
+    const nice = niceMax(max); const iw = W - padL - padR, ih = H - padT - padB; const bw = iw / months.length;
+    const ns = "http://www.w3.org/2000/svg"; const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "Revenue by month");
+    const mk = (t, a, txt) => { const n = document.createElementNS(ns, t); for (const k in a) n.setAttribute(k, a[k]); if (txt != null) n.textContent = txt; svg.append(n); return n; };
+    for (let g = 0; g <= 4; g++) { const v = (nice / 4) * g, y = padT + ih - (v / nice) * ih;
+      mk("line", { x1: padL, x2: W - padR, y1: y, y2: y, stroke: "var(--line)", "stroke-width": 1 });
+      mk("text", { x: padL - 6, y: y + 4, "text-anchor": "end" }, shortInr(v)); }
+    months.forEach((m, i) => {
+      const h = (m.rev / nice) * ih, x = padL + i * bw + bw * 0.2, w = bw * 0.6, y = padT + ih - h;
+      const last = i === months.length - 1;
+      mk("rect", { x, y, width: w, height: Math.max(h, m.rev ? 2 : 0), rx: 3, fill: last ? "var(--accent)" : "var(--gold)", opacity: last ? 1 : 0.75 }).append(Object.assign(document.createElementNS(ns, "title"), { textContent: `${m.label}: ${inr(m.rev)} from ${m.n} orders` }));
+      mk("text", { x: x + w / 2, y: H - 8, "text-anchor": "middle" }, m.label);
+      if (m.rev) mk("text", { x: x + w / 2, y: y - 6, "text-anchor": "middle", style: "fill:var(--ink)" }, shortInr(m.rev));
+    });
+    box.append(svg);
+  }
+  function niceMax(v) { const p = Math.pow(10, Math.floor(Math.log10(v))); const f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+  function shortInr(v) { if (v >= 1e5) return "₹" + (v / 1e5).toFixed(v % 1e5 ? 1 : 0) + "L"; if (v >= 1e3) return "₹" + (v / 1e3).toFixed(v % 1e3 ? 1 : 0) + "k"; return "₹" + Math.round(v); }
+
+  function hbars(box, rows, emptyText) {
+    box.replaceChildren();
+    if (!rows.length) { box.append(el("div", { class: "empty", text: emptyText })); return; }
+    const max = Math.max(1, ...rows.map((r) => r.value));
+    rows.forEach((r) => box.append(el("div", { class: "hb" }, el("span", { text: r.label }), el("div", { class: "track" }, el("i", { style: `width:${(r.value / max) * 100}%` })), el("span", { class: "meta", text: r.meta }))));
+  }
+  function renderChannels() {
+    const by = {};
+    S.orders.forEach((o) => { const c = o.channel || "Other"; by[c] = by[c] || { rev: 0, won: 0, all: 0 }; by[c].all++; if (isWon(o)) { by[c].won++; by[c].rev += amt(o); } });
+    const rows = Object.entries(by).map(([k, v]) => ({ label: k, value: v.rev, meta: `${inr(v.rev)} · ${v.won}/${v.all}`, conv: v.all ? v.won / v.all : 0, all: v.all })).sort((a, b) => b.value - a.value);
+    hbars($("channels"), rows, "Log where each enquiry came from to see which channel deserves more time and money.");
+    const best = rows.filter((r) => r.all >= 3).sort((a, b) => b.conv - a.conv)[0];
+    $("chan-tip").textContent = best ? `${best.label} turns ${Math.round(best.conv * 100)}% of enquiries into orders, your best rate. Put more effort there.` : "";
+  }
+  function renderPipeline() {
+    const f = $("funnel"); f.replaceChildren();
+    STATUSES.forEach((s) => { const n = S.orders.filter((o) => o.status === s).length; f.append(el("div", { class: "stage" }, el("b", { class: "num", text: n }), el("span", { text: s }))); });
+    const items = [];
+    S.orders.forEach((o) => {
+      if (o.status === "Enquiry" && daysAgo(o.date) >= 2) items.push({ o, tag: `Follow up · ${daysAgo(o.date)} days`, cls: "warn" });
+      if (o.wedding && !["Delivered", "Lost", "Enquiry"].includes(o.status)) { const left = -daysAgo(o.wedding); if (left >= 0 && left <= 21) items.push({ o, tag: `Wedding in ${left} days`, cls: "bad" }); }
+      if (o.status === "Delivered" && !o.reviewAsked) items.push({ o, tag: "Ask for review + referral", cls: "delivered", review: true });
+    });
+    const box = $("follow"); box.replaceChildren();
+    if (!items.length) { box.append(el("p", { class: "small muted", text: "Nothing pending. Enquiries older than 2 days, weddings in the next 3 weeks and review requests show up here." })); return; }
+    const ul = el("ul");
+    items.slice(0, 8).forEach(({ o, tag, cls, review }) => {
+      const right = el("span", { style: "display:flex;gap:6px;align-items:center" }, el("span", { class: "pill " + cls, text: tag }));
+      if (review) right.append(el("button", { class: "icon-btn", type: "button", text: "Done", title: "Mark review request sent", onclick: () => safe(patch("orders", o.id, { reviewAsked: true })) }));
+      ul.append(el("li", {}, el("span", {}, el("b", { text: o.client || "Unnamed" }), " ", el("span", { class: "small muted", text: [o.ref, o.city].filter(Boolean).join(" · ") })), right));
+    });
+    box.append(ul);
+  }
+  function renderCities() {
+    const by = {};
+    S.orders.filter(isWon).forEach((o) => { const c = (o.city || "").trim() || "Not set"; by[c] = by[c] || { n: 0, rev: 0 }; by[c].n++; by[c].rev += amt(o); });
+    const rows = Object.entries(by).map(([k, v]) => ({ label: k, value: v.n, meta: `${v.n} · ${inr(v.rev)}` })).sort((a, b) => b.value - a.value);
+    hbars($("cities"), rows, "Add a city to each order to watch Meraki spread beyond Guwahati.");
+    const dl = $("city-list"); dl.replaceChildren(...[...new Set(["Guwahati", "Dibrugarh", "Jorhat", "Tezpur", "Silchar", "Nagaon", "Shillong", ...S.orders.map((o) => o.city).filter(Boolean)])].map((c) => el("option", { value: c })));
+  }
+
+  function renderPlan() {
+    const tabs = $("tabs"); tabs.replaceChildren();
+    AREAS.forEach((a) => {
+      const list = S.tasks.filter((t) => t.area === a.id); const done = list.filter((t) => t.done).length;
+      tabs.append(el("button", { class: "tab", role: "tab", type: "button", "aria-selected": String(S.area === a.id), onclick: () => { S.area = a.id; try { localStorage.setItem(LS + "-tab", a.id); } catch (e) {} renderPlan(); } }, a.label, el("span", { class: "num", text: `${done}/${list.length}` })));
+    });
+    const total = S.tasks.length, done = S.tasks.filter((t) => t.done).length;
+    $("plan-count").textContent = `${done} / ${total} done`; $("plan-bar").style.width = total ? (done / total) * 100 + "%" : "0";
+    const ul = $("tasks"); ul.replaceChildren();
+    const list = S.tasks.filter((t) => t.area === S.area).sort((a, b) => (a.done - b.done) || ((b.prio === "high") - (a.prio === "high")) || ((a.created || 0) - (b.created || 0)));
+    if (!list.length) ul.append(el("li", { class: "task" }, el("span"), el("span", { class: "muted small", text: "No actions here yet. Add one below." }), el("span")));
+    list.forEach((t) => {
+      const cb = el("input", { type: "checkbox", id: "task-" + t.id, "aria-label": t.title, onchange: (e) => safe(patch("tasks", t.id, { done: e.target.checked, doneAt: e.target.checked ? todayISO() : null })) });
+      cb.checked = !!t.done;
+      const body = el("label", { for: "task-" + t.id, style: "display:flex;flex-direction:column;gap:2px;cursor:pointer" });
+      if (t.prio === "high" && !t.done) body.append(el("span", { class: "prio", text: "High priority" }));
+      body.append(el("span", { class: "t-title", text: t.title }));
+      if (t.why) body.append(el("span", { class: "t-why", text: t.why }));
+      if (t.done && t.doneAt) body.append(el("span", { class: "t-why", text: "Done " + t.doneAt }));
+      ul.append(el("li", { class: "task" + (t.done ? " done" : "") }, cb, body, confirmDelete(() => remove("tasks", t.id))));
+    });
+    const sel = $("task-area"); if (!sel.options.length) AREAS.forEach((a) => sel.append(el("option", { value: a.id, text: a.label })));
+    sel.value = S.area;
+  }
+  function confirmDelete(fn) {
+    const b = el("button", { class: "icon-btn", type: "button", text: "Remove", "aria-label": "Remove" });
+    b.addEventListener("click", () => {
+      if (b.dataset.armed) { safe(fn()); return; }
+      b.dataset.armed = "1"; b.textContent = "Sure?"; b.classList.add("danger");
+      setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = "Remove"; b.classList.remove("danger"); } }, 3000);
+    });
+    return b;
+  }
+
+  function renderKeywords() {
+    const tb = $("kw-body"); tb.replaceChildren();
+    if (!S.keywords.length) { tb.append(el("tr", {}, el("td", { colspan: 5, class: "muted", text: "No keywords yet. Add the words couples type when they look for wedding cards." }))); return; }
+    S.keywords.slice().sort((a, b) => (a.keyword || "").localeCompare(b.keyword || "")).forEach((k) => {
+      const inp = el("input", { type: "number", min: "1", value: k.rank ?? "", placeholder: "–", "aria-label": "Position for " + k.keyword, id: "kw-" + k.id, style: "width:80px;text-align:right" });
+      inp.addEventListener("change", () => { const v = inp.value ? Number(inp.value) : null; safe(patch("keywords", k.id, { rank: v, prev: k.rank ?? null, checked: todayISO() })); });
+      let trend = null;
+      if (k.rank && k.prev) trend = el("span", { class: "pill " + (k.rank < k.prev ? "delivered" : k.rank > k.prev ? "bad" : ""), text: k.rank < k.prev ? `▲ ${k.prev - k.rank}` : k.rank > k.prev ? `▼ ${k.rank - k.prev}` : "=" });
+      const status = !k.rank ? el("span", { class: "pill", text: "Not checked" }) : k.rank <= 3 ? el("span", { class: "pill delivered", text: "Top 3" }) : k.rank <= 10 ? el("span", { class: "pill confirmed", text: "Page 1" }) : el("span", { class: "pill warn", text: "Below page 1" });
+      tb.append(el("tr", {}, el("td", {}, el("b", { text: k.keyword }), " ", status), el("td", { text: k.where || "Google" }),
+        el("td", { class: "r" }, el("span", { style: "display:inline-flex;gap:6px;align-items:center" }, trend, inp)),
+        el("td", { class: "num small muted", text: k.checked || "–" }), el("td", { class: "r" }, confirmDelete(() => remove("keywords", k.id)))));
+    });
+  }
+
+  function renderOrders() {
+    const fs = $("f-status"); if (fs.options.length === 1) STATUSES.forEach((s) => fs.append(el("option", { value: s, text: s })));
+    const oc = $("o-channel"); if (!oc.options.length) CHANNELS.forEach((c) => oc.append(el("option", { value: c, text: c })));
+    const os = $("o-status"); if (!os.options.length) STATUSES.forEach((s) => os.append(el("option", { value: s, text: s })));
+    const q = $("f-q").value.trim().toLowerCase(), st = fs.value;
+    const rows = S.orders.filter((o) => (!st || o.status === st) && (!q || [o.client, o.ref, o.city, o.channel].join(" ").toLowerCase().includes(q)))
+      .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    const tb = $("o-body"); tb.replaceChildren();
+    if (!rows.length) { tb.append(el("tr", {}, el("td", { colspan: 10, class: "muted", text: S.orders.length ? "No orders match this filter." : "No orders logged yet. Use “Log an enquiry or order” above. Log enquiries too, even if they don't buy: that is how conversion is measured." }))); return; }
+    rows.forEach((o) => {
+      const sel = el("select", { "aria-label": "Status for " + (o.client || "order"), class: "", id: "st-" + o.id });
+      STATUSES.forEach((s) => sel.append(el("option", { value: s, text: s })));
+      sel.value = o.status || "Enquiry";
+      sel.addEventListener("change", () => safe(patch("orders", o.id, { status: sel.value })));
+      tb.append(el("tr", {},
+        el("td", { class: "num small", text: o.date || "–" }), el("td", {}, el("b", { text: o.client || "–" })), el("td", { class: "num small", text: o.ref || "–" }),
+        el("td", { class: "num small", text: o.wedding || "–" }), el("td", { class: "r num", text: o.qty || "–" }), el("td", { class: "r num", text: o.amount ? inr(o.amount) : "–" }),
+        el("td", { text: o.channel || "–" }), el("td", { text: o.city || "–" }), el("td", {}, el("span", { style: "display:inline-flex;gap:6px;align-items:center" }, el("span", { class: "pill " + (o.status || "enquiry").toLowerCase(), text: "●" }), sel)),
+        el("td", { class: "r" }, confirmDelete(() => remove("orders", o.id)))));
+    });
+  }
+
+  /* ---------- growth coach (Claude) ---------- */
+  let sample = null, coachBusy = false;
+  function renderCoach() {
+    $("coach-panel").hidden = !sample;
+    const out = $("coach-out"); out.replaceChildren();
+    S.coach.forEach((idea, i) => {
+      const area = AREAS.find((a) => a.id === idea.area) ? idea.area : "sales";
+      out.append(el("div", { class: "idea" },
+        el("div", { style: "display:flex;flex-direction:column;gap:2px" }, el("span", { class: "prio", text: (AREAS.find((a) => a.id === area) || {}).label }), el("b", { text: idea.title }), el("span", { class: "t-why", text: idea.why || "" })),
+        el("button", { class: "btn ghost", type: "button", text: idea.added ? "Added" : "Add to plan", disabled: idea.added, onclick: () => {
+          idea.added = true; const id = newId("t");
+          safe(put("tasks", id, { area, title: String(idea.title).slice(0, 200), why: String(idea.why || "").slice(0, 300), prio: "high", done: false, created: Date.now() })); renderCoach(); toast("Added to " + area + " plan"); } })));
+    });
+  }
+  function statsSummary() {
+    const won = S.orders.filter(isWon);
+    const by = (f) => { const m = {}; S.orders.forEach((o) => { const k = f(o) || "unknown"; m[k] = m[k] || { enquiries: 0, won: 0, revenue: 0 }; m[k].enquiries++; if (isWon(o)) { m[k].won++; m[k].revenue += amt(o); } }); return m; };
+    return {
+      today: todayISO(), totalEnquiries: S.orders.length, wonOrders: won.length, revenueAllTime: won.reduce((a, o) => a + amt(o), 0),
+      goals: S.goals, byChannel: by((o) => o.channel), byCity: by((o) => o.city), byStatus: by((o) => o.status),
+      openPlanItems: S.tasks.filter((t) => !t.done).map((t) => `${t.area}: ${t.title}`).slice(0, 30),
+      donePlanItems: S.tasks.filter((t) => t.done).map((t) => `${t.area}: ${t.title}`).slice(0, 30),
+      seoKeywords: S.keywords.map((k) => ({ keyword: k.keyword, where: k.where, position: k.rank }))
+    };
+  }
+  $("coach-btn").addEventListener("click", async () => {
+    if (!sample || coachBusy) return; coachBusy = true; const b = $("coach-btn"); b.disabled = true; b.textContent = "Thinking…";
+    const prompt = `You are a growth advisor for Meraki Cards, a small business in Assam, India that designs and prints custom wedding invitation cards (Assamese and English, bilingual), takes orders over WhatsApp and Instagram, and designs in Canva. The owner wants more sales, more orders, better SEO and brand, and expansion beyond Guwahati.
+Here are their current numbers and plan as JSON:
+${JSON.stringify(statsSummary())}
+Account for the Assamese wedding season (peaks Nov–Feb and Apr–Jun; couples order 6–8 weeks ahead) and today's date.
+Suggest exactly 5 specific, low-cost actions for THIS WEEK that are not already in the plan. Each must be concrete enough to do in under a day.
+Reply with only a JSON array of 5 objects: {"area": one of "sales","seo","brand","orders","expansion", "title": short imperative action (max 90 chars), "why": one sentence tied to their numbers or the season}.`;
+    try {
+      const res = await sample.json(prompt, { modelTier: "default" });
+      const arr = Array.isArray(res) ? res : (res && Array.isArray(res.actions) ? res.actions : []);
+      S.coach = arr.filter((x) => x && x.title).slice(0, 5).map((x) => ({ area: String(x.area || "sales").toLowerCase(), title: String(x.title), why: String(x.why || "") }));
+      if (!S.coach.length) toast("No suggestions came back. Try again.");
+    } catch (e) {
+      if (e && e.code === "not_granted") { sample = null; } else toast(e && e.code === "rate_limited" ? "Too many requests. Try again in a minute." : "Couldn't get suggestions right now.");
+    }
+    coachBusy = false; b.disabled = false; b.textContent = "Suggest this week's moves"; renderCoach();
+  });
+
+  /* ---------- forms ---------- */
+  $("o-date").value = todayISO();
+  $("order-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const data = { client: $("o-client").value.trim(), ref: $("o-ref").value.trim(), date: $("o-date").value, wedding: $("o-wedding").value || null,
+      qty: $("o-qty").value ? Number($("o-qty").value) : null, amount: $("o-amount").value ? Number($("o-amount").value) : null,
+      channel: $("o-channel").value, city: $("o-city").value.trim(), status: $("o-status").value, created: Date.now() };
+    if (!data.client) return;
+    safe(put("orders", newId("o"), data)); e.target.reset(); $("o-date").value = todayISO(); toast("Saved " + data.client);
+  });
+  $("task-form").addEventListener("submit", (e) => {
+    e.preventDefault(); const title = $("task-title").value.trim(); if (!title) return;
+    const area = $("task-area").value; S.area = area;
+    safe(put("tasks", newId("t"), { area, title, prio: $("task-prio").value, done: false, created: Date.now() })); $("task-title").value = ""; toast("Added");
+  });
+  $("kw-form").addEventListener("submit", (e) => {
+    e.preventDefault(); const keyword = $("kw-text").value.trim().toLowerCase(); if (!keyword) return;
+    safe(put("keywords", newId("k"), { keyword, where: $("kw-where").value, rank: null, checked: null })); $("kw-text").value = "";
+  });
+  $("f-q").addEventListener("input", renderOrders); $("f-status").addEventListener("change", renderOrders);
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(renderTrend, 150); });
+  try { const t = localStorage.getItem(LS + "-tab"); if (t && AREAS.some((a) => a.id === t)) S.area = t; } catch (e) {}
+
+  /* ---------- default plan (used only when no shared store is available) ---------- */
+  const DEFAULT_TASKS = [
+    { area: "sales", prio: "high", title: "Launch an early-bird offer for Magh weddings", why: "Couples marrying in Jan–Feb are choosing cards now." },
+    { area: "sales", prio: "high", title: "Reply to every WhatsApp enquiry within 2 hours", why: "The first card studio to answer usually wins the order." },
+    { area: "sales", title: "Sell a combo: printed cards + matching e-invite video", why: "Raises order value with little extra work." },
+    { area: "sales", title: "Give delivered clients a referral reward for friends' weddings", why: "Wedding guests are next season's couples." },
+    { area: "seo", prio: "high", title: "Set up Google Business Profile with 30+ card photos", why: "Shows Meraki on Google Maps for 'wedding card near me'." },
+    { area: "seo", title: "Collect 20 Google reviews from past clients", why: "Reviews are the biggest local ranking factor." },
+    { area: "seo", title: "Write bilingual captions with #AssameseWedding #GuwahatiWedding", why: "Makes posts findable in Instagram search." },
+    { area: "seo", title: "List Meraki on JustDial, WedMeGood and IndiaMART", why: "Free listings that also link back to you." },
+    { area: "brand", prio: "high", title: "Fix one logo, colour set and font for every post and package", why: "Consistency makes Meraki recognisable at a glance." },
+    { area: "brand", title: "Post 3 Reels a week: making, unboxing, before/after", why: "Reels reach people who don't follow you yet." },
+    { area: "brand", title: "Add a thank-you card and Meraki sticker to every delivery", why: "Turns each box into an advert at the wedding house." },
+    { area: "brand", title: "Pin Instagram highlights: Designs, Prices, Reviews, How to order", why: "Answers the first questions before they're asked." },
+    { area: "orders", prio: "high", title: "Make a 3-tier price list: Classic, Premium, Luxury", why: "Clear prices shorten the back-and-forth on WhatsApp." },
+    { area: "orders", title: "Put all designs in the WhatsApp Business catalog", why: "Clients pick a design without waiting for photos." },
+    { area: "orders", title: "Take 50% advance by UPI when an order is confirmed", why: "Fewer cancellations and steady cash for printing." },
+    { area: "orders", title: "Promise a first design proof within 48 hours", why: "A fast, reliable promise is a reason to choose Meraki." },
+    { area: "expansion", prio: "high", title: "Offer courier delivery across Assam and the Northeast", why: "Opens Dibrugarh, Jorhat, Tezpur, Silchar and Shillong." },
+    { area: "expansion", title: "Partner with 5 wedding planners, photographers or venues", why: "Each partner sends a steady stream of couples." },
+    { area: "expansion", title: "Add Bihu greetings, griha prawesh and baby-shower cards", why: "Fills the quiet Jul–Oct months." },
+    { area: "expansion", title: "Reach Assamese families in Delhi, Bengaluru and abroad", why: "Diaspora weddings still want Assamese cards." }
+  ];
+  const DEFAULT_KW = ["assamese wedding card", "wedding card guwahati", "wedding invitation card assam", "assamese biya card", "custom wedding cards guwahati", "assamese e invitation"];
+
+  /* ---------- boot ---------- */
+  function setMode(shared, text) { $("mode-dot").classList.toggle("on", shared); $("mode-text").textContent = text; }
+  render();
+  (async () => {
+    const c = window.claude;
+    const [d, smp] = c && c.use ? await Promise.all([c.use("db").catch(() => null), c.use("sample").catch(() => null)]) : [null, null];
+    sample = smp;
+    if (!d) { loadLocal(); setMode(false, "Saved in this browser only"); render(); return; }
+    db = d; setMode(true, "Saved to your Meraki workspace");
+    const sub = (name) => db.collection(name).onSnapshot((snap) => { S[name] = snap.docs.map((x) => ({ ...x.data(), id: x.id })); render(); },
+      () => setMode(false, "Couldn't load saved data. Reload the page."));
+    sub("orders"); sub("tasks"); sub("keywords");
+    db.doc("settings/goals").onSnapshot((snap) => { S.goals = snap.exists ? { ...snap.data() } : {}; render(); }, () => {});
+  })();
+})();
+</script>
