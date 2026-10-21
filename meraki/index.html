@@ -156,6 +156,19 @@ td select { padding: 4px 6px; font-size: .82rem; width: auto; }
 .coach-out { display: flex; flex-direction: column; gap: 10px; }
 .idea { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; padding: 12px 14px; background: var(--sunk); border-radius: 8px; }
 .toast { position: fixed; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 8px; font-size: .88rem; z-index: 20; }
+/* today */
+.today { border-color: var(--accent); }
+.focus { background: var(--accent-soft); border-radius: 8px; padding: 12px 14px; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
+.focus .t-title { font-weight: 600; }
+.focus input[type=checkbox] { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); }
+.focus.done .t-title { text-decoration: line-through; color: var(--muted); }
+.daily .tag { font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.week { display: flex; gap: 4px; }
+.week span { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .65rem; color: var(--muted); }
+.week i { width: 18px; height: 18px; border-radius: 4px; background: var(--sunk); display: block; }
+.week i.part { background: var(--gold-soft); }
+.week i.full { background: var(--ok); }
+.week span.now { color: var(--ink); font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 @media (max-width: 520px) { .season .mo span { font-size: .6rem; } .hb { grid-template-columns: 80px 1fr; } .hb .meta { grid-column: 2; } }
 </style>
@@ -169,6 +182,19 @@ td select { padding: 4px 6px; font-size: .82rem; width: auto; }
     </div>
     <div class="mode" id="mode"><i class="dot" id="mode-dot"></i><span id="mode-text">Connecting…</span></div>
   </header>
+
+  <section class="panel today" aria-labelledby="h-today">
+    <div class="panel-head">
+      <div style="display:flex;flex-direction:column;gap:2px"><span class="eyebrow" id="today-date"></span><h2 id="h-today">Today's tasks</h2></div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <div class="progress-line" style="min-width:200px"><span id="today-count">0 / 0</span><div class="bar"><i id="today-bar" style="width:0"></i></div></div>
+        <div class="week" id="today-week" aria-label="Last 7 days"></div>
+      </div>
+    </div>
+    <div class="focus" id="today-focus"></div>
+    <ul class="tasks daily" id="today-list"></ul>
+    <p class="small muted" id="today-streak"></p>
+  </section>
 
   <section aria-labelledby="h-month" style="display:flex;flex-direction:column;gap:12px">
     <div class="panel-head"><h2 id="h-month">This month · <span id="month-name"></span></h2><span class="small muted" id="month-note"></span></div>
@@ -338,7 +364,7 @@ td select { padding: 4px 6px; font-size: .82rem; width: auto; }
   function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 2200); }
 
   /* ---------- storage: shared db when available, this browser otherwise ---------- */
-  function saveLocal() { try { localStorage.setItem(LS, JSON.stringify({ orders: S.orders, tasks: S.tasks, keywords: S.keywords, goals: S.goals })); } catch (e) {} }
+  function saveLocal() { try { localStorage.setItem(LS, JSON.stringify({ orders: S.orders, tasks: S.tasks, keywords: S.keywords, goals: S.goals, daily: S.daily })); } catch (e) {} }
   function loadLocal() {
     try { const d = JSON.parse(localStorage.getItem(LS) || "null"); if (d) Object.assign(S, d); } catch (e) {}
     if (!S.tasks.length) S.tasks = DEFAULT_TASKS.map((t, i) => ({ ...t, id: "t" + i, done: false, created: i }));
@@ -374,8 +400,66 @@ td select { padding: 4px 6px; font-size: .82rem; width: auto; }
   function daysAgo(d) { if (!d) return 0; return Math.floor((Date.now() - new Date(d + "T00:00:00").getTime()) / 864e5); }
 
   /* ---------- render ---------- */
+  /* ---------- daily routine ---------- */
+  const DAILY = [
+    { key: "reply", area: "Orders", title: "Reply to every new WhatsApp and Instagram enquiry within 2 hours", why: "Send prices, the catalog link and the next free design slot." },
+    { key: "log", area: "Orders", title: "Log today's enquiries and orders in the order log", why: "Include the ones that don't buy. That is how conversion is measured." },
+    { key: "follow", area: "Sales", title: "Clear the “Needs action today” list", why: "Follow up on enquiries older than 2 days and check upcoming weddings." },
+    { key: "post", area: "Brand", title: "Post one Reel or carousel of a finished card", why: "Bilingual caption with #AssameseWedding #GuwahatiWedding." },
+    { key: "stories", area: "Brand", title: "Post 3 stories: work in progress, a client review, an offer", why: "Keeps Meraki in front of couples who are deciding." },
+    { key: "engage", area: "SEO", title: "Spend 15 minutes on comments, DMs and local wedding accounts", why: "Reply to every comment, then comment on photographers', venues' and makeup artists' posts." },
+    { key: "review", area: "SEO", title: "Ask one delivered client for a Google review", why: "Send the review link with a photo of their card." },
+    { key: "photo", area: "Brand", title: "Photograph every card finished today", why: "A flat lay plus an in-hand shot. This is next week's content." }
+  ];
+  // One focus task per weekday, index = Date.getDay() (0 = Sunday).
+  const FOCUS = [
+    { key: "focus-sun", area: "Review", title: "Review the week: revenue vs goal, best channel, open enquiries", why: "Then pick next week's top 3 actions from the growth plan." },
+    { key: "focus-mon", area: "Brand", title: "Plan this week's 7 posts and shoot what you need", why: "Mix designs, making-of, reviews, prices and offers." },
+    { key: "focus-tue", area: "SEO", title: "Add 5 new photos and one post to Google Business Profile", why: "Fresh activity helps Meraki show up on Google Maps." },
+    { key: "focus-wed", area: "Expansion", title: "Message 2 wedding planners, photographers or venues about a referral tie-up", why: "Offer them a commission or a free card set for their portfolio." },
+    { key: "focus-thu", area: "Sales", title: "Send a WhatsApp broadcast with this week's offer or new designs", why: "Send it to past clients and enquiries who didn't buy." },
+    { key: "focus-fri", area: "SEO", title: "Check your SEO keyword positions and update the tracker below", why: "Search in a private window, then fix the page or profile that slipped." },
+    { key: "focus-sat", area: "Expansion", title: "Reach one new city: post in a Dibrugarh, Jorhat, Silchar or diaspora group", why: "Share a design and mention courier delivery." }
+  ];
+  const localISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  S.daily = {};
+  async function toggleDaily(key, on) {
+    const day = localISO(new Date());
+    const done = { ...((S.daily[day] || {}).done || {}), [key]: on };
+    if (db) { await db.collection("daily").doc(day).set({ date: day, done }); return; }
+    S.daily[day] = { date: day, done }; saveLocal(); render();
+  }
+  function dayTasks(d) { return [FOCUS[d.getDay()], ...DAILY]; }
+  function renderToday() {
+    const now = new Date(), day = localISO(now), done = (S.daily[day] || {}).done || {};
+    $("today-date").textContent = now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+    const all = dayTasks(now), n = all.filter((t) => done[t.key]).length;
+    $("today-count").textContent = `${n} / ${all.length} done`;
+    $("today-bar").style.width = (n / all.length) * 100 + "%";
+    const item = (t, focus) => {
+      const cb = el("input", { type: "checkbox", id: "d-" + t.key, onchange: (e) => safe(toggleDaily(t.key, e.target.checked)) });
+      cb.checked = !!done[t.key];
+      const body = el("label", { for: "d-" + t.key, style: "display:flex;flex-direction:column;gap:2px;cursor:pointer" },
+        el("span", { class: focus ? "prio" : "tag", text: focus ? `${now.toLocaleDateString("en-IN", { weekday: "long" })} focus · ${t.area}` : t.area }),
+        el("span", { class: "t-title", text: t.title }), el("span", { class: "t-why", text: t.why }));
+      return [cb, body];
+    };
+    const f = $("today-focus"); f.className = "focus" + (done[all[0].key] ? " done" : ""); f.replaceChildren(...item(all[0], true));
+    const ul = $("today-list"); ul.replaceChildren();
+    DAILY.slice().sort((a, b) => !!done[a.key] - !!done[b.key]).forEach((t) => ul.append(el("li", { class: "task" + (done[t.key] ? " done" : "") }, ...item(t, false), el("span"))));
+    const wk = $("today-week"); wk.replaceChildren();
+    const ratio = (d) => { const dd = (S.daily[localISO(d)] || {}).done || {}; const ts = dayTasks(d); return ts.filter((t) => dd[t.key]).length / ts.length; };
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i), r = ratio(d);
+      wk.append(el("span", { class: i === 0 ? "now" : "", title: `${localISO(d)}: ${Math.round(r * 100)}% done` }, el("i", { class: r >= 1 ? "full" : r > 0 ? "part" : "" }), "SMTWTFS"[d.getDay()]));
+    }
+    let streak = 0;
+    for (let i = ratio(now) >= 1 ? 0 : 1; i < 60; i++) { if (ratio(new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)) >= 1) streak++; else break; }
+    $("today-streak").textContent = n === all.length ? `All done today. Streak: ${streak} day${streak === 1 ? "" : "s"}.` : streak ? `Streak: ${streak} full day${streak === 1 ? "" : "s"}. Finish today's list to keep it going.` : "Tick off all of today's tasks to start a streak. The list starts fresh every morning.";
+  }
+
   function render() {
-    renderKpis(); renderSeason(); renderTrend(); renderChannels(); renderPipeline(); renderCities();
+    renderToday(); renderKpis(); renderSeason(); renderTrend(); renderChannels(); renderPipeline(); renderCities();
     renderPlan(); renderKeywords(); renderOrders(); renderCoach();
   }
 
@@ -675,6 +759,7 @@ Reply with only a JSON array of 5 objects: {"area": one of "sales","seo","brand"
     const sub = (name) => db.collection(name).onSnapshot((snap) => { S[name] = snap.docs.map((x) => ({ ...x.data(), id: x.id })); render(); },
       () => setMode(false, "Couldn't load saved data. Reload the page."));
     sub("orders"); sub("tasks"); sub("keywords");
+    db.collection("daily").orderBy("date", "desc").limit(70).onSnapshot((snap) => { const m = {}; snap.docs.forEach((x) => { m[x.id] = x.data(); }); S.daily = m; render(); }, () => {});
     db.doc("settings/goals").onSnapshot((snap) => { S.goals = snap.exists ? { ...snap.data() } : {}; render(); }, () => {});
   })();
 })();
