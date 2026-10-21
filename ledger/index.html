@@ -950,14 +950,16 @@ for (const id of ["fText", "fMonth", "fType", "fMember"]) $(id).addEventListener
 /* ---------- demo backend (runs only when ledgerEndpoint is empty) ---------- */
 const Demo = {
   key: "grrLedgerDemo",
+  db: null,
+  // Kept in memory so the demo still works where browser storage is blocked (previews, embeds, private tabs).
   load() {
-    let db = null;
-    try { db = JSON.parse(store.get(this.key)); } catch (e) { /* reset */ }
-    if (!db) db = this.seed();
-    return db;
+    if (this.db) return this.db;
+    try { this.db = JSON.parse(store.get(this.key)); } catch (e) { /* reset */ }
+    if (!this.db) this.db = this.seed();
+    return this.db;
   },
   save(db) {
-    try { localStorage.setItem(this.key, JSON.stringify(db)); return true; } catch (e) { return false; }
+    try { localStorage.setItem(this.key, JSON.stringify(db)); } catch (e) { /* storage blocked or full: memory only */ }
   },
   receiptSvg(lines) {
     const body = lines.map((l, i) => '<text x="24" y="' + (70 + i * 30) + '" font-size="18">' + esc(l) + "</text>").join("");
@@ -1014,7 +1016,7 @@ const Demo = {
           mode: d.mode, reference: (d.reference || "").trim(), receiptName: d.receipt.name, receipt: { mime: d.receipt.mime, data: d.receipt.data }, hasReceipt: true,
           recordedBy: me.username, recordedAt: new Date().toISOString(), status: "ok", voidReason: "", voidedBy: "", voidedAt: "" };
         db.txns.push(t);
-        if (!this.save(db)) return { status: "error", message: "Demo storage is full. Clear it from the browser settings, or connect the Google Sheet." };
+        this.save(db);
         const { receipt, ...out } = t; return ok({ txn: out });
       }
       case "voidTxn": {
