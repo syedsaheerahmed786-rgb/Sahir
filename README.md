@@ -44,7 +44,7 @@ Editors upload card drafts, customers mark corrections on the design, and once a
 | `approval/index.html` | The portal. One page for editors (sign in) and customers (private link). No build step. |
 | `apps-script/ApprovalPortal.gs` | The backend. Customer files, drafts and messages go in a Google Sheet, design pages in a Google Drive folder. |
 
-Address: `https://syedsaheerahmed786-rgb.github.io/Sahir/approval/`. Until the backend is connected, the portal runs in **demo mode**: everything is saved only in that browser, which is fine for trying it out.
+Address: `https://syedsaheerahmed786-rgb.github.io/Sahir/approval/`. It is connected to the "Meraki Design Approvals" Google Sheet. With `endpoint` left empty, the portal runs in **demo mode** instead, where everything is saved only in that browser.
 
 ## How it works
 
