@@ -1,0 +1,1377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meraki Design Approval</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#A3192A">
+<link rel="icon" type="image/png" href="../meraki/app/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --bg: #FAF6F5; --panel: #FFFFFF; --sunk: #F3ECEB; --ink: #2A1A1F; --muted: #6E5A60; --line: #E6DADB;
+  --accent: #A3192A; --accent-ink: #FFFFFF; --accent-soft: #F6E3E5; --gold: #9A6F14; --gold-soft: #F5EBD6;
+  --ok: #2E7D4F; --ok-soft: #E2F1E8; --warn: #A8650F; --warn-soft: #FBEEDB; --bad: #B3261E; --bad-soft: #F9E1DF;
+  --stage: #EFE6E4; --paper-shadow: 0 1px 2px rgba(42,26,31,.12), 0 10px 28px rgba(42,26,31,.16);
+  --f-display: "Marcellus", Georgia, serif;
+  --f-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #171012; --panel: #21181B; --sunk: #2A1F23; --ink: #F3E9EA; --muted: #B5A2A7; --line: #3A2C31;
+  --accent: #E8667A; --accent-ink: #2A0A10; --accent-soft: #3D1D24; --gold: #D9AE52; --gold-soft: #3A2E17;
+  --ok: #62C08B; --ok-soft: #173325; --warn: #E7AA4E; --warn-soft: #3A2A12; --bad: #F07167; --bad-soft: #3D1A18;
+  --stage: #120C0E; --paper-shadow: 0 1px 2px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.55);
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #171012; --panel: #21181B; --sunk: #2A1F23; --ink: #F3E9EA; --muted: #B5A2A7; --line: #3A2C31;
+  --accent: #E8667A; --accent-ink: #2A0A10; --accent-soft: #3D1D24; --gold: #D9AE52; --gold-soft: #3A2E17;
+  --ok: #62C08B; --ok-soft: #173325; --warn: #E7AA4E; --warn-soft: #3A2A12; --bad: #F07167; --bad-soft: #3D1A18;
+  --stage: #120C0E; --paper-shadow: 0 1px 2px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.55);
+  color-scheme: dark }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 20px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 400; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.08rem; }
+p { margin: 0; }
+a { color: var(--accent); }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.eyebrow { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+.brand img { width: 40px; height: 40px; border-radius: 10px; }
+.brand b { font-family: var(--f-display); font-weight: 400; font-size: 1.5rem; line-height: 1; display: block; }
+.brand span { font-size: .78rem; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .88rem; color: var(--muted); }
+
+/* panels and controls */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 20px; align-items: start; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  border-radius: 8px; padding: 9px 14px; font-weight: 600; font-size: .92rem; text-decoration: none; line-height: 1.2; min-height: 40px; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 8px; }
+.btn.big { padding: 13px 22px; font-size: 1rem; min-height: 48px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+label.field { display: flex; flex-direction: column; gap: 5px; font-size: .88rem; font-weight: 600; }
+label.field .hint { font-weight: 400; color: var(--muted); font-size: .8rem; }
+input[type=text], input[type=tel], input[type=password], input[type=number], input[type=search], select, textarea {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); font-weight: 400; font-size: 16px; }
+textarea { min-height: 90px; resize: vertical; }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 600; border-radius: 999px; padding: 3px 10px; background: var(--sunk); color: var(--muted); white-space: nowrap; }
+.chip.accent { background: var(--accent-soft); color: var(--accent); }
+.chip.gold { background: var(--gold-soft); color: var(--gold); }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.note { border-radius: 8px; padding: 10px 14px; font-size: .9rem; background: var(--sunk); }
+.note.gold { background: var(--gold-soft); }
+.note.ok { background: var(--ok-soft); }
+.note.warn { background: var(--warn-soft); }
+.note.accent { background: var(--accent-soft); }
+.empty { text-align: center; padding: 36px 16px; color: var(--muted); }
+.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line); }
+.tabs button { border: none; background: none; padding: 9px 12px; font-weight: 600; font-size: .9rem; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; margin-bottom: -1px; }
+.tabs button[aria-selected=true] { color: var(--accent); border-bottom-color: var(--accent); }
+.seg { display: inline-flex; background: var(--sunk); border-radius: 9px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { border: none; background: none; padding: 6px 12px; border-radius: 7px; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed=true] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+/* dashboard */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.toolbar input[type=search] { max-width: 280px; }
+.plist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.pcard { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; }
+.pcard:hover { border-color: var(--muted); }
+.pcard b { font-size: 1.02rem; }
+.pcard .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .82rem; color: var(--muted); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.kpi { background: var(--panel); padding: 12px 16px; border: none; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.kpi .val { font-family: var(--f-display); font-size: 1.7rem; line-height: 1.1; }
+.kpi[aria-pressed=true] { background: var(--accent-soft); }
+
+/* format picker */
+.formats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 10px; }
+.fmt { text-align: left; border: 1.5px solid var(--line); background: var(--panel); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.fmt[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); }
+.fmt .mini { display: flex; gap: 6px; align-items: flex-end; height: 46px; }
+.fmt .mini i { display: block; width: 24px; height: 34px; border: 1.5px solid var(--muted); border-radius: 2px; background: var(--panel); font-style: normal; font-size: 8px; color: var(--muted); text-align: center; line-height: 31px; }
+.fmt .mini i.wide { width: 48px; background: linear-gradient(90deg, var(--panel) 49%, var(--muted) 49% 51%, var(--panel) 51%); }
+.fmt .mini i.qr { background: repeating-conic-gradient(var(--muted) 0 25%, var(--panel) 0 50%) 50% 50% / 6px 6px; }
+
+/* viewer */
+.viewer { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--panel); }
+.viewer .tabs { padding-inline: 8px; }
+.stage { background: var(--stage); padding: 22px 14px 16px; display: flex; flex-direction: column; align-items: center; gap: 14px; min-height: 280px; }
+.spread { display: flex; justify-content: center; align-items: flex-start; width: 100%; }
+.spread.two .pgwrap { width: min(48%, 420px); }
+.spread.one .pgwrap { width: min(86%, 440px); }
+.spread.all { flex-wrap: wrap; gap: 18px; }
+.spread.all .pgwrap { width: min(44%, 230px); }
+.pgwrap { display: flex; flex-direction: column; gap: 6px; align-items: center; min-width: 0; }
+.pg { position: relative; width: 100%; aspect-ratio: 148 / 210; background: #fff; box-shadow: var(--paper-shadow); overflow: hidden; touch-action: manipulation; }
+.pg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; user-select: none; -webkit-user-drag: none; }
+.pg.blank { display: flex; align-items: center; justify-content: center; color: #9a8a8e; font-size: .85rem; }
+.pg.tappable { cursor: crosshair; }
+.spread.two .pgwrap:first-child .pg::after, .spread.two .pgwrap:last-child .pg::after { content: ""; position: absolute; top: 0; bottom: 0; width: 9%; pointer-events: none; }
+.spread.two .pgwrap:first-child .pg::after { right: 0; background: linear-gradient(90deg, transparent, rgba(0,0,0,.10)); }
+.spread.two .pgwrap:last-child .pg::after { left: 0; background: linear-gradient(270deg, transparent, rgba(0,0,0,.12)); }
+.pglabel { font-size: .78rem; color: var(--muted); text-align: center; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; align-items: center; }
+.zoom-btn { position: absolute; top: 6px; right: 6px; z-index: 3; width: 32px; height: 32px; border-radius: 8px; border: none; background: rgba(255,255,255,.88); color: #2A1A1F; box-shadow: 0 1px 3px rgba(0,0,0,.2); display: flex; align-items: center; justify-content: center; }
+.pin { position: absolute; z-index: 2; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50% 50% 50% 4px; border: 2px solid #fff; background: var(--accent); color: #fff; font-size: .75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,.35); padding: 0; }
+.pin.sent { background: #B07A12; }
+.pin.done { background: #2E7D4F; }
+.pin.flash { animation: flash 1s ease 2; }
+@keyframes flash { 50% { transform: scale(1.5); } }
+.stage-hint { font-size: .85rem; color: var(--muted); text-align: center; }
+.qr-chip { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; background: var(--ok-soft); color: var(--ok); border-radius: 999px; padding: 3px 10px; max-width: 100%; }
+.qr-chip a { color: inherit; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+
+/* upload */
+.drop { border: 2px dashed var(--line); border-radius: var(--r); padding: 20px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; background: var(--bg); }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(46%, 170px), 1fr)); gap: 14px; }
+.slot { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.slot .pg { cursor: pointer; }
+.slot .pg.blank { background: var(--bg); box-shadow: none; border: 2px dashed var(--line); color: var(--muted); flex-direction: column; gap: 4px; text-align: center; padding: 8px; }
+.slot.over .pg { outline: 3px solid var(--accent); }
+.slot .busy { position: absolute; inset: 0; background: rgba(255,255,255,.75); display: flex; align-items: center; justify-content: center; color: #2A1A1F; font-size: .85rem; font-weight: 600; z-index: 2; }
+.slot-title { font-weight: 600; font-size: .9rem; }
+.warns { display: flex; flex-direction: column; gap: 4px; }
+
+/* corrections and thread */
+.clist { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.citem { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.citem .num { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-size: .75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.citem.sent .num { background: #B07A12; }
+.citem.done .num { background: #2E7D4F; }
+.citem.done .txt { text-decoration: line-through; color: var(--muted); }
+.citem .txt { white-space: pre-wrap; word-break: break-word; }
+.citem .where { font-size: .78rem; color: var(--muted); }
+.citem.flash { animation: bg 1.4s ease; }
+@keyframes bg { 0%, 60% { background: var(--gold-soft); } }
+.thread { display: flex; flex-direction: column; gap: 10px; }
+.bubble { max-width: 88%; padding: 9px 12px; border-radius: 12px; background: var(--sunk); white-space: pre-wrap; word-break: break-word; }
+.bubble.me { align-self: flex-end; background: var(--accent-soft); }
+.bubble .by { display: block; font-size: .74rem; color: var(--muted); margin-bottom: 2px; }
+.steps { display: flex; gap: 6px; flex-wrap: wrap; }
+.steps span { font-size: .78rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--sunk); color: var(--muted); }
+.steps span.done { background: var(--ok-soft); color: var(--ok); }
+.steps span.now { background: var(--accent); color: var(--accent-ink); }
+.steps span.final { background: var(--gold-soft); color: var(--gold); }
+
+/* dialog and toast */
+dialog { border: none; border-radius: 14px; padding: 0; width: min(520px, calc(100vw - 24px)); background: var(--panel); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+dialog::backdrop { background: rgba(20,10,12,.55); }
+dialog form, dialog .dbody { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+dialog.full { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; margin: 0; background: #1b1416; }
+.zoomer { display: flex; flex-direction: column; height: 100%; }
+.zoomer .bar { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 10px max(12px, env(safe-area-inset-left)); color: #fff; }
+.zoomer .bar .btn { background: rgba(255,255,255,.12); color: #fff; border-color: transparent; }
+.zoomer .scroll { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; text-align: center; }
+.zoomer .scroll img { width: 100%; max-width: none; background: #fff; display: inline-block; }
+#toast { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: .9rem; z-index: 99; max-width: calc(100vw - 32px); opacity: 0; transition: opacity .2s; pointer-events: none; }
+#toast.show { opacity: 1; }
+#toast.bad { background: var(--bad); color: #fff; }
+.spinner { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 560px) {
+  .stage { padding: 16px 8px 12px; }
+  .spread.two .pgwrap { width: 49%; }
+  .spread.one .pgwrap { width: 92%; }
+  .citem { grid-template-columns: 26px 1fr; }
+  .citem > :last-child { grid-column: 2; }
+}
+</style>
+</head>
+<body>
+<div id="app" class="wrap"><div class="empty"><span class="spinner"></span></div></div>
+<dialog id="dlg"></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ======================= settings ======================= */
+const CONFIG = {
+  // Web-app URL of apps-script/ApprovalPortal.gs (it ends in /exec). See README.md.
+  // Leave it empty to try the portal in demo mode: everything is then saved only in this browser.
+  endpoint: "",
+  countryCode: "91",   // added to 10-digit numbers for WhatsApp links
+  studio: "Meraki"
+};
+
+const LIB = {
+  jspdf: "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+  pdf: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+  pdfWorker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+  jsqr: "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"
+};
+const SOURCE_EDGE = 3508;   // longest side an upload is read at (A4 at 300 dpi), so A4 spreads split into sharp A5 halves
+const PRINT_EDGE = 2480;    // longest side of a stored print page: A5 at 300 dpi
+const PREVIEW_EDGE = 1400;  // longest side of the image customers see
+const PAPER = { A4: [210, 297], A5: [148, 210] };
+
+/* Card formats. Each one says which designs the editor uploads (pages), how the customer sees them (views),
+   how an A4 spread upload splits into pages (spreads) and which print PDFs the editor can download (print).
+   To add a standard format, copy one of these blocks. One-off layouts can be made with "Custom" in the portal. */
+const S = (...slots) => ({ slots });
+const FORMATS = {
+  a4fold: {
+    name: "A4 folded card", tag: "4 designs · A5 pages",
+    desc: "One A4 sheet folded in the middle: front cover, English inside left, Assamese inside right, QR on the back.",
+    mini: ["Front", "wide", "qr"],
+    config: {
+      size: "A5",
+      pages: [
+        { key: "front", label: "Front cover", hint: "Bride & groom names or caricatures" },
+        { key: "inLeft", label: "Inside left", hint: "English" },
+        { key: "inRight", label: "Inside right", hint: "Assamese" },
+        { key: "back", label: "Back cover", hint: "QR code", qr: true }
+      ],
+      views: [
+        { label: "Front", pages: ["front"] },
+        { label: "Opened", pages: ["inLeft", "inRight"] },
+        { label: "Back", pages: ["back"] }
+      ],
+      spreads: [["back", "front"], ["inLeft", "inRight"]],
+      print: [
+        { id: "a4", label: "A4 print sheets", sheet: "A4", note: "2 A4 sheets: outside (back + front) and inside (English + Assamese). Print double-sided, flip on the short edge, then fold in the middle.",
+          sheets: [{ slots: ["back", "front"], fold: true }, S("inLeft", "inRight")] },
+        { id: "a5", label: "A5 pages", sheet: "A5", note: "4 separate A5 pages in reading order.",
+          sheets: [S("front"), S("inLeft"), S("inRight"), S("back")] }
+      ]
+    }
+  },
+  a5single: {
+    name: "A5 card, front & back", tag: "2 designs",
+    desc: "One A5 card printed on both sides.",
+    mini: ["Front", "Back"],
+    config: {
+      size: "A5",
+      pages: [
+        { key: "front", label: "Front", hint: "Main design" },
+        { key: "back", label: "Back", hint: "Details or QR code" }
+      ],
+      views: [{ label: "Front", pages: ["front"] }, { label: "Back", pages: ["back"] }],
+      spreads: [["front", "back"]],
+      print: [
+        { id: "a5", label: "A5 pages", sheet: "A5", note: "Front and back. Print double-sided.", sheets: [S("front"), S("back")] },
+        { id: "a4", label: "2 cards per A4 sheet", sheet: "A4", note: "Two copies side by side. Print double-sided, then cut in half.", sheets: [S("front", "front"), S("back", "back")] }
+      ]
+    }
+  },
+  a5pair: {
+    name: "Two A5 cards, shared back", tag: "3 designs",
+    desc: "Two separate A5 cards, each with its own front, and one common back.",
+    mini: ["1", "2", "Back"],
+    config: {
+      size: "A5",
+      pages: [
+        { key: "front1", label: "Card 1 front", hint: "First card" },
+        { key: "front2", label: "Card 2 front", hint: "Second card" },
+        { key: "back", label: "Common back", hint: "Same back for both cards" }
+      ],
+      views: [{ label: "Card 1", pages: ["front1"] }, { label: "Card 2", pages: ["front2"] }, { label: "Back", pages: ["back"] }],
+      print: [
+        { id: "a5", label: "A5 pages", sheet: "A5", note: "Card 1 front, back, card 2 front, back. Print double-sided.", sheets: [S("front1"), S("back"), S("front2"), S("back")] },
+        { id: "a4", label: "Both cards on one A4 sheet", sheet: "A4", note: "Card 1 and card 2 side by side, common back on the reverse. Print double-sided, then cut in half.", sheets: [S("front1", "front2"), S("back", "back")] }
+      ]
+    }
+  },
+  custom: { name: "Custom", tag: "Your own layout", desc: "Any number of designs, A5 or A4, folded or separate.", mini: ["?", "?", "?"] }
+};
+const DEFAULT_FORMAT = "a4fold";
+
+// Builds the config for a custom layout chosen in the New customer form.
+function customConfig({ count, size, layout, labels, qrLast }) {
+  count = Math.max(1, Math.min(12, count | 0));
+  const pages = Array.from({ length: count }, (_, i) => ({ key: "p" + (i + 1), label: (labels[i] || "").trim() || "Page " + (i + 1), hint: "" }));
+  if (qrLast) { pages[count - 1].qr = true; pages[count - 1].hint = "QR code"; }
+  const keys = pages.map(p => p.key);
+  let views = keys.map((k, i) => ({ label: pages[i].label, pages: [k] }));
+  if (layout === "folded" && count >= 3) {
+    views = [{ label: pages[0].label, pages: [keys[0]] }];
+    for (let i = 1; i < count - 1; i += 2) views.push(i + 1 < count - 1 ? { label: "Inside " + (views.length), pages: [keys[i], keys[i + 1]] } : { label: pages[i].label, pages: [keys[i]] });
+    views.push({ label: pages[count - 1].label, pages: [keys[count - 1]] });
+  }
+  const print = [{ id: "pages", label: size + " pages", sheet: size, note: count + " " + size + " pages in order.", sheets: keys.map(k => S(k)) }];
+  if (size === "A5" && layout === "folded" && count === 4) {
+    print.unshift({ id: "a4", label: "A4 print sheets", sheet: "A4", note: "Outside (back + front) and inside spread. Print double-sided, flip on the short edge, fold in the middle.",
+      sheets: [{ slots: [keys[3], keys[0]], fold: true }, S(keys[1], keys[2])] });
+  } else if (size === "A5" && count > 1) {
+    const sheets = [];
+    for (let i = 0; i < count; i += 2) sheets.push(S(keys[i], keys[i + 1] || keys[i]));
+    print.push({ id: "a4", label: "2 per A4 sheet", sheet: "A4", note: "Pages paired side by side on A4, ready to cut.", sheets });
+  }
+  const spreads = layout === "folded" && count === 4 ? [[keys[3], keys[0]], [keys[1], keys[2]]] : undefined;
+  return { size, layout, pages, views, print, spreads };
+}
+
+/* ======================= helpers ======================= */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const app = $("#app");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtDate = iso => iso ? new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
+const fmtDay = iso => iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { /* private mode */ } }
+};
+let toastTimer;
+function toast(msg, bad) {
+  const t = $("#toast");
+  t.textContent = msg; t.className = "show" + (bad ? " bad" : "");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = "", bad ? 5000 : 2800);
+}
+const libs = {};
+function loadScript(src) {
+  return libs[src] ||= new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = res; s.onerror = () => { delete libs[src]; rej(new Error("Couldn't load a helper library. Check the internet connection.")); };
+    document.head.appendChild(s);
+  });
+}
+function waLink(phone, text) {
+  let d = String(phone || "").replace(/\D/g, "");
+  if (d.length === 10) d = CONFIG.countryCode + d;
+  return "https://wa.me/" + d + "?text=" + encodeURIComponent(text);
+}
+const customerLink = p => location.origin + location.pathname + "?c=" + p.token;
+const STATUS = {
+  new: ["Preparing draft", ""], review: ["With customer", "gold"],
+  corrections: ["Corrections received", "accent"], approved: ["Approved", "ok"]
+};
+const statusChip = s => `<span class="chip ${(STATUS[s] || STATUS.new)[1]}">${esc((STATUS[s] || STATUS.new)[0])}</span>`;
+const formatName = p => (FORMATS[p.format] || FORMATS.custom).name;
+const slotDef = (cfg, key) => cfg.pages.find(x => x.key === key) || { key, label: key };
+const slotLabel = (cfg, key) => slotDef(cfg, key).label;
+const shared = p => p.drafts.filter(d => d.shared);
+const latest = p => shared(p).at(-1) || null;
+const openDraft = p => p.drafts.find(d => !d.shared) || null;
+const uploadDraftNo = p => p.status === "approved" ? 0
+  : openDraft(p) ? openDraft(p).n : (shared(p).length < p.draftsAllowed ? shared(p).length + 1 : 0);
+function shortUrl(u) {
+  try { const x = new URL(u); return x.hostname.replace(/^www\./, "") + (x.pathname.length > 1 ? x.pathname.slice(0, 18) + (x.pathname.length > 18 ? "…" : "") : ""); }
+  catch (e) { return u.length > 40 ? u.slice(0, 40) + "…" : u; }
+}
+const isUrl = s => /^https?:\/\//i.test(s || "");
+function qrChip(qr) {
+  if (!qr) return "";
+  return isUrl(qr)
+    ? `<span class="qr-chip" title="${esc(qr)}">QR opens <a href="${esc(qr)}" target="_blank" rel="noopener">${esc(shortUrl(qr))}</a></span>`
+    : `<span class="qr-chip" title="${esc(qr)}">QR reads: ${esc(qr.slice(0, 40))}</span>`;
+}
+function pageWarnings(cfg, key, page) {
+  const w = [];
+  const def = slotDef(cfg, key);
+  if (!page) return w;
+  const r = Math.max(page.w, page.h) / Math.max(1, Math.min(page.w, page.h));
+  if (page.w && Math.abs(r - Math.SQRT2) / Math.SQRT2 > 0.04) w.push(["warn", `Not ${cfg.size || "A5"} shape. It will be centred with white edges when printed.`]);
+  if (page.w && Math.max(page.w, page.h) < 1600) w.push(["warn", `Low resolution (${page.w}×${page.h}px). Export at 300 dpi for sharp print.`]);
+  if (def.qr && !page.qr) w.push(["bad", "No QR code found on this page."]);
+  return w;
+}
+
+/* ======================= data: Google Sheet backend ======================= */
+let auth = store.get("meraki-approval-editor", null);
+const imgCache = new Map();
+function check(r) {
+  if (r && r.status === "ok") return r;
+  const msg = (r && r.message) || { denied: "Access denied.", notfound: "Not found." }[r && r.status] || "Something went wrong. Please try again.";
+  const e = new Error(msg); e.code = r && r.status; throw e;
+}
+const Remote = {
+  async get(q) { return check(await (await fetch(CONFIG.endpoint + "?" + new URLSearchParams(q))).json()); },
+  async post(body) {
+    // text/plain keeps this a simple request, so Apps Script accepts it without a CORS preflight.
+    const r = await fetch(CONFIG.endpoint, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) });
+    return check(await r.json());
+  },
+  list: () => Remote.get({ action: "list", k: auth.key }).then(r => r.projects),
+  project: id => Remote.get({ action: "project", id, k: auth.key }).then(r => r.project),
+  customer: t => Remote.get({ action: "project", t }).then(r => r.project),
+  create: d => Remote.post({ action: "create", k: auth.key, editor: auth.name, ...d }).then(r => r.project),
+  act: (id, action, d = {}) => Remote.post({ action, id, k: auth.key, editor: auth.name, ...d }).then(r => r.project),
+  customerAct: (t, action, d = {}) => Remote.post({ action, t, ...d }).then(r => r.project),
+  async image(p, f) {
+    const q = p.token && !TOKEN ? { action: "image", p: p.id, f, k: auth.key } : { action: "image", t: TOKEN, f };
+    const r = await Remote.get(q);
+    return "data:" + r.mime + ";base64," + r.data;
+  }
+};
+
+/* ======================= data: demo mode (this browser only) ======================= */
+const idb = {
+  db: null,
+  open() {
+    return this.db ||= new Promise((res, rej) => {
+      const r = indexedDB.open("meraki-approval", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("files");
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+  },
+  async run(mode, fn) {
+    const db = await this.open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction("files", mode); const req = fn(tx.objectStore("files"));
+      tx.oncomplete = () => res(req && req.result); tx.onerror = () => rej(tx.error);
+    });
+  },
+  put(k, v) { return this.run("readwrite", s => s.put(v, k)); },
+  get(k) { return this.run("readonly", s => s.get(k)); },
+  del(k) { return this.run("readwrite", s => s.delete(k)); }
+};
+const rid = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => "abcdefghijkmnpqrstuvwxyz23456789"[b % 32]).join("");
+const Local = {
+  KEY: "meraki-approval-demo",
+  db() { return store.get(this.KEY, { projects: [] }); },
+  async tx(fn) { const db = this.db(); const r = await fn(db); store.set(this.KEY, db); return r; },
+  out(p, editor) {
+    const o = JSON.parse(JSON.stringify(p));
+    if (!editor) {
+      delete o.token; delete o.notes;
+      o.drafts = o.drafts.filter(d => d.shared);
+      o.drafts.forEach(d => Object.values(d.pages).forEach(pg => delete pg.print));
+    }
+    return o;
+  },
+  find(db, id) { const p = db.projects.find(x => x.id === id); if (!p) check({ status: "notfound" }); return p; },
+  touch(p) { p.updated = new Date().toISOString(); },
+  async list() {
+    return this.db().projects.map(p => {
+      const sh = shared(p).length;
+      return { id: p.id, customer: p.customer, phone: p.phone, format: p.format, status: p.status, editor: p.editor,
+        draftsAllowed: p.draftsAllowed, shared: sh, drafts: p.drafts.length, updated: p.updated, created: p.created,
+        openCorrections: p.messages.filter(m => m.from === "customer" && m.draft === sh && !m.done).length };
+    });
+  },
+  async project(id) { return this.out(this.find(this.db(), id), true); },
+  async customer(t) { const p = this.db().projects.find(x => x.token === t); if (!p) check({ status: "notfound" }); return this.out(p, false); },
+  create(d) {
+    return this.tx(db => {
+      if (String(d.customer || "").trim().length < 2) check({ status: "invalid", message: "Customer name is required." });
+      const now = new Date().toISOString();
+      const p = { id: "MK-" + rid(5).toUpperCase(), token: rid(20), customer: d.customer.trim(), phone: String(d.phone || "").replace(/[^\d+]/g, ""),
+        format: d.format, config: d.config, draftsAllowed: Math.max(1, Math.min(10, +d.draftsAllowed || 3)), status: "new",
+        editor: auth.name, notes: d.notes || "", created: now, updated: now, approvedDraft: null, approvedAt: "", approvedBy: "",
+        drafts: [], messages: [] };
+      db.projects.push(p);
+      return this.out(p, true);
+    });
+  },
+  act(id, action, d = {}) {
+    return this.tx(async db => {
+      const p = this.find(db, id);
+      const sh = shared(p).length;
+      if (action === "update") {
+        if (d.customer !== undefined) { if (d.customer.trim().length < 2) check({ status: "invalid", message: "Customer name is required." }); p.customer = d.customer.trim(); }
+        if (d.phone !== undefined) p.phone = String(d.phone).replace(/[^\d+]/g, "");
+        if (d.notes !== undefined) p.notes = d.notes;
+        if (d.draftsAllowed !== undefined) p.draftsAllowed = Math.max(1, Math.min(10, +d.draftsAllowed || 3));
+        if (d.config !== undefined) {
+          if (p.drafts.length) check({ status: "invalid", message: "The format can only change before the first upload." });
+          p.format = d.format; p.config = d.config;
+        }
+      } else if (action === "page") {
+        if (p.status === "approved") check({ status: "invalid", message: "This design is already approved." });
+        if (d.draft !== sh + 1 || d.draft > p.draftsAllowed) check({ status: "invalid", message: "Draft " + d.draft + " is not open for uploads." });
+        let dr = p.drafts.find(x => x.n === d.draft);
+        if (!dr) { dr = { n: d.draft, editor: auth.name, created: new Date().toISOString(), shared: "", pages: {} }; p.drafts.push(dr); }
+        const old = dr.pages[d.slot];
+        if (old) { await idb.del(old.preview); await idb.del(old.print); }
+        const pv = "f" + rid(12), pr = "f" + rid(12);
+        await idb.put(pv, d.preview); await idb.put(pr, d.print);
+        dr.pages[d.slot] = { preview: pv, print: pr, w: d.w, h: d.h, qr: d.qr || "" };
+        dr.editor = auth.name;
+      } else if (action === "share") {
+        const dr = p.drafts.find(x => x.n === d.draft);
+        if (!dr || dr.shared) check({ status: "invalid", message: "Nothing to share." });
+        const missing = p.config.pages.filter(x => !dr.pages[x.key]);
+        if (missing.length) check({ status: "invalid", message: "Upload every page first: " + missing.map(x => x.label).join(", ") });
+        dr.shared = new Date().toISOString(); dr.editor = auth.name; p.status = "review";
+      } else if (action === "message") {
+        this.addMessages(p, d, "editor");
+      } else if (action === "done") {
+        const m = p.messages.find(x => x.id === d.msg); if (m) m.done = !!d.done;
+      } else if (action === "grant") {
+        p.draftsAllowed += 1;
+      } else if (action === "reopen") {
+        p.status = "corrections"; p.approvedDraft = null; p.approvedAt = ""; p.approvedBy = "";
+      }
+      this.touch(p);
+      return this.out(p, true);
+    });
+  },
+  addMessages(p, d, from) {
+    const items = (d.items || []).filter(it => String(it.text || "").trim());
+    if (!items.length) check({ status: "invalid", message: "Write a message first." });
+    const sh = shared(p).length, n = d.draft || sh;
+    if (from === "customer") {
+      if (p.status === "approved") check({ status: "invalid", message: "This design is already approved." });
+      if (!sh || n !== sh) check({ status: "invalid", message: "Corrections go on the latest draft." });
+      p.status = "corrections";
+    }
+    const time = new Date().toISOString();
+    items.forEach(it => p.messages.push({ id: "M" + rid(8), draft: n, from, name: (d.name || "").trim() || (from === "customer" ? p.customer : CONFIG.studio),
+      page: it.page || "", x: it.x ?? null, y: it.y ?? null, text: String(it.text).trim(), time, done: false }));
+  },
+  customerAct(t, action, d = {}) {
+    return this.tx(db => {
+      const p = db.projects.find(x => x.token === t);
+      if (!p) check({ status: "denied" });
+      if (action === "message") this.addMessages(p, d, "customer");
+      if (action === "approve" && p.status !== "approved") {
+        if (d.draft !== shared(p).length) check({ status: "invalid", message: "Please approve the latest draft." });
+        p.status = "approved"; p.approvedDraft = d.draft; p.approvedAt = new Date().toISOString(); p.approvedBy = (d.name || "").trim() || p.customer;
+      }
+      this.touch(p);
+      return this.out(p, false);
+    });
+  },
+  async image(p, f) { const v = await idb.get(f); if (!v) throw new Error("Image not found in this browser."); return v; }
+};
+
+const TOKEN = new URLSearchParams(location.search).get("c");
+const DEMO = !CONFIG.endpoint;
+const api = DEMO ? Local : Remote;
+function imageSrc(p, f) {
+  if (!imgCache.has(f)) imgCache.set(f, api.image(p, f).catch(e => { imgCache.delete(f); throw e; }));
+  return imgCache.get(f);
+}
+function loadImg(src) {
+  return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("Couldn't read that image.")); i.src = src; });
+}
+// Fills every <img data-file> inside el once its image has loaded.
+function hydrate(el, p) {
+  $$("img[data-file]", el).forEach(img => {
+    imageSrc(p, img.dataset.file).then(src => { img.src = src; }).catch(() => { img.alt = "Couldn't load this page"; });
+  });
+}
+
+/* ======================= dialogs ======================= */
+const dlg = $("#dlg");
+function openDialog(html, bind, full) {
+  dlg.className = full ? "full" : "";
+  dlg.innerHTML = html;
+  dlg.showModal();
+  $$("[data-close]", dlg).forEach(b => b.addEventListener("click", e => { e.preventDefault(); dlg.close(); }));
+  bind && bind(dlg);
+}
+dlg.addEventListener("click", e => { if (e.target === dlg && !dlg.classList.contains("full")) dlg.close(); });
+function confirmDialog(title, body, okLabel, okClass = "primary") {
+  return new Promise(res => {
+    openDialog(`<form method="dialog"><h2>${esc(title)}</h2><div>${body}</div>
+      <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn ${okClass}" value="ok" id="dOk">${esc(okLabel)}</button></div></form>`,
+      d => {
+        $("#dOk", d).addEventListener("click", e => {
+          const req = $("[data-required]", d);
+          if (req && !req.checked) { e.preventDefault(); toast(req.dataset.required, true); return; }
+          e.preventDefault(); dlg.close(); res(true);
+        });
+        dlg.addEventListener("close", () => res(false), { once: true });
+      });
+  });
+}
+function zoomPage(p, fileId, label) {
+  openDialog(`<div class="zoomer"><div class="bar"><b>${esc(label)}</b><div class="row">
+      <button class="btn" data-z="-1" aria-label="Zoom out">−</button><button class="btn" data-z="1" aria-label="Zoom in">+</button>
+      <button class="btn" data-close>Close</button></div></div>
+      <div class="scroll"><img data-file="${esc(fileId)}" alt="${esc(label)}"></div></div>`, d => {
+    const img = $("img", d);
+    let z = Math.round(Math.min(100, 900 / Math.max(1, innerWidth) * 100));
+    img.style.width = z + "%";
+    $$("[data-z]", d).forEach(b => b.addEventListener("click", () => { z = Math.max(50, Math.min(400, z + (+b.dataset.z) * 50)); img.style.width = z + "%"; }));
+    hydrate(d, p);
+  }, true);
+}
+
+/* ======================= card viewer ======================= */
+// Numbers every customer correction on a draft; pins are the ones placed on a page.
+function corrections(p, n, pending = []) {
+  let i = 0;
+  const list = p.messages.filter(m => m.draft === n && m.from === "customer").map(m => ({ ...m, num: ++i, kind: m.done ? "done" : "sent" }));
+  pending.forEach((m, j) => list.push({ ...m, num: ++i, kind: "pending", pi: j }));
+  return list;
+}
+
+function mountViewer(el, o) {
+  // o: { project, draft, getPins(), onTap(slot, x, y), onPin(item), tapHint }
+  const cfg = o.project.config;
+  const views = [...cfg.views, { label: "All pages", pages: cfg.pages.map(x => x.key), all: true }];
+  let vi = Math.min(o.view || 0, views.length - 1);
+  el.innerHTML = `<div class="viewer"><div class="tabs" role="tablist">${views.map((v, i) =>
+    `<button role="tab" data-v="${i}" aria-selected="${i === vi}">${esc(v.label)}</button>`).join("")}</div><div class="stage"></div></div>`;
+  const stage = $(".stage", el);
+  $$("[data-v]", el).forEach(b => b.addEventListener("click", () => { vi = +b.dataset.v; draw(); }));
+  function draw() {
+    $$("[data-v]", el).forEach(b => b.setAttribute("aria-selected", +b.dataset.v === vi));
+    const v = views[vi];
+    const pins = o.getPins ? o.getPins() : [];
+    stage.innerHTML = `<div class="spread ${v.all ? "all" : v.pages.length > 1 ? "two" : "one"}">${v.pages.map(k => {
+      const pg = o.draft.pages[k];
+      const ratio = pg && pg.w ? `${pg.w} / ${pg.h}` : "148 / 210";
+      const mine = pins.filter(m => m.page === k && m.x !== null && m.x !== undefined);
+      return `<div class="pgwrap"><div class="pg ${pg ? "" : "blank"} ${o.onTap && pg ? "tappable" : ""}" data-slot="${esc(k)}" style="aspect-ratio:${ratio}">
+          ${pg ? `<img data-file="${esc(pg.preview)}" alt="${esc(slotLabel(cfg, k))}" draggable="false">
+          <button class="zoom-btn" data-zoom="${esc(k)}" aria-label="Zoom ${esc(slotLabel(cfg, k))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg></button>` : "Not uploaded"}
+          ${mine.map(m => `<button class="pin ${m.kind}" style="left:${m.x}%;top:${m.y}%" data-pin="${m.num}" title="${esc(m.text)}">${m.num}</button>`).join("")}
+        </div><div class="pglabel">${esc(slotLabel(cfg, k))}${pg && pg.qr ? " " + qrChip(pg.qr) : ""}</div></div>`;
+    }).join("")}</div>${o.tapHint && !v.all ? `<p class="stage-hint">${o.tapHint}</p>` : ""}`;
+    hydrate(stage, o.project);
+    $$(".pg.tappable", stage).forEach(pgEl => pgEl.addEventListener("click", e => {
+      if (e.target.closest("button")) return;
+      const r = pgEl.getBoundingClientRect();
+      const x = Math.round((e.clientX - r.left) / r.width * 1000) / 10, y = Math.round((e.clientY - r.top) / r.height * 1000) / 10;
+      o.onTap(pgEl.dataset.slot, x, y);
+    }));
+    $$("[data-zoom]", stage).forEach(b => b.addEventListener("click", () => zoomPage(o.project, o.draft.pages[b.dataset.zoom].preview, slotLabel(cfg, b.dataset.zoom))));
+    $$("[data-pin]", stage).forEach(b => b.addEventListener("click", () => {
+      const it = pins.find(m => m.num === +b.dataset.pin); if (it && o.onPin) o.onPin(it);
+    }));
+  }
+  draw();
+  return {
+    redraw: draw,
+    // Switches to a view that shows the page and makes the pin pulse.
+    show(slot, num) {
+      if (!views[vi].pages.includes(slot)) { vi = views.findIndex(v => v.pages.includes(slot)); draw(); }
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      const pin = $(`[data-pin="${num}"]`, stage);
+      if (pin) { pin.classList.remove("flash"); void pin.offsetWidth; pin.classList.add("flash"); }
+    }
+  };
+}
+
+function correctionItem(cfg, m, opts = {}) {
+  const where = m.page ? slotLabel(cfg, m.page) + (m.x !== null && m.x !== undefined ? " · pin " + m.num : "") : "General";
+  return `<li class="citem ${m.kind}" data-num="${m.num}" ${m.page ? `data-page="${esc(m.page)}"` : ""}>
+    <span class="num">${m.num}</span>
+    <div><div class="txt">${esc(m.text)}</div><div class="where">${esc(where)}${m.kind === "done" ? " · fixed" : ""}${opts.showTime && m.time ? " · " + esc(fmtDate(m.time)) : ""}</div></div>
+    <div class="row">${opts.actions ? opts.actions(m) : ""}</div></li>`;
+}
+
+// Corrections and replies of one draft, oldest first. compact: a batch of corrections shown elsewhere becomes one line.
+function threadHTML(p, n, me, compact) {
+  const cfg = p.config;
+  const list = corrections(p, n);
+  const msgs = p.messages.filter(m => m.draft === n).sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+  if (!msgs.length) return `<p class="muted small">No messages on this draft.</p>`;
+  // Group a customer's batch (same time) into one block of numbered items.
+  const out = []; let batch = null;
+  msgs.forEach(m => {
+    if (m.from === "customer") {
+      const it = list.find(x => x.id === m.id);
+      if (!batch || batch.time !== m.time) { batch = { time: m.time, name: m.name, items: [] }; out.push(batch); }
+      batch.items.push(it);
+    } else { batch = null; out.push(m); }
+  });
+  return `<div class="thread">${out.map(b => b.items
+    ? `<div><span class="by small muted">${esc(b.name)} sent ${b.items.length} correction${b.items.length > 1 ? "s" : ""} · ${esc(fmtDate(b.time))}</span>${compact ? ""
+        : `<ul class="clist" style="margin-top:6px">${b.items.map(it => correctionItem(cfg, it)).join("")}</ul>`}</div>`
+    : `<div class="bubble ${me === "editor" ? "me" : ""}"><span class="by">${esc(b.name)} · ${esc(fmtDate(b.time))}</span>${esc(b.text)}</div>`).join("")}</div>`;
+}
+
+/* ======================= upload: reading, splitting, QR detection ======================= */
+function makeCanvas(w, h) { const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+function scaled(src, maxEdge, sx = 0, sy = 0, sw = src.width, sh = src.height) {
+  const s = Math.min(1, maxEdge / Math.max(sw, sh));
+  const c = makeCanvas(sw * s, sh * s), g = c.getContext("2d");
+  g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+  g.imageSmoothingQuality = "high";
+  g.drawImage(src, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  return c;
+}
+async function readFile(file) {
+  if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
+    await loadScript(LIB.pdf);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = LIB.pdfWorker;
+    const doc = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const out = [];
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      const v1 = page.getViewport({ scale: 1 });
+      const v = page.getViewport({ scale: Math.min(8, SOURCE_EDGE / Math.max(v1.width, v1.height)) });
+      const c = makeCanvas(v.width, v.height), g = c.getContext("2d");
+      g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+      await page.render({ canvasContext: g, viewport: v }).promise;
+      out.push({ canvas: c, name: file.name + " p" + i });
+    }
+    return out;
+  }
+  if (!/^image\//.test(file.type) && !/\.(jpe?g|png|webp)$/i.test(file.name)) throw new Error(file.name + " is not an image or PDF.");
+  const url = URL.createObjectURL(file);
+  try { return [{ canvas: scaled(await loadImg(url), SOURCE_EDGE), name: file.name }]; }
+  finally { URL.revokeObjectURL(url); }
+}
+function halves(c) {
+  return c.width >= c.height
+    ? [scaled(c, SOURCE_EDGE, 0, 0, c.width / 2, c.height), scaled(c, SOURCE_EDGE, c.width / 2, 0, c.width / 2, c.height)]
+    : [scaled(c, SOURCE_EDGE, 0, 0, c.width, c.height / 2), scaled(c, SOURCE_EDGE, 0, c.height / 2, c.width, c.height / 2)];
+}
+// Looks for a QR code on the page: whole page first, then each quarter (for small codes in a corner).
+async function detectQR(c) {
+  if ("BarcodeDetector" in window) {
+    try {
+      const found = await new BarcodeDetector({ formats: ["qr_code"] }).detect(c);
+      if (found.length) return found[0].rawValue;
+    } catch (e) { /* fall back to jsQR */ }
+  }
+  await loadScript(LIB.jsqr);
+  const W = c.width, H = c.height;
+  const tries = [[0, 0, W, H, 1000], [0, 0, W, H, 1800]];
+  for (const [fx, fy] of [[0, 0], [.5, 0], [0, .5], [.5, .5]]) tries.push([W * fx, H * fy, W / 2, H / 2, 1100]);
+  tries.push([0, H / 3, W, H * 2 / 3, 1400]);
+  for (const [x, y, w, h, edge] of tries) {
+    const s = scaled(c, edge, x, y, w, h);
+    const data = s.getContext("2d").getImageData(0, 0, s.width, s.height);
+    const code = jsQR(data.data, s.width, s.height, { inversionAttempts: "attemptBoth" });
+    if (code && code.data) return code.data;
+  }
+  return "";
+}
+// Decides which uploaded picture goes on which page of the card.
+async function arrange(cfg, items, mode, filled, target) {
+  const notes = [];
+  const keys = cfg.pages.map(x => x.key);
+  const qrKey = (cfg.pages.find(x => x.qr) || {}).key;
+  if (target) {
+    const it = items[0];
+    return { assign: [{ key: target, canvas: it.canvas, qr: await detectQR(it.canvas) }], notes: items.length > 1 ? ["Only the first page was used for " + slotLabel(cfg, target) + "."] : [] };
+  }
+  const landscape = items.every(i => i.canvas.width > i.canvas.height * 1.2);
+  const spreads = cfg.spreads && (mode === "spreads" || (mode === "auto" && landscape && items.length === cfg.spreads.length));
+  if (spreads) {
+    const parts = [];
+    for (const it of items.slice(0, cfg.spreads.length)) {
+      const hs = halves(it.canvas);
+      parts.push(await Promise.all(hs.map(async c => ({ canvas: c, qr: await detectQR(c) }))));
+    }
+    // The spread with the QR code is the outside of the card; its QR half is the back.
+    const qrSpread = qrKey ? cfg.spreads.findIndex(s => s.includes(qrKey)) : -1;
+    const found = parts.findIndex(hs => hs.some(h => h.qr));
+    if (qrSpread >= 0 && found >= 0 && found !== qrSpread && parts.length === cfg.spreads.length) {
+      [parts[found], parts[qrSpread]] = [parts[qrSpread], parts[found]];
+      notes.push("The spread with the QR code was used as the outside of the card.");
+    }
+    const assign = [];
+    parts.forEach((hs, i) => {
+      let slotsHere = cfg.spreads[i].slice();
+      const qi = slotsHere.indexOf(qrKey);
+      if (qi >= 0 && hs.length === 2 && !hs[qi].qr && hs[1 - qi].qr) { slotsHere.reverse(); notes.push("The QR code half was placed on the " + slotLabel(cfg, qrKey) + "."); }
+      hs.forEach((h, j) => slotsHere[j] && assign.push({ key: slotsHere[j], ...h }));
+    });
+    notes.unshift(`Split ${parts.length} A4 spread${parts.length > 1 ? "s" : ""} into ${assign.length} pages.`);
+    return { assign, notes };
+  }
+  const pages = await Promise.all(items.map(async it => ({ canvas: it.canvas, qr: await detectQR(it.canvas) })));
+  let order;
+  if (pages.length >= keys.length) {
+    if (pages.length > keys.length) notes.push(`${pages.length} pages uploaded; the first ${keys.length} were used.`);
+    order = pages.slice(0, keys.length);
+    const qi = keys.indexOf(qrKey), withQr = order.findIndex(x => x.qr);
+    if (qi >= 0 && withQr >= 0 && withQr !== qi && !order[qi].qr) {
+      const [pg] = order.splice(withQr, 1); order.splice(qi, 0, pg);
+      notes.push(`QR code found on uploaded page ${withQr + 1}, so it was placed on the ${slotLabel(cfg, qrKey)}.`);
+    }
+    return { assign: order.map((pg, i) => ({ key: keys[i], ...pg })), notes };
+  }
+  // Fewer pictures than pages: fill the empty pages in order, QR page onto the QR slot.
+  const free = keys.filter(k => !filled.includes(k));
+  const pool = free.length ? free : keys;
+  const assign = [];
+  pages.forEach(pg => {
+    let k = pg.qr && qrKey && pool.includes(qrKey) ? qrKey : pool.find(x => x !== qrKey || !pages.some(o => o.qr)) || pool[0];
+    if (!k) return;
+    pool.splice(pool.indexOf(k), 1);
+    assign.push({ key: k, ...pg });
+  });
+  return { assign, notes };
+}
+
+/* ======================= print PDF ======================= */
+async function buildPdf(p, opt) {
+  await loadScript(LIB.jspdf);
+  const { jsPDF } = window.jspdf;
+  const draft = p.drafts.find(d => d.n === p.approvedDraft);
+  const srcs = {}, imgs = {};
+  for (const k of new Set(opt.sheets.flatMap(s => s.slots))) {
+    srcs[k] = await imageSrc(p, draft.pages[k].print);
+    imgs[k] = await loadImg(srcs[k]);
+  }
+  let doc = null;
+  for (const sh of opt.sheets) {
+    const first = imgs[sh.slots[0]];
+    const land = first.naturalWidth > first.naturalHeight;
+    let pw, ph, cells;
+    if (sh.slots.length === 1) {
+      const [a, b] = PAPER[opt.sheet] || PAPER.A5;
+      [pw, ph] = land ? [b, a] : [a, b];
+      cells = [{ x: 0, y: 0, w: pw, h: ph }];
+    } else {
+      const [a, b] = PAPER.A4;
+      if (!land) { pw = b; ph = a; cells = [{ x: 0, y: 0, w: pw / 2, h: ph }, { x: pw / 2, y: 0, w: pw / 2, h: ph }]; }
+      else { pw = a; ph = b; cells = [{ x: 0, y: 0, w: pw, h: ph / 2 }, { x: 0, y: ph / 2, w: pw, h: ph / 2 }]; }
+    }
+    const orientation = pw > ph ? "landscape" : "portrait";
+    if (!doc) doc = new jsPDF({ unit: "mm", format: [pw, ph], orientation, compress: true });
+    else doc.addPage([pw, ph], orientation);
+    sh.slots.forEach((k, i) => {
+      const img = imgs[k], cell = cells[i];
+      let data = srcs[k], alias = k;
+      // Top-fold card (landscape pages stacked on A4): the back prints upside down so it reads correctly after folding.
+      if (sh.fold && land && i === 0) {
+        const c = makeCanvas(img.naturalWidth, img.naturalHeight), g = c.getContext("2d");
+        g.translate(c.width, c.height); g.rotate(Math.PI); g.drawImage(img, 0, 0);
+        data = c.toDataURL("image/jpeg", 0.95); alias = k + "-rot";
+      }
+      const s = Math.min(cell.w / img.naturalWidth, cell.h / img.naturalHeight);
+      const w = img.naturalWidth * s, h = img.naturalHeight * s;
+      doc.addImage(data, "JPEG", cell.x + (cell.w - w) / 2, cell.y + (cell.h - h) / 2, w, h, alias, "NONE");
+    });
+  }
+  doc.setProperties({ title: `${p.customer} – ${opt.label}`, creator: CONFIG.studio + " design approval" });
+  doc.save(`${CONFIG.studio} - ${p.customer.replace(/&/g, "and").replace(/[^\w\- ]+/g, "").replace(/\s+/g, " ").trim()} - ${opt.label}.pdf`);
+}
+
+/* ======================= shared page chrome ======================= */
+function header(right = "") {
+  return `<header class="top"><a class="brand" href="${TOKEN ? "#" : "#/"}"><img src="../meraki/app/icon-192.png" alt="">
+    <div><b>${esc(CONFIG.studio)}</b><span>Design approval</span></div></a><div class="top-right">${right}</div></header>
+    ${DEMO ? `<div class="note warn small"><b>Demo mode.</b> Everything is saved only in this browser, so customer links work only here. Connect the Google Sheet (see README) to share links with customers.</div>` : ""}`;
+}
+function fail(e) {
+  app.innerHTML = header() + `<div class="panel empty"><h2>${esc(e.code === "notfound" || e.code === "denied" ? "This link isn't valid" : "Couldn't load")}</h2>
+    <p>${esc(e.code === "notfound" || e.code === "denied" ? "Please check the link you were sent, or ask " + CONFIG.studio + " for a new one." : e.message)}</p>
+    <p><button class="btn" onclick="location.reload()">Try again</button></p></div>`;
+}
+
+/* ======================= editor: sign in ======================= */
+function renderLogin() {
+  app.innerHTML = header() + `<form class="panel" id="login" style="max-width:420px;margin:24px auto;width:100%">
+    <h2>Editor sign in</h2>
+    <label class="field">Your name<input type="text" name="name" required autocomplete="name" value="${esc((auth && auth.name) || "")}"></label>
+    ${DEMO ? "" : `<label class="field">Team passcode<input type="password" name="key" required autocomplete="current-password"></label>`}
+    <button class="btn primary big">Sign in</button><p class="small muted" id="loginMsg"></p></form>`;
+  $("#login").addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const a = { name: String(f.get("name")).trim(), key: String(f.get("key") || "") };
+    if (!a.name) return;
+    auth = a;
+    if (!DEMO) {
+      $("#loginMsg").textContent = "Checking…";
+      try { await Remote.list(); }
+      catch (err) { auth = null; $("#loginMsg").textContent = err.code === "denied" ? "Wrong passcode." : err.message; return; }
+    }
+    store.set("meraki-approval-editor", auth);
+    route();
+  });
+}
+const editorHeader = () => header(`<span>${esc(auth.name)}</span><button class="btn ghost" id="signout">Sign out</button>`);
+function bindHeader() {
+  const b = $("#signout");
+  b && b.addEventListener("click", () => { store.del("meraki-approval-editor"); auth = null; location.hash = "#/"; route(); });
+}
+
+/* ======================= editor: dashboard ======================= */
+let dashFilter = "all", dashQuery = "";
+async function renderDashboard() {
+  app.innerHTML = editorHeader() + `<div class="empty"><span class="spinner"></span></div>`;
+  bindHeader();
+  let list;
+  try { list = await api.list(); } catch (e) { if (e.code === "denied") { auth = null; store.del("meraki-approval-editor"); return route(); } return fail(e); }
+  list.sort((a, b) => (b.updated || "").localeCompare(a.updated || ""));
+  const needs = x => x.status === "corrections" || (x.status === "new");
+  const groups = {
+    all: ["All customers", () => true], todo: ["Needs editor", needs],
+    waiting: ["With customer", x => x.status === "review"], approved: ["Approved", x => x.status === "approved"]
+  };
+  function draw() {
+    const q = dashQuery.toLowerCase();
+    const shown = list.filter(groups[dashFilter][1]).filter(x => !q || [x.customer, x.phone, x.id].join(" ").toLowerCase().includes(q));
+    $("#plist").innerHTML = shown.length ? shown.map(x => `<a class="pcard" href="#/p/${encodeURIComponent(x.id)}">
+        <div class="row" style="justify-content:space-between"><b>${esc(x.customer)}</b>${statusChip(x.status)}</div>
+        <div class="meta"><span>${esc(x.phone || "No phone")}</span><span>·</span><span>${esc((FORMATS[x.format] || FORMATS.custom).name)}</span></div>
+        <div class="meta"><span class="chip">Draft ${x.shared}/${x.draftsAllowed}</span>
+          ${x.openCorrections ? `<span class="chip accent">${x.openCorrections} open correction${x.openCorrections > 1 ? "s" : ""}</span>` : ""}
+          <span>${esc(x.id)}</span><span>· ${esc(fmtDate(x.updated))}</span></div></a>`).join("")
+      : `<div class="panel empty" style="grid-column:1/-1">${list.length ? "No customers match." : "No customers yet. Start with <b>New customer</b>."}</div>`;
+    $$("[data-f]").forEach(b => b.setAttribute("aria-pressed", b.dataset.f === dashFilter));
+  }
+  app.innerHTML = editorHeader() + `
+    <div class="toolbar"><h1 style="font-size:1.7rem">Customer files</h1><a class="btn primary" href="#/new">+ New customer</a></div>
+    <div class="kpis">${Object.entries(groups).map(([k, [label, fn]]) =>
+      `<button class="kpi" data-f="${k}" aria-pressed="false"><span class="eyebrow">${esc(label)}</span><span class="val">${list.filter(fn).length}</span></button>`).join("")}</div>
+    <input type="search" id="q" placeholder="Search name, phone or ID" value="${esc(dashQuery)}" aria-label="Search customers">
+    <div class="plist" id="plist"></div>`;
+  bindHeader();
+  $$("[data-f]").forEach(b => b.addEventListener("click", () => { dashFilter = b.dataset.f; draw(); }));
+  $("#q").addEventListener("input", e => { dashQuery = e.target.value; draw(); });
+  draw();
+}
+
+/* ======================= editor: new customer ======================= */
+function formatPicker(selected) {
+  return `<div class="formats">${Object.entries(FORMATS).map(([k, f]) => `<button type="button" class="fmt" data-fmt="${k}" aria-pressed="${k === selected}">
+      <div class="mini">${f.mini.map(m => m === "wide" ? `<i class="wide"></i>` : m === "qr" ? `<i class="qr"></i>` : `<i>${esc(m)}</i>`).join("")}</div>
+      <b>${esc(f.name)}${k === DEFAULT_FORMAT ? ` <span class="chip gold">Default</span>` : ""}</b>
+      <span class="small muted">${esc(f.tag)}. ${esc(f.desc)}</span></button>`).join("")}</div>
+    <div id="customBox" class="panel" style="background:var(--bg)" ${selected === "custom" ? "" : "hidden"}>
+      <div class="grid-2" style="gap:12px">
+        <label class="field">Number of designs<input type="number" name="cCount" min="1" max="12" value="4"></label>
+        <label class="field">Page size<select name="cSize"><option>A5</option><option>A4</option></select></label>
+        <label class="field">Customer sees<select name="cLayout"><option value="separate">Each page on its own</option><option value="folded">A folded card (cover, inside spreads, back)</option></select></label>
+        <label class="field" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" name="cQr"> Last page has a QR code</label>
+      </div>
+      <label class="field">Page names <span class="hint">One per line, in order. Leave empty for Page 1, Page 2…</span><textarea name="cLabels" rows="4" placeholder="Front&#10;Inside&#10;Back"></textarea></label>
+    </div>`;
+}
+function readFormat(form, fmt) {
+  if (fmt !== "custom") return JSON.parse(JSON.stringify(FORMATS[fmt].config));
+  const f = new FormData(form);
+  return customConfig({ count: +f.get("cCount"), size: f.get("cSize"), layout: f.get("cLayout"), labels: String(f.get("cLabels") || "").split("\n"), qrLast: !!f.get("cQr") });
+}
+function bindFormatPicker(root, onChange) {
+  $$("[data-fmt]", root).forEach(b => b.addEventListener("click", () => {
+    $$("[data-fmt]", root).forEach(x => x.setAttribute("aria-pressed", x === b));
+    $("#customBox", root).hidden = b.dataset.fmt !== "custom";
+    onChange(b.dataset.fmt);
+  }));
+}
+function renderNew() {
+  let fmt = DEFAULT_FORMAT;
+  app.innerHTML = editorHeader() + `<a href="#/" class="small">← Customer files</a>
+    <form class="panel" id="newForm"><h1 style="font-size:1.6rem">New customer file</h1>
+      <div class="grid-2" style="gap:14px">
+        <label class="field">Customer name<input type="text" name="customer" required maxlength="80" placeholder="e.g. Priyanka & Rahul"></label>
+        <label class="field">Phone (WhatsApp)<input type="tel" name="phone" inputmode="tel" maxlength="16" placeholder="10-digit mobile"></label>
+      </div>
+      <div class="field" style="gap:8px"><span style="font-weight:600;font-size:.88rem">Card format</span>${formatPicker(fmt)}</div>
+      <div class="grid-2" style="gap:14px">
+        <label class="field">Drafts for corrections<input type="number" name="drafts" min="1" max="10" value="3"></label>
+        <label class="field">Notes for editors <span class="hint">Order number, wedding date, side (bride/groom)… Customers don't see this.</span><textarea name="notes" rows="2"></textarea></label>
+      </div>
+      <div class="row"><button class="btn primary big">Create file</button><a class="btn" href="#/">Cancel</a></div></form>`;
+  bindHeader();
+  const form = $("#newForm");
+  bindFormatPicker(form, f => fmt = f);
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = new FormData(form);
+    const btn = $("button.primary", form); btn.disabled = true; btn.textContent = "Creating…";
+    try {
+      const p = await api.create({ customer: String(f.get("customer")).trim(), phone: String(f.get("phone")).trim(), format: fmt,
+        config: readFormat(form, fmt), draftsAllowed: +f.get("drafts") || 3, notes: String(f.get("notes")).trim() });
+      location.hash = "#/p/" + encodeURIComponent(p.id);
+    } catch (err) { toast(err.message, true); btn.disabled = false; btn.textContent = "Create file"; }
+  });
+}
+
+/* ======================= editor: customer file ======================= */
+const E = { p: null, tab: null, busy: {}, notes: [] };
+async function renderProject(id) {
+  app.innerHTML = editorHeader() + `<div class="empty"><span class="spinner"></span></div>`;
+  bindHeader();
+  try { E.p = await api.project(id); } catch (e) { if (e.code === "denied") { auth = null; store.del("meraki-approval-editor"); return route(); } return fail(e); }
+  E.tab = null; E.busy = {}; E.notes = [];
+  drawProject();
+}
+function defaultTab(p) {
+  const up = uploadDraftNo(p), last = latest(p);
+  if (p.status === "approved") return p.approvedDraft;
+  if (p.status === "corrections" && last) return last.n;
+  if (up && (!last || openDraft(p))) return "up";
+  return last ? last.n : "up";
+}
+function shareText(p) {
+  const last = latest(p), link = customerLink(p);
+  if (!last) return `Hello ${p.customer}, this is ${CONFIG.studio}. Your card design will appear here: ${link}`;
+  const final = last.n >= p.draftsAllowed;
+  return `Hello ${p.customer}! Draft ${last.n} of your ${CONFIG.studio} card design is ready.\n\nPlease open the link, check every page carefully, and tap on the design to mark any correction. When everything is correct, press Approve.\n\n${final
+    ? "This is your final draft, so please send all remaining corrections now."
+    : `You get ${p.draftsAllowed} drafts in total; this is draft ${last.n}. Please send all corrections together.`}\n\n${link}`;
+}
+function drawProject() {
+  const p = E.p, cfg = p.config;
+  if (E.tab === null) E.tab = defaultTab(p);
+  const up = uploadDraftNo(p);
+  const sh = shared(p);
+  const tabs = sh.map(d => [d.n, "Draft " + d.n + (p.approvedDraft === d.n ? " ✓" : "")]);
+  if (up) tabs.push(["up", openDraft(p) ? `Draft ${up} (preparing)` : `+ Upload draft ${up}`]);
+  if (!tabs.some(t => t[0] === E.tab)) E.tab = tabs.length ? tabs[tabs.length - 1][0] : "up";
+  const last = latest(p);
+  app.innerHTML = editorHeader() + `<a href="#/" class="small">← Customer files</a>
+    <section class="panel">
+      <div class="panel-head"><div><span class="eyebrow">${esc(p.id)} · ${esc(formatName(p))}</span><h1 style="font-size:1.7rem">${esc(p.customer)}</h1></div>
+        <div class="row">${statusChip(p.status)}<span class="chip">Draft ${sh.length}/${p.draftsAllowed}</span><button class="btn" id="edit">Edit</button></div></div>
+      <div class="row small">${p.phone ? `<a href="tel:${esc(p.phone)}">${esc(p.phone)}</a> · ` : ""}<span class="muted">Created ${esc(fmtDay(p.created))} by ${esc(p.editor || "—")}</span></div>
+      ${p.notes ? `<div class="note small" style="white-space:pre-wrap">${esc(p.notes)}</div>` : ""}
+      <div class="row">
+        <button class="btn" id="copyLink">Copy customer link</button>
+        ${p.phone ? `<a class="btn ${p.status === "review" ? "primary" : ""}" id="wa" target="_blank" rel="noopener" href="${esc(waLink(p.phone, shareText(p)))}">Send on WhatsApp</a>` : ""}
+        <a class="btn ghost" href="${esc(customerLink(p))}" target="_blank" rel="noopener">Open customer view ↗</a>
+      </div>
+    </section>
+    ${p.status === "approved" ? approvedPanel(p) : ""}
+    ${!up && p.status !== "approved" && last ? `<div class="note warn row" style="justify-content:space-between">
+        <span>All ${p.draftsAllowed} drafts have been shared. The customer can approve, or you can give one more draft.</span>
+        <button class="btn" id="grant">Give an extra draft</button></div>` : ""}
+    <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="${k === E.tab}">${esc(l)}</button>`).join("")}</div>
+    <div id="tabBody"></div>`;
+  bindHeader();
+  $("#edit").addEventListener("click", editProject);
+  $("#copyLink").addEventListener("click", () => copy(customerLink(p)));
+  $("#grant") && $("#grant").addEventListener("click", async () => { try { E.p = await api.act(p.id, "grant"); E.tab = "up"; drawProject(); toast("Extra draft added."); } catch (e) { toast(e.message, true); } });
+  $$("[data-tab]").forEach(b => b.addEventListener("click", () => { E.tab = b.dataset.tab === "up" ? "up" : +b.dataset.tab; drawProject(); }));
+  $$("[data-print]").forEach(b => b.addEventListener("click", async () => {
+    const opt = cfg.print.find(o => o.id === b.dataset.print);
+    const label = b.innerHTML; b.disabled = true; b.innerHTML = `<span class="spinner" style="width:16px;height:16px;border-width:2px"></span> Making PDF…`;
+    try { await buildPdf(p, opt); } catch (e) { toast(e.message, true); }
+    b.disabled = false; b.innerHTML = label;
+  }));
+  $("#reopen") && $("#reopen").addEventListener("click", async () => {
+    if (!await confirmDialog("Undo approval?", "<p>The customer will be able to send corrections again.</p>", "Undo approval")) return;
+    try { E.p = await api.act(p.id, "reopen"); E.tab = null; drawProject(); } catch (e) { toast(e.message, true); }
+  });
+  if (E.tab === "up") drawUpload(); else drawSharedDraft(E.tab);
+}
+function approvedPanel(p) {
+  return `<section class="panel" style="border-color:var(--ok)">
+    <div class="panel-head"><div><span class="eyebrow" style="color:var(--ok)">Approved</span>
+      <h2>Draft ${p.approvedDraft} approved by ${esc(p.approvedBy)} on ${esc(fmtDay(p.approvedAt))}</h2></div>
+      <button class="btn ghost" id="reopen">Undo approval</button></div>
+    <p class="muted small">Download the print-ready PDF:</p>
+    <div class="grid-2" style="gap:10px">${p.config.print.map((o, i) => `<div class="panel" style="padding:14px;gap:8px;background:var(--bg)">
+      <b>${esc(o.label)}</b><span class="small muted">${esc(o.note)}</span>
+      <button class="btn ${i === 0 ? "ok" : ""}" data-print="${esc(o.id)}">Download PDF</button></div>`).join("")}</div></section>`;
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); toast("Link copied."); }
+  catch (e) { openDialog(`<div class="dbody"><h2>Customer link</h2><input type="text" readonly value="${esc(text)}" onfocus="this.select()"><button class="btn" data-close>Close</button></div>`); }
+}
+function editProject() {
+  const p = E.p;
+  const canFormat = !p.drafts.length;
+  let fmt = p.format;
+  openDialog(`<form id="editForm"><h2>Edit customer file</h2>
+    <label class="field">Customer name<input type="text" name="customer" required maxlength="80" value="${esc(p.customer)}"></label>
+    <label class="field">Phone<input type="tel" name="phone" maxlength="16" value="${esc(p.phone)}"></label>
+    <label class="field">Drafts for corrections<input type="number" name="drafts" min="1" max="10" value="${p.draftsAllowed}"></label>
+    <label class="field">Notes for editors<textarea name="notes" rows="3">${esc(p.notes || "")}</textarea></label>
+    ${canFormat ? `<div class="field" style="gap:8px"><span>Card format</span>${formatPicker(fmt)}</div>` : `<p class="small muted">Format: ${esc(formatName(p))}. It can't change after the first upload.</p>`}
+    <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary">Save</button></div></form>`, d => {
+    const form = $("#editForm", d);
+    if (canFormat) bindFormatPicker(form, f => fmt = f);
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const f = new FormData(form);
+      const body = { customer: String(f.get("customer")).trim(), phone: String(f.get("phone")).trim(), notes: String(f.get("notes")), draftsAllowed: +f.get("drafts") };
+      if (canFormat && (fmt !== p.format || fmt === "custom")) Object.assign(body, { format: fmt, config: readFormat(form, fmt) });
+      try { E.p = await api.act(p.id, "update", body); dlg.close(); drawProject(); toast("Saved."); } catch (err) { toast(err.message, true); }
+    });
+  });
+}
+
+function drawUpload() {
+  const p = E.p, cfg = p.config, n = uploadDraftNo(p);
+  const dr = p.drafts.find(d => d.n === n) || { pages: {} };
+  const keys = cfg.pages.map(x => x.key);
+  const filled = keys.filter(k => dr.pages[k]);
+  const lastShared = latest(p);
+  const open = lastShared ? corrections(p, lastShared.n).filter(m => m.kind === "sent") : [];
+  const body = $("#tabBody");
+  body.innerHTML = `<section class="panel">
+    <div class="panel-head"><h2>Draft ${n} of ${p.draftsAllowed}</h2><span class="small muted">${filled.length} of ${keys.length} pages uploaded</span></div>
+    ${open.length ? `<div class="note accent small">${open.length} correction${open.length > 1 ? "s" : ""} from draft ${lastShared.n} still open. <a href="#" id="seeCorr">See them</a></div>` : ""}
+    <div class="drop" id="drop">
+      <b>Drop the designs here</b>
+      <span class="small muted">${keys.length} pages, a ${keys.length}-page PDF${cfg.spreads ? ", or A4 spreads" : ""}. Pages are placed automatically and QR codes are detected.</span>
+      <div class="row" style="justify-content:center">
+        <label class="btn primary">Choose files<input type="file" id="files" accept="image/*,application/pdf" multiple hidden></label>
+        ${cfg.spreads ? `<select id="upMode" style="width:auto" aria-label="How the files are laid out">
+          <option value="auto">Detect layout</option><option value="pages">One page per file</option><option value="spreads">A4 spreads (2 pages per sheet)</option></select>` : ""}
+      </div>
+    </div>
+    ${E.notes.length ? `<div class="note gold small">${E.notes.map(esc).join("<br>")}</div>` : ""}
+    <div class="slots">${cfg.pages.map(def => {
+      const pg = dr.pages[def.key], busy = E.busy[def.key];
+      return `<div class="slot" data-slot="${esc(def.key)}">
+        <div class="pg ${pg ? "" : "blank"}" style="${pg && pg.w ? `aspect-ratio:${pg.w}/${pg.h}` : ""}" role="button" tabindex="0" aria-label="Upload ${esc(def.label)}">
+          ${pg ? `<img data-file="${esc(pg.preview)}" alt="${esc(def.label)}">` : `<span style="font-size:1.6rem;line-height:1">+</span><span>${esc(def.label)}</span>`}
+          ${busy ? `<div class="busy">${esc(busy)}</div>` : ""}</div>
+        <div><div class="slot-title">${esc(def.label)}</div><div class="small muted">${esc(def.hint || "")}</div></div>
+        <div class="warns">${pg && pg.qr ? qrChip(pg.qr) : ""}${pageWarnings(cfg, def.key, pg).map(([c, t]) => `<span class="chip ${c}" style="white-space:normal">${esc(t)}</span>`).join("")}</div>
+        <input type="file" accept="image/*,application/pdf" hidden></div>`;
+    }).join("")}</div>
+    <div class="row" style="justify-content:space-between">
+      <span class="small muted">The customer sees nothing until you share.</span>
+      <button class="btn primary big" id="share" ${filled.length === keys.length && !Object.keys(E.busy).length ? "" : "disabled"}>Share draft ${n} with customer</button></div>
+  </section>`;
+  hydrate(body, p);
+  $("#seeCorr") && $("#seeCorr").addEventListener("click", e => { e.preventDefault(); E.tab = lastShared.n; drawProject(); });
+  const drop = $("#drop");
+  $("#files").addEventListener("change", e => { handleFiles([...e.target.files]); e.target.value = ""; });
+  ["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => handleFiles([...e.dataTransfer.files]));
+  $$(".slot").forEach(s => {
+    const input = $("input[type=file]", s), key = s.dataset.slot, pgEl = $(".pg", s);
+    pgEl.addEventListener("click", () => input.click());
+    pgEl.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+    input.addEventListener("change", () => { input.files.length && handleFiles([...input.files], key); input.value = ""; });
+    ["dragenter", "dragover"].forEach(t => s.addEventListener(t, e => { e.preventDefault(); e.stopPropagation(); s.classList.add("over"); }));
+    ["dragleave", "drop"].forEach(t => s.addEventListener(t, e => { e.preventDefault(); e.stopPropagation(); s.classList.remove("over"); }));
+    s.addEventListener("drop", e => handleFiles([...e.dataTransfer.files], key));
+  });
+  $("#share").addEventListener("click", async () => {
+    const warn = cfg.pages.flatMap(def => pageWarnings(cfg, def.key, dr.pages[def.key]).map(w => def.label + ": " + w[1]));
+    const ok = await confirmDialog(`Share draft ${n}?`, `<p>${esc(p.customer)} will see this draft and can send corrections${n >= p.draftsAllowed ? " or approve. <b>This is the final draft.</b>" : " or approve."}</p>
+      ${warn.length ? `<div class="note warn small" style="margin-top:10px">${warn.map(esc).join("<br>")}</div>` : ""}`, "Share draft " + n);
+    if (!ok) return;
+    try {
+      E.p = await api.act(p.id, "share", { draft: n });
+      E.tab = n; E.notes = []; drawProject();
+      toast("Shared. Now send the link on WhatsApp.");
+    } catch (e) { toast(e.message, true); }
+  });
+}
+
+async function handleFiles(files, target) {
+  const p = E.p, cfg = p.config, n = uploadDraftNo(p);
+  if (!files.length || !n) return;
+  const dr = p.drafts.find(d => d.n === n) || { pages: {} };
+  const filled = cfg.pages.map(x => x.key).filter(k => dr.pages[k]);
+  const busyKeys = target ? [target] : cfg.pages.map(x => x.key);
+  busyKeys.forEach(k => E.busy[k] = "Reading…"); drawUpload();
+  let plan;
+  try {
+    const items = [];
+    for (const f of files) items.push(...await readFile(f));
+    busyKeys.forEach(k => E.busy[k] = "Checking QR…"); drawUpload();
+    plan = await arrange(cfg, items, ($("#upMode") || {}).value || "auto", filled, target);
+  } catch (e) {
+    E.busy = {}; drawUpload(); toast(e.message, true); return;
+  }
+  E.busy = {}; plan.assign.forEach(a => E.busy[a.key] = "Waiting…");
+  E.notes = plan.notes; drawUpload();
+  for (const a of plan.assign) {
+    E.busy[a.key] = "Uploading…"; drawUpload();
+    try {
+      const print = scaled(a.canvas, PRINT_EDGE), preview = scaled(a.canvas, PREVIEW_EDGE);
+      E.p = await api.act(p.id, "page", { draft: n, slot: a.key, w: print.width, h: print.height, qr: a.qr || "",
+        print: print.toDataURL("image/jpeg", 0.92), preview: preview.toDataURL("image/jpeg", 0.82) });
+    } catch (e) { toast(slotLabel(cfg, a.key) + ": " + e.message, true); }
+    delete E.busy[a.key];
+    if (E.tab === "up") drawUpload();
+  }
+  if (E.tab === "up") drawProject();
+}
+
+function drawSharedDraft(n) {
+  const p = E.p, cfg = p.config, d = p.drafts.find(x => x.n === n);
+  const isLast = latest(p) && latest(p).n === n;
+  const list = corrections(p, n);
+  const body = $("#tabBody");
+  body.innerHTML = `<div class="grid-2">
+    <div id="viewer"></div>
+    <section class="panel">
+      <div class="panel-head"><h2>Corrections on draft ${n}</h2><span class="small muted">Shared ${esc(fmtDate(d.shared))}${d.editor ? " by " + esc(d.editor) : ""}</span></div>
+      ${list.length ? `<ul class="clist">${list.map(m => correctionItem(cfg, m, { showTime: true,
+        actions: m => `<label class="small row" style="gap:4px;cursor:pointer"><input type="checkbox" data-done="${esc(m.id)}" ${m.done ? "checked" : ""}> Fixed</label>` })).join("")}</ul>`
+        : `<p class="muted">${isLast && p.status === "review" ? "Waiting for the customer to check this draft." : "No corrections on this draft."}</p>`}
+      <h3>Messages</h3>
+      <div id="thread">${threadHTML(p, n, "editor", true)}</div>
+      <form id="reply" class="field" style="gap:8px"><textarea name="text" rows="2" placeholder="Reply to ${esc(p.customer)}…" required></textarea>
+        <div class="row" style="justify-content:flex-end"><button class="btn">Send reply</button></div></form>
+    </section></div>`;
+  const viewer = mountViewer($("#viewer"), { project: p, draft: d, getPins: () => list, onPin: m => flashItem(m.num) });
+  $$(".clist .citem[data-page]", body).forEach(li => li.addEventListener("click", e => {
+    if (e.target.closest("label")) return;
+    viewer.show(li.dataset.page, +li.dataset.num);
+  }));
+  $$("[data-done]", body).forEach(cb => cb.addEventListener("change", async () => {
+    try { E.p = await api.act(p.id, "done", { msg: cb.dataset.done, done: cb.checked }); drawSharedDraft(n); }
+    catch (e) { toast(e.message, true); cb.checked = !cb.checked; }
+  }));
+  $("#reply").addEventListener("submit", async e => {
+    e.preventDefault();
+    const text = String(new FormData(e.target).get("text")).trim();
+    if (!text) return;
+    try { E.p = await api.act(p.id, "message", { draft: n, name: auth.name, items: [{ text }] }); drawSharedDraft(n); toast("Reply saved. The customer sees it on their link."); }
+    catch (err) { toast(err.message, true); }
+  });
+}
+function flashItem(num) {
+  const li = $(`.citem[data-num="${num}"]`);
+  if (!li) return;
+  li.scrollIntoView({ behavior: "smooth", block: "center" });
+  li.classList.remove("flash"); void li.offsetWidth; li.classList.add("flash");
+}
+
+/* ======================= customer view ======================= */
+const C = { p: null, view: null, viewer: null, viewIndex: 0 };
+const pendingKey = n => `meraki-approval-pending-${TOKEN}-${n}`;
+async function renderCustomer() {
+  try { C.p = await api.customer(TOKEN); } catch (e) { return fail(e); }
+  C.view = latest(C.p) ? latest(C.p).n : null;
+  drawCustomer();
+}
+function drawCustomer() {
+  const p = C.p, cfg = p.config, last = latest(p);
+  const right = `<span>${esc(p.customer)}</span>`;
+  if (!last) {
+    app.innerHTML = header(right) + `<section class="panel empty"><h2>Your design is being prepared</h2>
+      <p>Hello ${esc(p.customer)}! ${esc(CONFIG.studio)} will send you a message as soon as draft 1 is ready to check on this page.</p></section>`;
+    return;
+  }
+  const n = C.view, d = p.drafts.find(x => x.n === n);
+  const viewingLatest = n === last.n;
+  const approved = p.status === "approved";
+  const canEdit = viewingLatest && !approved;
+  const final = last.n >= p.draftsAllowed;
+  const pending = canEdit ? store.get(pendingKey(n), []) : [];
+  const list = corrections(p, n, pending);
+  const sentHere = list.filter(m => m.kind !== "pending");
+  const steps = Array.from({ length: p.draftsAllowed }, (_, i) => i + 1).map(i =>
+    `<span class="${i < last.n || (approved && i === last.n) ? "done" : i === last.n ? "now" : i === p.draftsAllowed ? "final" : ""}">Draft ${i}${i === p.draftsAllowed ? " (final)" : ""}</span>`).join("")
+    + `<span class="${approved ? "now" : ""}">Approved</span>`;
+
+  app.innerHTML = header(right) + `
+    <section class="panel">
+      <div class="panel-head"><div><span class="eyebrow">${esc(formatName(p))}</span><h1 style="font-size:1.6rem">Hello ${esc(p.customer)}</h1></div>
+        ${shared(p).length > 1 ? `<label class="small row" style="gap:6px">Viewing <select id="draftSel" style="width:auto">${shared(p).map(x => `<option value="${x.n}" ${x.n === n ? "selected" : ""}>Draft ${x.n}${x.n === last.n ? " (latest)" : ""}</option>`).join("")}</select></label>` : ""}</div>
+      <div class="steps">${steps}</div>
+      ${approved ? `<div class="note ok"><b>You approved draft ${p.approvedDraft} on ${esc(fmtDay(p.approvedAt))}.</b> Thank you! Your cards now go to print.</div>`
+        : !viewingLatest ? `<div class="note">This is an older draft. <a href="#" id="toLatest">Go to the latest draft ${last.n}</a> to send corrections or approve.</div>`
+        : p.status === "corrections" ? `<div class="note gold">We've received your corrections on draft ${n}. ${final ? CONFIG.studio + " will get in touch about them." : `We're preparing draft ${n + 1}.`} You can still add more corrections below.</div>`
+        : `<div class="note ${final ? "warn" : "gold"}">${final
+          ? `<b>This is your final draft (${n} of ${p.draftsAllowed}).</b> Please check everything carefully and approve. If something is still wrong, mark it below.`
+          : `<b>Draft ${n} of ${p.draftsAllowed}.</b> Check every page: names, dates, times, venue, phone numbers and the QR code. Mark all corrections at once, because you get ${p.draftsAllowed} drafts in total.`}</div>`}
+    </section>
+    <div class="grid-2">
+      <div id="viewer"></div>
+      <div style="display:flex;flex-direction:column;gap:20px">
+        ${canEdit ? `<section class="panel" id="corrPanel">
+          <div class="panel-head"><h2>Your corrections</h2><span class="small muted">${pending.length} not sent yet</span></div>
+          <p class="small muted">Tap on the design where something needs to change, then write what to change. You can also add a general note.</p>
+          ${list.length ? `<ul class="clist">${list.map(m => correctionItem(cfg, m, { actions: m => m.kind === "pending"
+            ? `<button class="btn ghost small" data-edit="${m.pi}">Edit</button><button class="btn ghost small" data-del="${m.pi}" aria-label="Delete correction ${m.num}">✕</button>` : `<span class="chip ${m.kind === "done" ? "ok" : "gold"}">${m.kind === "done" ? "Fixed" : "Sent"}</span>` })).join("")}</ul>` : ""}
+          <button class="btn" id="addGeneral">+ Add a general correction</button>
+          <label class="field">Your name <span class="hint">So we know who sent the corrections</span><input type="text" id="cName" maxlength="60" value="${esc(store.get("meraki-approval-name", "") || p.customer)}"></label>
+          <button class="btn primary big" id="sendCorr" ${pending.length ? "" : "disabled"}>Send ${pending.length || ""} correction${pending.length === 1 ? "" : "s"} to ${esc(CONFIG.studio)}</button>
+        </section>
+        <section class="panel" style="border-color:var(--ok)">
+          <h2>Everything correct?</h2>
+          <p class="small muted">Approve draft ${n} when every page is right. After approval the design goes to print and can't be changed.</p>
+          <button class="btn ok big" id="approve" ${pending.length ? "disabled title='Send or delete your unsent corrections first'" : ""}>Approve draft ${n} for printing</button>
+          ${pending.length ? `<span class="small muted">Send or delete your unsent corrections first.</span>` : ""}
+        </section>` : sentHere.length ? `<section class="panel"><h2>Corrections on draft ${n}</h2><ul class="clist">${sentHere.map(m => correctionItem(cfg, m)).join("")}</ul></section>` : ""}
+        <section class="panel"><h2>Messages</h2>${shared(p).slice().reverse().map(x => `<div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Draft ${x.n}</span>${threadHTML(p, x.n, "customer", x.n === n)}</div>`).join("")}</section>
+      </div>
+    </div>`;
+
+  C.viewer = mountViewer($("#viewer"), {
+    project: p, draft: d, view: C.viewIndex, getPins: () => list,
+    tapHint: canEdit ? "Tap on the design to mark a correction. Use 🔍 to zoom in." : "Use 🔍 to zoom in.",
+    onTap: canEdit ? (slot, x, y) => composeCorrection({ page: slot, x, y }) : null,
+    onPin: m => m.kind === "pending" ? composeCorrection(pending[m.pi], m.pi) : flashItem(m.num)
+  });
+  $$("[data-v]", $("#viewer")).forEach(b => b.addEventListener("click", () => C.viewIndex = +b.dataset.v));
+  $("#draftSel") && $("#draftSel").addEventListener("change", e => { C.view = +e.target.value; drawCustomer(); });
+  $("#toLatest") && $("#toLatest").addEventListener("click", e => { e.preventDefault(); C.view = last.n; drawCustomer(); });
+  $$(".clist .citem[data-page]").forEach(li => li.addEventListener("click", e => {
+    if (e.target.closest("button")) return;
+    C.viewer.show(li.dataset.page, +li.dataset.num);
+  }));
+  if (!canEdit) return;
+  $("#cName").addEventListener("change", e => store.set("meraki-approval-name", e.target.value.trim()));
+  $("#addGeneral").addEventListener("click", () => composeCorrection({ page: "", x: null, y: null }));
+  $$("[data-edit]").forEach(b => b.addEventListener("click", () => composeCorrection(pending[+b.dataset.edit], +b.dataset.edit)));
+  $$("[data-del]").forEach(b => b.addEventListener("click", () => {
+    const list = store.get(pendingKey(n), []); list.splice(+b.dataset.del, 1); store.set(pendingKey(n), list); drawCustomer();
+  }));
+  $("#sendCorr").addEventListener("click", async e => {
+    const items = store.get(pendingKey(n), []);
+    if (!items.length) return;
+    const name = $("#cName").value.trim();
+    e.target.disabled = true; e.target.textContent = "Sending…";
+    try {
+      C.p = await api.customerAct(TOKEN, "message", { draft: n, name, items });
+      store.del(pendingKey(n));
+      drawCustomer();
+      toast("Corrections sent. Thank you!");
+    } catch (err) { toast(err.message, true); e.target.disabled = false; e.target.textContent = "Send corrections"; }
+  });
+  $("#approve").addEventListener("click", async () => {
+    const ok = await confirmDialog(`Approve draft ${n}?`, `<p>The design goes to print exactly as it is now. It can't be changed after approval.</p>
+      <label class="row" style="margin-top:12px;gap:8px;align-items:flex-start"><input type="checkbox" data-required="Please tick the box to confirm." style="margin-top:4px">
+      <span>I have checked all names, dates, times, the venue, phone numbers and the QR code.</span></label>`, "Approve for printing", "ok");
+    if (!ok) return;
+    try { C.p = await api.customerAct(TOKEN, "approve", { draft: n, name: $("#cName").value.trim() }); drawCustomer(); toast("Approved. Thank you!"); }
+    catch (err) { toast(err.message, true); }
+  });
+}
+function composeCorrection(item, index) {
+  const p = C.p, n = C.view;
+  const editing = index !== undefined;
+  const where = item.page ? slotLabel(p.config, item.page) : "General correction";
+  openDialog(`<form id="cForm"><h2>${editing ? "Edit correction" : "What should change?"}</h2>
+    <p class="small muted">${esc(where)}${item.page && item.x !== null ? " · at the pin you placed" : ""}</p>
+    <textarea name="text" rows="4" required maxlength="2000" placeholder="e.g. The groom's father's name should be spelled …">${esc(item.text || "")}</textarea>
+    <div class="row" style="justify-content:flex-end">${editing ? `<button class="btn ghost" id="cDel" style="margin-right:auto;color:var(--bad)">Delete</button>` : ""}
+      <button class="btn" data-close>Cancel</button><button class="btn primary">${editing ? "Save" : "Add correction"}</button></div></form>`, d => {
+    const form = $("#cForm", d), ta = $("textarea", d);
+    setTimeout(() => ta.focus(), 50);
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const text = ta.value.trim(); if (!text) return;
+      const list = store.get(pendingKey(n), []);
+      const it = { page: item.page || "", x: item.x ?? null, y: item.y ?? null, text };
+      if (editing) list[index] = it; else list.push(it);
+      store.set(pendingKey(n), list);
+      dlg.close(); drawCustomer();
+      if (!editing) toast("Added. Send all corrections together when you're done.");
+    });
+    $("#cDel", d) && $("#cDel", d).addEventListener("click", e => {
+      e.preventDefault();
+      const list = store.get(pendingKey(n), []); list.splice(index, 1); store.set(pendingKey(n), list);
+      dlg.close(); drawCustomer();
+    });
+  });
+}
+
+/* ======================= routing ======================= */
+function route() {
+  if (TOKEN) return renderCustomer();
+  if (!auth) return renderLogin();
+  const h = location.hash;
+  if (h.startsWith("#/p/")) return renderProject(decodeURIComponent(h.slice(4)));
+  if (h === "#/new") return renderNew();
+  renderDashboard();
+}
+window.addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>
