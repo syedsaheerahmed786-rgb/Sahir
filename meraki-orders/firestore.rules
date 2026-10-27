@@ -1,0 +1,63 @@
+rules_version = '2';
+
+// Meraki order management - Stage 1.
+//
+// Two things this file is responsible for:
+//   1. Orders are only ever created by the createOrder function. The website form
+//      talks to that function, never to Firestore, so a browser cannot invent an order.
+//   2. Reading an order requires a signed-in staff account that is still active. This is
+//      what replaces the client-side password gate on the old insider dashboard, where
+//      the passwords sat in the JavaScript bundle and the order data was readable without
+//      them.
+//
+// Customer-facing access (the private correction link) is Stage 2 and is deliberately
+// absent here: no rule below grants an unauthenticated reader anything.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function staffDoc() {
+      return get(/databases/$(database)/documents/staff/$(request.auth.uid)).data;
+    }
+
+    function isStaff() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/staff/$(request.auth.uid))
+        && staffDoc().active == true;
+    }
+
+    function isAdmin() {
+      return isStaff() && staffDoc().role == 'admin';
+    }
+
+    function isStage(value) {
+      return value in ['new', 'drafting', 'with_customer', 'approved', 'printing', 'delivered', 'cancelled'];
+    }
+
+    match /staff/{uid} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isStaff();
+
+      // Written by the Admin SDK inside createOrder, which bypasses these rules.
+      // Nothing in a browser may create or destroy an order record.
+      allow create, delete: if false;
+
+      // Staff move an order along the board and reassign it. That is all. Customer
+      // details, card copy, payments and the Sheet-sync stamp are not editable from
+      // the board, so a mis-click cannot quietly rewrite an address or a paid amount.
+      allow update: if isStaff()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['stage', 'stage_since', 'stage_history', 'owner', 'updated_at'])
+        && isStage(request.resource.data.stage)
+        && request.resource.data.owner is string
+        && request.resource.data.stage_history.size() >= resource.data.stage_history.size();
+    }
+
+    // Everything else is denied: an unmatched path has no rule, and Firestore denies
+    // by default. Adding collections means adding a block here on purpose.
+  }
+}

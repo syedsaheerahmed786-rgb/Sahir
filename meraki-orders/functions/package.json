@@ -1,0 +1,17 @@
+{
+  "name": "meraki-orders-functions",
+  "description": "Write path for the Meraki order record: website form in, Firestore as source of truth, Google Sheet as a one-way backup copy.",
+  "private": true,
+  "engines": { "node": "22" },
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions,firestore",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-admin": "12.7.0",
+    "firebase-functions": "6.1.1",
+    "googleapis": "144.0.0"
+  }
+}

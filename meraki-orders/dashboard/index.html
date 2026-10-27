@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meraki Orders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Brand tokens match the existing Meraki Growth Hub, so the two tools look like one system. */
+:root {
+  --bg: #FAF6F5; --panel: #FFFFFF; --sunk: #F3ECEB; --ink: #2A1A1F; --muted: #6E5A60; --line: #E6DADB;
+  --accent: #A3192A; --accent-soft: #F6E3E5; --gold: #9A6F14; --gold-soft: #F5EBD6;
+  --ok: #2E7D4F; --ok-soft: #E2F1E8; --warn: #A8650F; --warn-soft: #FBEEDB; --bad: #B3261E; --bad-soft: #F9E1DF;
+  --f-display: "Marcellus", Georgia, serif;
+  --f-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #171012; --panel: #21181B; --sunk: #2A1F23; --ink: #F3E9EA; --muted: #B5A2A7; --line: #3A2C31;
+  --accent: #E8667A; --accent-soft: #3D1D24; --gold: #D9AE52; --gold-soft: #3A2E17;
+  --ok: #62C08B; --ok-soft: #173325; --warn: #E7AA4E; --warn-soft: #3A2A12; --bad: #F07167; --bad-soft: #3D1A18;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #171012; --panel: #21181B; --sunk: #2A1F23; --ink: #F3E9EA; --muted: #B5A2A7; --line: #3A2C31;
+  --accent: #E8667A; --accent-soft: #3D1D24; --gold: #D9AE52; --gold-soft: #3A2E17;
+  --ok: #62C08B; --ok-soft: #173325; --warn: #E7AA4E; --warn-soft: #3A2A12; --bad: #F07167; --bad-soft: #3D1A18;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; }
+h1, h2 { font-family: var(--f-display); font-weight: 400; margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+
+/* header */
+header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line);
+  padding: 14px max(16px, env(safe-area-inset-left)) 12px max(16px, env(safe-area-inset-right)); }
+.bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.bar h1 { font-size: 1.5rem; letter-spacing: .02em; }
+.bar h1 span { color: var(--accent); }
+.spacer { flex: 1; }
+.chip { background: var(--sunk); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; font-size: .8rem; }
+.chip.alert { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); font-weight: 600; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.controls input, .controls select { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+.controls input { min-width: 200px; flex: 1 1 200px; max-width: 320px; }
+.ghost { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; }
+
+/* board */
+/* 260px keeps all five stages on screen on a 1440px laptop; wider screens share the slack. */
+.board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 1fr); gap: 14px;
+  overflow-x: auto; padding: 16px max(16px, env(safe-area-inset-left)) 40px max(16px, env(safe-area-inset-right)); align-items: start; }
+@media (max-width: 760px) { .board { grid-auto-flow: row; grid-auto-columns: auto; overflow-x: visible; } }
+.col { background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r); display: flex; flex-direction: column; min-width: 0; }
+.col-head { display: flex; align-items: baseline; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); position: sticky; top: 0;
+  background: var(--sunk); border-radius: var(--r) var(--r) 0 0; }
+.col-head h2 { font-size: 1rem; }
+.col-head .n { margin-left: auto; font-size: .85rem; color: var(--muted); }
+.col-body { display: flex; flex-direction: column; gap: 10px; padding: 12px; min-height: 60px; }
+.empty { color: var(--muted); font-size: .85rem; text-align: center; padding: 14px 6px; }
+
+/* order card */
+.card { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 8px; padding: 11px 12px; display: flex; flex-direction: column; gap: 7px; }
+.card.stuck { border-left-color: var(--bad); }
+.card.soon { border-left-color: var(--warn); }
+.card-top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.oid { font-family: var(--f-mono); font-size: .78rem; color: var(--muted); }
+.line { font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+.line.card-line { background: var(--accent-soft); color: var(--accent); }
+.line.board-line { background: var(--gold-soft); color: var(--gold); }
+.who { font-weight: 600; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: .82rem; color: var(--muted); }
+.age { font-weight: 600; }
+.age.stuck { color: var(--bad); }
+.age.ok { color: var(--ok); }
+.flags { display: flex; flex-wrap: wrap; gap: 5px; }
+.flag { font-size: .72rem; padding: 2px 7px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); }
+.flag.bad { background: var(--bad-soft); color: var(--bad); }
+.row { display: flex; gap: 6px; }
+.row select { flex: 1; min-width: 0; background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; font-size: .82rem; }
+
+/* sign in */
+.gate { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.gate form { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 26px; width: min(360px, 100%); display: flex; flex-direction: column; gap: 12px; }
+.gate h1 { font-size: 1.6rem; }
+.gate input { background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.gate button { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 11px; font-weight: 600; }
+.err { color: var(--bad); font-size: .85rem; min-height: 1.2em; }
+#toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--ink); color: var(--bg);
+  padding: 9px 16px; border-radius: 999px; font-size: .88rem; z-index: 50; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate" hidden>
+  <form id="signin">
+    <h1>Meraki <span style="color:var(--accent)">Orders</span></h1>
+    <p class="muted" style="margin:0;font-size:.88rem">Sign in with your Meraki staff account.</p>
+    <input type="email" id="email" placeholder="you@themerakievent.in" autocomplete="username" required>
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
+    <button type="submit">Sign in</button>
+    <p class="err" id="signin-err"></p>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <div class="bar">
+      <h1>Meraki <span>Orders</span></h1>
+      <span class="chip" id="total">&hellip;</span>
+      <span class="chip alert" id="stuck" hidden></span>
+      <span class="spacer"></span>
+      <span class="muted" style="font-size:.85rem" id="me"></span>
+      <button class="ghost" id="signout" type="button">Sign out</button>
+    </div>
+    <div class="controls">
+      <input type="search" id="q" placeholder="Search name, order id or phone" aria-label="Search orders">
+      <select id="f-line" aria-label="Filter by product line">
+        <option value="">All products</option>
+        <option value="card">Wedding cards</option>
+        <option value="entry_board">Entry boards</option>
+      </select>
+      <select id="f-owner" aria-label="Filter by owner">
+        <option value="">All owners</option>
+        <option value="__none">Unassigned</option>
+      </select>
+      <select id="f-flag" aria-label="Filter by attention needed">
+        <option value="">Everything</option>
+        <option value="stuck">Stuck only</option>
+        <option value="review">Needs review</option>
+      </select>
+    </div>
+  </header>
+  <div class="board" id="board"></div>
+</div>
+
+<div id="toast" hidden></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import { getFirestore, collection, doc, onSnapshot, updateDoc, query, orderBy,
+         serverTimestamp, arrayUnion, Timestamp }
+  from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+/* ---------------------------------------------------------------- *
+ * CONFIG - paste the web app config from the Firebase console here
+ * (Project settings -> Your apps -> Web app -> SDK setup).
+ * These values are not secrets; access is controlled by firestore.rules.
+ * ---------------------------------------------------------------- */
+const CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+
+// Mirrors functions/lib/stages.js. If you change a stuck threshold, change it in both
+// places - the board reads this copy, the server reads that one.
+const STAGES = [
+  { id: 'new',           label: 'New',           stuckAfterDays: 1 },
+  { id: 'drafting',      label: 'Drafting',      stuckAfterDays: 2 },
+  { id: 'with_customer', label: 'With Customer', stuckAfterDays: 3 },
+  { id: 'approved',      label: 'Approved',      stuckAfterDays: 1 },
+  { id: 'printing',      label: 'Printing',      stuckAfterDays: 3 }
+];
+const TERMINAL = [
+  { id: 'delivered', label: 'Delivered' },
+  { id: 'cancelled', label: 'Cancelled' }
+];
+const ALL_STAGES = STAGES.concat(TERMINAL);
+
+const $ = (id) => document.getElementById(id);
+const state = { orders: [], staff: [], user: null, filters: { q: '', line: '', owner: '', flag: '' } };
+
+// Declared up here, not beside subscribe(): the auth callback can fire during module
+// evaluation, and a `let` below would still be in its temporal dead zone.
+let unsubs = [];
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { t.hidden = true; }, 2600);
+}
+
+if (!CONFIG.projectId) {
+  document.body.innerHTML =
+    '<div class="gate"><form><h1>Not configured yet</h1>' +
+    '<p class="muted">Paste your Firebase web config into the CONFIG block in ' +
+    '<code>dashboard/index.html</code>, then deploy again. Setup steps are in the README.</p></form></div>';
+  throw new Error('Firebase config missing');
+}
+
+const app = initializeApp(CONFIG);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ---------- live data ---------- */
+
+function subscribe() {
+  unsubs.forEach((u) => u());
+  unsubs = [];
+
+  unsubs.push(onSnapshot(
+    query(collection(db, 'orders'), orderBy('stage_since', 'asc')),
+    (snap) => {
+      state.orders = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+      render();
+    },
+    (err) => {
+      // The most likely cause is a signed-in account with no active staff/{uid} document.
+      toast('Could not load orders: ' + err.code);
+    }
+  ));
+
+  unsubs.push(onSnapshot(collection(db, 'staff'),
+    (snap) => {
+      state.staff = snap.docs
+        .map((d) => Object.assign({ id: d.id }, d.data()))
+        .filter((s) => s.active !== false);
+      render();
+    },
+    () => {}
+  ));
+}
+
+/* ---------- derived ---------- */
+
+const DAY = 86400000;
+const toDate = (v) => (v && typeof v.toDate === 'function' ? v.toDate() : v ? new Date(v) : null);
+
+function daysIn(order, now) {
+  const since = toDate(order.stage_since);
+  return since ? (now - since) / DAY : null;
+}
+
+function isStuck(order, now) {
+  const def = STAGES.find((s) => s.id === order.stage);
+  if (!def) return false;                       // delivered and cancelled never go stuck
+  const d = daysIn(order, now);
+  return d != null && d > def.stuckAfterDays;
+}
+
+function daysToEvent(order, now) {
+  if (!order.event_date) return null;
+  return Math.round((new Date(order.event_date + 'T00:00:00') - now) / DAY);
+}
+
+function ownerName(id) {
+  const s = state.staff.find((x) => x.id === id || x.handle === id);
+  return s ? (s.name || s.handle || id) : id;
+}
+
+function flagsFor(order) {
+  const out = [];
+  if (order.needs_review) out.push({ text: 'check import', bad: true });
+  if (order.possible_duplicate) out.push({ text: 'maybe duplicate', bad: true });
+  if (order.phone_valid === false) out.push({ text: 'bad phone', bad: true });
+  if (!order.owner) out.push({ text: 'no owner', bad: true });
+  if (order.card && order.card.inside_card_pending) out.push({ text: 'inside card not chosen' });
+  if (order.board && order.board.edition !== 'standard' && !order.photos_received) out.push({ text: 'photos missing' });
+  if (order.payment_status === 'unpaid') out.push({ text: 'unpaid' });
+  if (!order.whatsapp_group_id) out.push({ text: 'no WhatsApp group' });
+  return out;
+}
+
+function matchesFilters(order, now) {
+  const f = state.filters;
+  if (f.line && order.product_line !== f.line) return false;
+  if (f.owner === '__none' && order.owner) return false;
+  if (f.owner && f.owner !== '__none' && order.owner !== f.owner) return false;
+  if (f.flag === 'stuck' && !isStuck(order, now)) return false;
+  if (f.flag === 'review' && !(order.needs_review || order.possible_duplicate || order.phone_valid === false)) return false;
+  if (f.q) {
+    const hay = [order.order_id, order.customer_name, order.phone_e164, order.phone_raw,
+                 order.card && order.card.product_name, order.board && order.board.event_name]
+      .filter(Boolean).join(' ').toLowerCase();
+    if (!hay.includes(f.q)) return false;
+  }
+  return true;
+}
+
+/* ---------- writes ---------- */
+
+async function moveStage(order, stageId) {
+  if (stageId === order.stage) return;
+  try {
+    await updateDoc(doc(db, 'orders', order.id), {
+      stage: stageId,
+      stage_since: serverTimestamp(),
+      stage_history: arrayUnion({ stage: stageId, at: Timestamp.now(), by: state.user.email || 'staff' }),
+      updated_at: serverTimestamp()
+    });
+    toast(order.order_id + ' moved to ' + (ALL_STAGES.find((s) => s.id === stageId) || {}).label);
+  } catch (err) {
+    toast('Could not move it: ' + err.code);
+    render();   // put the dropdown back where it was
+  }
+}
+
+async function assignOwner(order, ownerId) {
+  if (ownerId === (order.owner || '')) return;
+  try {
+    await updateDoc(doc(db, 'orders', order.id), { owner: ownerId, updated_at: serverTimestamp() });
+    toast(order.order_id + (ownerId ? ' assigned to ' + ownerName(ownerId) : ' unassigned'));
+  } catch (err) {
+    toast('Could not assign it: ' + err.code);
+    render();
+  }
+}
+
+/* ---------- render ---------- */
+
+const el = (tag, attrs, ...kids) => {
+  const e = document.createElement(tag);
+  for (const k in attrs || {}) {
+    if (k === 'class') e.className = attrs[k];
+    else if (k === 'text') e.textContent = attrs[k];
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), attrs[k]);
+    else if (attrs[k] != null && attrs[k] !== false) e.setAttribute(k, attrs[k]);
+  }
+  for (const c of kids) if (c != null) e.append(c);
+  return e;
+};
+
+function ageLabel(days) {
+  if (days == null) return 'no date';
+  if (days < 1) return Math.max(1, Math.round(days * 24)) + 'h in stage';
+  const d = Math.floor(days);
+  return d + (d === 1 ? ' day' : ' days') + ' in stage';
+}
+
+function orderCard(order, now) {
+  const days = daysIn(order, now);
+  const stuck = isStuck(order, now);
+  const toEvent = daysToEvent(order, now);
+  const soon = toEvent != null && toEvent >= 0 && toEvent <= 14;
+
+  const stageSel = el('select', {
+    'aria-label': 'Stage for ' + order.order_id,
+    onchange: (e) => moveStage(order, e.target.value)
+  }, ...ALL_STAGES.map((s) => el('option', { value: s.id, text: s.label, selected: s.id === order.stage })));
+
+  const ownerSel = el('select', {
+    'aria-label': 'Owner for ' + order.order_id,
+    onchange: (e) => assignOwner(order, e.target.value)
+  }, el('option', { value: '', text: 'Unassigned', selected: !order.owner }),
+     ...state.staff.map((s) => el('option', {
+       value: s.handle || s.id, text: s.name || s.handle || s.id,
+       selected: (s.handle || s.id) === order.owner
+     })));
+
+  // An owner that is not in the staff list (left the team, or a hand-typed value in the
+  // old sheet) would otherwise vanish from the dropdown and look unassigned.
+  if (order.owner && !state.staff.some((s) => (s.handle || s.id) === order.owner)) {
+    ownerSel.append(el('option', { value: order.owner, text: order.owner + ' (not on staff list)', selected: true }));
+  }
+
+  const flags = flagsFor(order);
+
+  return el('article', { class: 'card' + (stuck ? ' stuck' : soon ? ' soon' : '') },
+    el('div', { class: 'card-top' },
+      el('span', { class: 'line ' + (order.product_line === 'card' ? 'card-line' : 'board-line'),
+                   text: order.product_line === 'card' ? 'Card' : 'Board' }),
+      el('span', { class: 'oid num', text: order.order_id })),
+    el('div', { class: 'who', text: order.customer_name || '(no name)' }),
+    el('div', { class: 'meta' },
+      el('span', { class: 'age num ' + (stuck ? 'stuck' : 'ok'), text: ageLabel(days) }),
+      order.event_date
+        ? el('span', { class: 'num', text: order.event_date + (toEvent == null ? ''
+            : toEvent < 0 ? ' (past)' : toEvent === 0 ? ' (today)' : ' (in ' + toEvent + 'd)') })
+        : null,
+      order.quantity ? el('span', { class: 'num', text: order.quantity + ' pcs' }) : null,
+      order.pincode ? el('span', { class: 'num', text: 'PIN ' + order.pincode }) : null),
+    flags.length ? el('div', { class: 'flags' },
+      ...flags.map((f) => el('span', { class: 'flag' + (f.bad ? ' bad' : ''), text: f.text }))) : null,
+    el('div', { class: 'row' }, ownerSel, stageSel));
+}
+
+function render() {
+  const now = new Date();
+  const visible = state.orders.filter((o) => matchesFilters(o, now));
+  const onBoard = visible.filter((o) => STAGES.some((s) => s.id === o.stage));
+  const stuckCount = onBoard.filter((o) => isStuck(o, now)).length;
+
+  $('total').textContent = onBoard.length + ' live · ' + state.orders.length + ' total';
+  $('stuck').textContent = stuckCount + ' stuck';
+  $('stuck').hidden = stuckCount === 0;
+
+  // Keep the owner filter in step with the staff list without losing the current choice.
+  const ownerSel = $('f-owner');
+  const chosen = ownerSel.value;
+  ownerSel.replaceChildren(
+    el('option', { value: '', text: 'All owners' }),
+    el('option', { value: '__none', text: 'Unassigned' }),
+    ...state.staff.map((s) => el('option', { value: s.handle || s.id, text: s.name || s.handle || s.id })));
+  ownerSel.value = chosen;
+
+  const board = $('board');
+  board.replaceChildren(...STAGES.map((stage) => {
+    const items = onBoard.filter((o) => o.stage === stage.id);
+    const stuckHere = items.filter((o) => isStuck(o, now)).length;
+    return el('section', { class: 'col' },
+      el('div', { class: 'col-head' },
+        el('h2', { text: stage.label }),
+        stuckHere ? el('span', { class: 'chip alert', text: stuckHere + ' stuck' }) : null,
+        el('span', { class: 'n num', text: String(items.length) })),
+      el('div', { class: 'col-body' },
+        items.length
+          ? el('div', { style: 'display:flex;flex-direction:column;gap:10px' }, ...items.map((o) => orderCard(o, now)))
+          : el('p', { class: 'empty', text: 'Nothing here' })));
+  }));
+}
+
+/* ---------- filters ---------- */
+
+$('q').addEventListener('input', (e) => { state.filters.q = e.target.value.trim().toLowerCase(); render(); });
+$('f-line').addEventListener('change', (e) => { state.filters.line = e.target.value; render(); });
+$('f-owner').addEventListener('change', (e) => { state.filters.owner = e.target.value; render(); });
+$('f-flag').addEventListener('change', (e) => { state.filters.flag = e.target.value; render(); });
+
+// "Days in stage" is a clock, not an event: re-render so a board left open overnight is
+// not quietly showing yesterday's ages.
+setInterval(() => { if (state.user) render(); }, 10 * 60 * 1000);
+
+/* ---------- sign in ---------- *
+ * Wired last on purpose. onAuthStateChanged fires as soon as it is registered, and it
+ * calls subscribe() -> render(), so every function those reach has to be defined by
+ * then. Registering this higher up leaves them in the temporal dead zone.
+ */
+
+$('signin').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('signin-err').textContent = '';
+  try {
+    await signInWithEmailAndPassword(auth, $('email').value.trim(), $('password').value);
+  } catch (err) {
+    // Deliberately vague: do not tell an unknown caller whether the address exists.
+    $('signin-err').textContent = 'That email and password did not work.';
+  }
+});
+
+$('signout').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, (user) => {
+  state.user = user;
+  $('gate').hidden = !!user;
+  $('app').hidden = !user;
+  if (!user) { state.orders = []; return; }
+  $('me').textContent = user.email || '';
+  subscribe();
+});
+
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+{
+  "indexes": [
+    {
+      "comment": "The board: one column per stage, oldest-in-stage first so stuck orders surface at the top.",
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "stage", "order": "ASCENDING" },
+        { "fieldPath": "stage_since", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "comment": "One editor's workload across the board.",
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "owner", "order": "ASCENDING" },
+        { "fieldPath": "stage", "order": "ASCENDING" },
+        { "fieldPath": "stage_since", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "comment": "Filter the board to one product line.",
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "product_line", "order": "ASCENDING" },
+        { "fieldPath": "stage", "order": "ASCENDING" },
+        { "fieldPath": "stage_since", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "comment": "What is due next, for the print queue.",
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "stage", "order": "ASCENDING" },
+        { "fieldPath": "event_date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "comment": "Rows the one-way Sheet mirror has not caught up with.",
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "synced_to_sheet_at", "order": "ASCENDING" },
+        { "fieldPath": "updated_at", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

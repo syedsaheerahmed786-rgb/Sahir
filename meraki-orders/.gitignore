@@ -1,0 +1,8 @@
+node_modules/
+.firebase/
+firebase-debug.log
+*-debug.log
+.runtimeconfig.json
+service-account*.json
+scripts/import-report.json
+test/board-preview.png
