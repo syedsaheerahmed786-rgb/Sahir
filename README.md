@@ -40,6 +40,12 @@ Each registration becomes a row in the **Registrations** tab: ID, name, mobile, 
 Open it at `https://syedsaheerahmed786-rgb.github.io/Sahir/invoice/`, or just open the file
 from disk — it works either way.
 
+It is themed to match the Run for All poster: near-black and deep forest green with a warm
+amber accent, and `assets/grr-logo-light.png` (a white version of the logo, generated from
+`grr-logo.png`) for use on dark backgrounds. The printed invoice keeps a **white body** under
+a green header band — a full-black A4 page wastes toner and reads wrong as a business
+document, so the brand comes through in the band, the table header and the totals block.
+
 **First run.** Go to **Settings** and fill in the organisation name, address, GSTIN, bank
 account and UPI ID. These print on every invoice. Set the number prefix and the next serial
 while you are there; numbers come out as `GRR/2026-27/004`, where the middle part is the
