@@ -243,6 +243,7 @@
   .s-sign { margin-top: 32px; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; font-size: 11px; }
   .s-sign .box { text-align: center; }
   .s-sign .rule { border-top: 1px solid #0c1718; width: 190px; margin-bottom: 6px; }
+  .s-sig { display: block; width: 172px; height: auto; max-height: 86px; object-fit: contain; margin: 0 auto -2px; }
   .s-pay { display: flex; gap: 14px; align-items: center; margin-top: 16px; }
   .s-pay img { width: 92px; height: 92px; border: 1px solid #e3e7e5; border-radius: 4px; }
   .s-tag { margin-top: 24px; border-top: 2px solid #06281c; padding-top: 11px; font-size: 10px; color: #6a7a74; display: flex; justify-content: space-between; gap: 14px; letter-spacing: .06em; }
@@ -252,6 +253,13 @@
   .pan-hint { display: none; }
   @media (max-width: 880px) { .pan-hint { display: inline; } }
   .note b { color: var(--text); }
+  .sig-row { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  .sig-preview {
+    flex: 0 0 auto; width: 210px; height: 92px; border: 1px dashed var(--line); border-radius: 12px;
+    background: #fff; display: flex; align-items: center; justify-content: center; padding: 8px;
+  }
+  .sig-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .sig-preview .none { font-size: .76rem; font-weight: 700; color: #8a9a94; letter-spacing: .1em; text-transform: uppercase; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .banner {
     border: 1px solid rgba(215,145,89,.42); background: rgba(215,145,89,.12); color: var(--amber-lit);
@@ -689,6 +697,24 @@
     </div>
 
     <div class="card">
+      <h2>Signature</h2>
+      <p class="hint">Printed above the signature line on every invoice. The signature in this repo is used by default.</p>
+      <div class="sig-row">
+        <div class="sig-preview" id="sigPreview"></div>
+        <div style="flex:1 1 240px;min-width:0">
+          <div class="actions">
+            <input type="file" id="sSignFile" accept="image/*" style="max-width:320px">
+            <button type="button" id="signClear">Use the default</button>
+          </div>
+          <label class="actions" style="font-weight:700;font-size:.82rem;gap:9px;margin-top:14px">
+            <input type="checkbox" id="sSignHide" style="width:20px;height:20px;min-height:0;accent-color:#19c184">
+            <span>Print the line without a signature</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Backup</h2>
       <p class="hint">Invoices live in this browser only. Clearing site data or switching device loses them, so export a backup now and then.</p>
       <div class="actions">
@@ -759,7 +785,7 @@ const DEFAULT_SETTINGS = {
   termsDefault: "Payment due within 15 days of the invoice date.\nPlease quote the invoice number with your payment.",
   notesDefault: "Thank you for supporting Run for All.",
   bankName: "", bank: "", acc: "", ifsc: "", upi: "", sign: "Authorised signatory",
-  logo: ""
+  logo: "", signImg: "", signHide: false
 };
 
 /* ============================ helpers ============================ */
@@ -1096,6 +1122,12 @@ function logoSrc() {
   return settings.logo || "../assets/grr-logo-light.png";
 }
 
+// The scanned signature sits on the white part of the sheet, above the rule.
+function signSrc() {
+  if (settings.signHide) return "";
+  return settings.signImg || "../assets/signature.png";
+}
+
 function upiQr(c) {
   if (!settings.upi || c.balance <= 0) return "";
   const url = "upi://pay?pa=" + encodeURIComponent(settings.upi) +
@@ -1227,7 +1259,9 @@ function renderSheet() {
         (c.showTax ? "Tax is charged as shown above. " : "") +
         "This is a computer-generated " + esc((inv.kind || "invoice").toLowerCase()) + "." +
       "</div>" +
-      '<div class="box"><div class="rule"></div>' +
+      '<div class="box">' +
+        (signSrc() ? '<img class="s-sig" src="' + esc(signSrc()) + '" alt="Signature" onerror="this.style.display=\'none\'">' : "") +
+        '<div class="rule"></div>' +
         "For <b>" + esc(org.org || "") + "</b><br>" + esc(settings.sign || "Authorised signatory") +
       "</div>" +
     "</div>" +
@@ -1486,10 +1520,20 @@ function settingsToForm() {
     const el = $(id);
     if (el) el.value = settings[SET_FIELDS[id]] == null ? "" : settings[SET_FIELDS[id]];
   });
+  $("sSignHide").checked = !!settings.signHide;
+  renderSigPreview();
   updateNumPreview();
 }
 
+function renderSigPreview() {
+  const src = signSrc();
+  $("sigPreview").innerHTML = src
+    ? '<img src="' + esc(src) + '" alt="Current signature" onerror="this.parentNode.innerHTML=\'<span class=&quot;none&quot;>Not found</span>\'">'
+    : '<span class="none">No signature</span>';
+}
+
 function formToSettings() {
+  settings.signHide = $("sSignHide").checked;
   Object.keys(SET_FIELDS).forEach(function (id) {
     const el = $(id);
     if (!el) return;
@@ -1670,6 +1714,35 @@ function wire() {
     $("barLogo").src = "../assets/grr-logo-light.png";
     renderSheet();
     toast("Back to the default logo.");
+  };
+
+  $("sSignFile").onchange = function (e) {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (f.size > 900 * 1024) { toast("Pick a signature image under 900 KB."); e.target.value = ""; return; }
+    const fr = new FileReader();
+    fr.onload = function () {
+      settings.signImg = String(fr.result);
+      settings.signHide = false;
+      $("sSignHide").checked = false;
+      if (writeLS(LS_SET, settings)) { renderSigPreview(); renderSheet(); toast("Signature updated."); }
+    };
+    fr.readAsDataURL(f);
+  };
+  $("signClear").onclick = function () {
+    settings.signImg = "";
+    settings.signHide = false;
+    $("sSignHide").checked = false;
+    writeLS(LS_SET, settings);
+    renderSigPreview();
+    renderSheet();
+    toast("Back to the default signature.");
+  };
+  $("sSignHide").onchange = function () {
+    settings.signHide = $("sSignHide").checked;
+    writeLS(LS_SET, settings);
+    renderSigPreview();
+    renderSheet();
   };
 
   $("exportBtn").onclick = function () {

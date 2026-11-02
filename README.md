@@ -49,7 +49,14 @@ document, so the brand comes through in the band, the table header and the total
 **First run.** Go to **Settings** and fill in the organisation name, address, GSTIN, bank
 account and UPI ID. These print on every invoice. Set the number prefix and the next serial
 while you are there; numbers come out as `GRR/2026-27/004`, where the middle part is the
-Indian financial year of the invoice date.
+Indian financial year of the invoice date. Put the signatory's name in **Signature name**
+under Payment details — it prints under the signature line.
+
+**Signature.** `assets/signature.png` is printed above the signature line on every invoice.
+It is a transparent cut-out, so it sits on the paper rather than on a white box. To change
+it, upload a new image under **Settings → Signature** (a photo or scan on plain paper is
+fine), or tick **Print the line without a signature** to leave the line empty for signing by
+hand.
 
 **Making an invoice.** The **Make an invoice** tab is a form, and the preview underneath is
 exactly what prints. Add a row per item with a quantity, rate and GST rate; the presets fill
