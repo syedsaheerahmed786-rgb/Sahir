@@ -7,6 +7,7 @@ A booking page for **Run for All**: Sunday 11 October 2026, 6:00 AM, Jyoti Bishn
 | `index.html` | The booking page. It's a single file with no build step. |
 | `apps-script/Code.gs` | The Google Sheet backend. It saves each registration as a row. |
 | `register-qr.png` / `.svg` | A QR code for `https://syedsaheerahmed786-rgb.github.io/Sahir/`, for the poster. |
+| `invoice/index.html` | The invoice portal. Also a single file with no build step. |
 
 ## 1. Connect a Google Sheet (about 5 minutes)
 
@@ -32,3 +33,44 @@ Each registration becomes a row in the **Registrations** tab: ID, name, mobile, 
 `https://syedsaheerahmed786-rgb.github.io/Sahir/`. The QR code in this repo already points to that address.
 
 **Option B: the GRR website.** Upload `index.html` as a page, for example `yoursite.com/register`. You can also add a "Register" button that links to the GitHub Pages address. If you use the GRR website, make a new QR code for that address.
+
+## 3. The invoice portal
+
+`invoice/index.html` is an internal tool for billing sponsors, stall holders and vendors.
+Open it at `https://syedsaheerahmed786-rgb.github.io/Sahir/invoice/`, or just open the file
+from disk — it works either way.
+
+**First run.** Go to **Settings** and fill in the organisation name, address, GSTIN, bank
+account and UPI ID. These print on every invoice. Set the number prefix and the next serial
+while you are there; numbers come out as `GRR/2026-27/004`, where the middle part is the
+Indian financial year of the invoice date.
+
+**Making an invoice.** The **Make an invoice** tab is a form, and the preview underneath is
+exactly what prints. Add a row per item with a quantity, rate and GST rate; the presets fill
+in a sponsorship package or a stall with its SAC code. GST follows the place of supply: inside
+Assam it splits into equal CGST and SGST halves, outside Assam it is charged as IGST. Pick
+**Invoice (no GST)** as the document type, or set every row to 0%, and the tax columns drop
+out altogether. Mixed rates on one invoice are summarised per rate, the way GST expects.
+
+**Getting it out.** **Print / Save as PDF** prints the sheet alone on A4 — in the print dialog
+choose "Save as PDF" for a file to email. **Share on WhatsApp** opens a chat with the invoice
+as text, to the client's number when one is filled in. **Copy as text** puts the same on the
+clipboard.
+
+**Saved invoices.** Every save lands in the **Saved** tab with running totals for billed,
+received and outstanding. From there you can reopen an invoice, duplicate it as a new draft,
+mark it paid, or export the register as CSV for your accountant.
+
+### Where the data lives
+
+Invoices are stored in the browser on the device you make them on, in `localStorage`. Nothing
+is uploaded anywhere, which also means:
+
+- they do not sync between your phone and your laptop,
+- clearing site data or browsing history for the site wipes them,
+- a different browser on the same machine sees a different set.
+
+So use **Settings → Export backup** after a billing session; it writes a `.json` file holding
+every invoice and all the settings, and **Import backup** reads it back on any device. If
+several people need the same list, put the exported file in shared storage and re-import it,
+or move the whole thing onto a Google Sheet the way the registration page does.
