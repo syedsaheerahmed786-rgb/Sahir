@@ -8,6 +8,8 @@ A booking page for **Run for All**: Sunday 11 October 2026, 6:00 AM, Jyoti Bishn
 | `apps-script/Code.gs` | The Google Sheet backend. It saves each registration as a row. |
 | `register-qr.png` / `.svg` | A QR code for `https://syedsaheerahmed786-rgb.github.io/Sahir/`, for the poster. |
 | `invoice/index.html` | The invoice portal. Also a single file with no build step. |
+| `invoice/standalone.html` | The same portal with the images inlined, for uploading to any host on its own. |
+| `invoice/build-standalone.py` | Regenerates `standalone.html` after you edit `index.html`. |
 
 ## 1. Connect a Google Sheet (about 5 minutes)
 
@@ -73,6 +75,24 @@ clipboard.
 **Saved invoices.** Every save lands in the **Saved** tab with running totals for billed,
 received and outstanding. From there you can reopen an invoice, duplicate it as a new draft,
 mark it paid, or export the register as CSV for your accountant.
+
+### Putting it on a host that isn't GitHub Pages
+
+`invoice/index.html` loads the logo and signature from `../assets/`, so it needs the repo
+around it. To put the portal on the GRR website instead, upload **`invoice/standalone.html`**
+— the same page with those images inlined, so it works on its own in any folder, on any host.
+Rename it to whatever you want the address to be, for example `invoice.html` for
+`guwahatirunandrave.in/invoice.html`, or drop it in as `invoice/index.html` for
+`guwahatirunandrave.in/invoice/`.
+
+It is a plain HTML page, so it works on static hosting, cPanel/Hostinger file manager, or as
+a WordPress page uploaded via the file manager (not pasted into the block editor, which
+strips the script). If you edit `index.html` afterwards, re-run `python3
+invoice/build-standalone.py` to rebuild it.
+
+Keep the address to yourself, or put it behind your host's password protection: the page
+carries no login, so anyone with the link can make invoices in their own browser. The page
+also sets `noindex`, so search engines leave it alone.
 
 ### Where the data lives
 
