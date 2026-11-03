@@ -13,10 +13,12 @@ const DEFAULT_DRAFTS = 3;
 const NOTIFY_EMAIL = '';
 // Drive folder for the uploaded designs. It's created in the owner's Drive on first use.
 const FOLDER_NAME = 'Meraki Design Approvals';
+// The website's bookings sheet ("Meraki Wedding Bookings(cards)"). Editors search it by order ID to start a customer file.
+const BOOKINGS_SHEET_ID = '1MCNCnPgRyjigbpYoagGeVD4YNXewcOO5F2CqKUqW_Qk';
 
 const TABS = {
   Projects: ['ID', 'Token', 'Customer', 'Phone', 'Format', 'Config', 'Drafts allowed', 'Status', 'Editor', 'Notes',
-    'Created', 'Updated', 'Approved draft', 'Approved at', 'Approved by', 'Folder ID'],
+    'Created', 'Updated', 'Approved draft', 'Approved at', 'Approved by', 'Folder ID', 'Order'],
   Drafts: ['Project ID', 'Draft', 'Editor', 'Created', 'Shared at', 'Pages'],
   Messages: ['ID', 'Project ID', 'Draft', 'From', 'Name', 'Page', 'X', 'Y', 'Text', 'Time', 'Done']
 };
@@ -31,6 +33,9 @@ function tab_(name) {
     sh.appendRow(TABS[name]);
     sh.setFrozenRows(1);
     if (name === 'Projects') sh.getRange('D:D').setNumberFormat('@'); // keep phone numbers as text
+  } else if (sh.getLastColumn() < TABS[name].length) {
+    // A column was added in a newer version of this script: name it in the header row.
+    sh.getRange(1, 1, 1, TABS[name].length).setValues([TABS[name]]);
   }
   return sh;
 }
@@ -72,6 +77,72 @@ function uid_(n) {
 
 function clean_(s, max) {
   return String(s == null ? '' : s).trim().slice(0, max);
+}
+
+/* ---------- bookings sheet ---------- */
+
+// Run this once from the Apps Script editor (choose it in the toolbar, press Run) so Google asks for access to the bookings sheet.
+function authorize() {
+  SpreadsheetApp.openById(BOOKINGS_SHEET_ID).getName();
+  DriveApp.getRootFolder();
+}
+
+function day_(v, pattern) {
+  return Object.prototype.toString.call(v) === '[object Date]'
+    ? Utilities.formatDate(v, Session.getScriptTimeZone(), pattern) : String(v == null ? '' : v).trim();
+}
+
+// Every order in the bookings sheet. The header row is the one with an "Order ID" cell.
+function bookings_() {
+  const values = SpreadsheetApp.openById(BOOKINGS_SHEET_ID).getSheets()[0].getDataRange().getValues();
+  const h = values.findIndex(function (r) { return r.some(function (c) { return String(c).trim().toLowerCase() === 'order id'; }); });
+  if (h < 0) return [];
+  const head = values[h].map(function (c) { return String(c).trim().toLowerCase(); });
+  const col = function (name) { return head.indexOf(name); };
+  const c = {
+    orderId: col('order id'), productId: col('product id'), product: col('product name'), customer: col('customer name'),
+    phone: col('whatsapp'), quantity: col('quantity'), weddingDate: col('wedding date'), pincode: col('pincode'),
+    coverUrl: col('cover image url'), insideUrl: col('inside card url')
+  };
+  return values.slice(h + 1).filter(function (r) { return String(r[c.orderId] || '').trim(); }).map(function (r) {
+    const get = function (k) { return c[k] < 0 ? '' : String(r[c[k]] == null ? '' : r[c[k]]).trim(); };
+    return {
+      orderId: get('orderId'), productId: get('productId'), product: get('product'), customer: get('customer'),
+      phone: get('phone'), quantity: get('quantity'), weddingDate: c.weddingDate < 0 ? '' : day_(r[c.weddingDate], 'yyyy-MM-dd'),
+      pincode: get('pincode'), coverUrl: get('coverUrl'), insideUrl: get('insideUrl'),
+      booked: day_(r[0], 'dd/MM/yyyy HH:mm') // the first column is the booking time
+    };
+  });
+}
+
+// An exact order ID (ORD-711576 or just 711576) wins; otherwise matches on order ID, name or phone, newest first.
+function findOrders_(q) {
+  q = String(q || '').trim();
+  if (q.length < 3) return [];
+  const up = q.toUpperCase(), low = q.toLowerCase(), digits = q.replace(/\D/g, '');
+  const all = bookings_();
+  const exact = all.filter(function (o) {
+    return o.orderId.toUpperCase() === up || (digits.length >= 4 && o.orderId.replace(/\D/g, '') === digits);
+  });
+  const found = exact.length ? exact : all.filter(function (o) {
+    return o.orderId.toLowerCase().indexOf(low) >= 0 || o.customer.toLowerCase().indexOf(low) >= 0 ||
+      (digits.length >= 5 && o.phone.replace(/\D/g, '').indexOf(digits) >= 0);
+  }).reverse().slice(0, 15);
+  const projects = rows_('Projects');
+  return found.map(function (o) {
+    o.files = projects.filter(function (p) { return (parse_(p.Order, {}) || {}).orderId === o.orderId; })
+      .map(function (p) { return { id: p.ID, customer: p.Customer, status: p.Status }; });
+    return o;
+  });
+}
+
+// Keeps only the order fields the portal shows, so a file can't carry anything else.
+function cleanOrder_(o) {
+  if (!o || !o.orderId) return '';
+  const out = {};
+  ['orderId', 'productId', 'product', 'customer', 'phone', 'quantity', 'weddingDate', 'pincode', 'coverUrl', 'insideUrl', 'booked']
+    .forEach(function (k) { out[k] = clean_(o[k], 500); });
+  return JSON.stringify(out);
 }
 
 /* ---------- project lookups ---------- */
@@ -121,7 +192,7 @@ function out_(p, editor) {
     approvedAt: iso_(p['Approved at']), approvedBy: p['Approved by'],
     drafts: drafts, messages: messages
   };
-  if (editor) { o.token = p.Token; o.notes = p.Notes; }
+  if (editor) { o.token = p.Token; o.notes = p.Notes; o.order = parse_(p.Order, null); }
   return o;
 }
 
@@ -167,10 +238,16 @@ function doGet(e) {
         return {
           id: p.ID, customer: p.Customer, phone: String(p.Phone), format: p.Format, status: p.Status, editor: p.Editor,
           draftsAllowed: Number(p['Drafts allowed']) || DEFAULT_DRAFTS, shared: shared, drafts: mine.length,
-          openCorrections: open, updated: iso_(p.Updated), created: iso_(p.Created)
+          openCorrections: open, updated: iso_(p.Updated), created: iso_(p.Created),
+          orderId: (parse_(p.Order, {}) || {}).orderId || ''
         };
       });
       return json_({ status: 'ok', projects: list });
+    }
+
+    if (q.action === 'orders') {
+      if (!editor) return json_({ status: 'denied' });
+      return json_({ status: 'ok', orders: findOrders_(q.q) });
     }
 
     if (q.action === 'project') {
@@ -228,7 +305,7 @@ function doPost(e) {
         Format: clean_(d.format, 30) || 'a4fold', Config: JSON.stringify(d.config || {}),
         'Drafts allowed': Math.max(1, Math.min(10, Number(d.draftsAllowed) || DEFAULT_DRAFTS)),
         Status: 'new', Editor: clean_(d.editor, 60), Notes: clean_(d.notes, 2000),
-        Created: new Date(), Updated: new Date()
+        Created: new Date(), Updated: new Date(), Order: cleanOrder_(d.order)
       };
       append_('Projects', p);
       return json_({ status: 'ok', project: out_(findProject_(p.ID), true) });

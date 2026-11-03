@@ -101,6 +101,15 @@ textarea { min-height: 90px; resize: vertical; }
 .kpi .val { font-family: var(--f-display); font-weight: 600; font-size: 1.6rem; line-height: 1.1; }
 .kpi[aria-pressed=true] { background: var(--accent-soft); }
 
+/* bookings */
+.olist { display: flex; flex-direction: column; gap: 10px; }
+.ocard { display: flex; gap: 14px; align-items: flex-start; border: 1px solid var(--line); border-radius: var(--r); padding: 12px; background: var(--panel); }
+.othumbs { display: flex; gap: 6px; flex: none; }
+.othumbs img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; background: var(--sunk); display: block; }
+.obody { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.obody .meta { font-size: .84rem; color: var(--muted); overflow-wrap: anywhere; }
+@media (max-width: 480px) { .ocard { flex-direction: column; } }
+
 /* format picker */
 .formats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 10px; }
 .fmt { text-align: left; border: 1.5px solid var(--line); background: var(--panel); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
@@ -402,6 +411,7 @@ const Remote = {
   list: () => Remote.get({ action: "list", k: auth.key }).then(r => r.projects),
   project: id => Remote.get({ action: "project", id, k: auth.key }).then(r => r.project),
   customer: t => Remote.get({ action: "project", t }).then(r => r.project),
+  orders: q => Remote.get({ action: "orders", q, k: auth.key }).then(r => r.orders),
   create: d => Remote.post({ action: "create", k: auth.key, editor: auth.name, ...d }).then(r => r.project),
   act: (id, action, d = {}) => Remote.post({ action, id, k: auth.key, editor: auth.name, ...d }).then(r => r.project),
   customerAct: (t, action, d = {}) => Remote.post({ action, t, ...d }).then(r => r.project),
@@ -441,7 +451,7 @@ const Local = {
   out(p, editor) {
     const o = JSON.parse(JSON.stringify(p));
     if (!editor) {
-      delete o.token; delete o.notes;
+      delete o.token; delete o.notes; delete o.order;
       o.drafts = o.drafts.filter(d => d.shared);
       o.drafts.forEach(d => Object.values(d.pages).forEach(pg => delete pg.print));
     }
@@ -454,10 +464,11 @@ const Local = {
       const sh = shared(p).length;
       return { id: p.id, customer: p.customer, phone: p.phone, format: p.format, status: p.status, editor: p.editor,
         draftsAllowed: p.draftsAllowed, shared: sh, drafts: p.drafts.length, updated: p.updated, created: p.created,
-        openCorrections: p.messages.filter(m => m.from === "customer" && m.draft === sh && !m.done).length };
+        openCorrections: p.messages.filter(m => m.from === "customer" && m.draft === sh && !m.done).length, orderId: (p.order || {}).orderId || "" };
     });
   },
   async project(id) { return this.out(this.find(this.db(), id), true); },
+  async orders() { throw new Error("Order search needs the Google Sheet connection. Use Custom create in demo mode."); },
   async customer(t) { const p = this.db().projects.find(x => x.token === t); if (!p) check({ status: "notfound" }); return this.out(p, false); },
   create(d) {
     return this.tx(db => {
@@ -465,7 +476,7 @@ const Local = {
       const now = new Date().toISOString();
       const p = { id: "MK-" + rid(5).toUpperCase(), token: rid(20), customer: d.customer.trim(), phone: String(d.phone || "").replace(/[^\d+]/g, ""),
         format: d.format, config: d.config, draftsAllowed: Math.max(1, Math.min(10, +d.draftsAllowed || 3)), status: "new",
-        editor: auth.name, notes: d.notes || "", created: now, updated: now, approvedDraft: null, approvedAt: "", approvedBy: "",
+        editor: auth.name, notes: d.notes || "", order: d.order || null, created: now, updated: now, approvedDraft: null, approvedAt: "", approvedBy: "",
         drafts: [], messages: [] };
       db.projects.push(p);
       return this.out(p, true);
@@ -900,13 +911,13 @@ async function renderDashboard() {
   };
   function draw() {
     const q = dashQuery.toLowerCase();
-    const shown = list.filter(groups[dashFilter][1]).filter(x => !q || [x.customer, x.phone, x.id].join(" ").toLowerCase().includes(q));
+    const shown = list.filter(groups[dashFilter][1]).filter(x => !q || [x.customer, x.phone, x.id, x.orderId].join(" ").toLowerCase().includes(q));
     $("#plist").innerHTML = shown.length ? shown.map(x => `<a class="pcard" href="#/p/${encodeURIComponent(x.id)}">
         <div class="row" style="justify-content:space-between"><b>${esc(x.customer)}</b>${statusChip(x.status)}</div>
         <div class="meta"><span>${esc(x.phone || "No phone")}</span><span>·</span><span>${esc((FORMATS[x.format] || FORMATS.custom).name)}</span></div>
         <div class="meta"><span class="chip">Draft ${x.shared}/${x.draftsAllowed}</span>
           ${x.openCorrections ? `<span class="chip accent">${x.openCorrections} open correction${x.openCorrections > 1 ? "s" : ""}</span>` : ""}
-          <span>${esc(x.id)}</span><span>· ${esc(fmtDate(x.updated))}</span></div></a>`).join("")
+          <span>${esc(x.orderId || x.id)}</span><span>· ${esc(fmtDate(x.updated))}</span></div></a>`).join("")
       : `<div class="panel empty" style="grid-column:1/-1">${list.length ? "No customers match." : "No customers yet. Start with <b>New customer</b>."}</div>`;
     $$("[data-f]").forEach(b => b.setAttribute("aria-pressed", b.dataset.f === dashFilter));
   }
@@ -914,7 +925,7 @@ async function renderDashboard() {
     <div class="toolbar"><h1 style="font-size:1.7rem">Customer files</h1><a class="btn primary" href="#/new">+ New customer</a></div>
     <div class="kpis">${Object.entries(groups).map(([k, [label, fn]]) =>
       `<button class="kpi" data-f="${k}" aria-pressed="false"><span class="eyebrow">${esc(label)}</span><span class="val">${list.filter(fn).length}</span></button>`).join("")}</div>
-    <input type="search" id="q" placeholder="Search name, phone or ID" value="${esc(dashQuery)}" aria-label="Search customers">
+    <input type="search" id="q" placeholder="Search name, phone or order ID" value="${esc(dashQuery)}" aria-label="Search customers">
     <div class="plist" id="plist"></div>`;
   bindHeader();
   $$("[data-f]").forEach(b => b.addEventListener("click", () => { dashFilter = b.dataset.f; draw(); }));
@@ -950,10 +961,38 @@ function bindFormatPicker(root, onChange) {
     onChange(b.dataset.fmt);
   }));
 }
+// One booking from the website's bookings sheet, as a card.
+function orderCard(o, actions = "") {
+  const pics = [["Cover", o.coverUrl], ["Inside", o.insideUrl]].filter(([, u]) => isUrl(u));
+  return `<div class="ocard">
+    ${pics.length ? `<div class="othumbs">${pics.map(([l, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener" title="${l} design"><img src="${esc(u)}" alt="${l} design" loading="lazy"></a>`).join("")}</div>` : ""}
+    <div class="obody">
+      <div class="row" style="justify-content:space-between"><b>${esc(o.customer || "No name")}</b><span class="chip">${esc(o.orderId)}</span></div>
+      <div class="meta">${esc(o.product || "No product")}${o.quantity ? ` · ${esc(o.quantity)} cards` : ""}${o.weddingDate ? ` · Wedding ${esc(fmtDay(o.weddingDate) || o.weddingDate)}` : ""}${o.pincode ? ` · PIN ${esc(o.pincode)}` : ""}</div>
+      <div class="meta">${esc(o.phone || "No phone")}${o.booked ? ` · booked ${esc(o.booked)}` : ""}${o.insideUrl && !isUrl(o.insideUrl) ? ` · Inside card: ${esc(o.insideUrl)}` : ""}</div>
+      ${actions ? `<div class="row" style="margin-top:4px">${actions}</div>` : ""}
+    </div></div>`;
+}
+let newMode = DEMO ? "custom" : "order";
 function renderNew() {
-  let fmt = DEFAULT_FORMAT;
+  let fmt = DEFAULT_FORMAT, order = null, found = [];
   app.innerHTML = editorHeader() + `<a href="#/" class="small">← Customer files</a>
-    <form class="panel" id="newForm"><h1 style="font-size:1.6rem">New customer file</h1>
+    <section class="panel">
+      <h1 style="font-size:1.6rem">New customer file</h1>
+      <div class="seg" role="group" aria-label="How to start the file">
+        <button type="button" data-mode="order">Find by order ID</button>
+        <button type="button" data-mode="custom">Custom create</button>
+      </div>
+      <div id="orderBox" style="display:flex;flex-direction:column;gap:12px">
+        <form id="orderSearch" class="row" style="align-items:stretch">
+          <input type="search" name="q" placeholder="Order ID, e.g. ORD-711576 (or name or phone)" style="flex:1;min-width:200px" autocomplete="off" aria-label="Order ID, name or phone">
+          <button class="btn primary">Search</button>
+        </form>
+        <div id="orderResults" class="olist"></div>
+      </div>
+    </section>
+    <form class="panel" id="newForm">
+      <div id="orderPicked"></div>
       <div class="grid-2" style="gap:14px">
         <label class="field">Customer name<input type="text" name="customer" required maxlength="80" placeholder="e.g. Priyanka & Rahul"></label>
         <label class="field">Phone (WhatsApp)<input type="tel" name="phone" inputmode="tel" maxlength="16" placeholder="10-digit mobile"></label>
@@ -961,22 +1000,58 @@ function renderNew() {
       <div class="field" style="gap:8px"><span style="font-weight:600;font-size:.88rem">Card format</span>${formatPicker(fmt)}</div>
       <div class="grid-2" style="gap:14px">
         <label class="field">Drafts for corrections<input type="number" name="drafts" min="1" max="10" value="3"></label>
-        <label class="field">Notes for editors <span class="hint">Order number, wedding date, side (bride/groom)… Customers don't see this.</span><textarea name="notes" rows="2"></textarea></label>
+        <label class="field">Notes for editors <span class="hint">Side (bride/groom), special requests… Customers don't see this.</span><textarea name="notes" rows="2"></textarea></label>
       </div>
-      <div class="row"><button class="btn primary big">Create file</button><a class="btn" href="#/">Cancel</a></div></form>`;
+      <div class="row"><button class="btn primary big" id="createBtn">Create file</button><a class="btn" href="#/">Cancel</a></div></form>`;
   bindHeader();
   const form = $("#newForm");
   bindFormatPicker(form, f => fmt = f);
+
+  function setMode(m) {
+    newMode = m;
+    $$("[data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === m));
+    $("#orderBox").hidden = m !== "order";
+    if (m === "custom") pick(null);
+    form.hidden = m === "order" && !order;
+    if (m === "order") setTimeout(() => $("#orderSearch input").focus(), 30);
+  }
+  function pick(o) {
+    order = o;
+    $("#orderPicked").innerHTML = o ? `<div class="field" style="gap:8px"><span style="font-weight:600;font-size:.88rem">Order</span>
+      ${orderCard(o, `<button type="button" class="btn ghost" id="unpick">Choose another order</button>`)}</div>` : "";
+    if (o) {
+      form.customer.value = o.customer; form.phone.value = o.phone;
+      form.hidden = false;
+      $("#unpick").addEventListener("click", () => { pick(null); form.hidden = true; $("#orderSearch input").focus(); });
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+  $$("[data-mode]").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode)));
+  $("#orderSearch").addEventListener("submit", async e => {
+    e.preventDefault();
+    const q = e.target.q.value.trim(), box = $("#orderResults");
+    if (q.length < 3) { box.innerHTML = `<p class="small muted">Type at least 3 characters.</p>`; return; }
+    box.innerHTML = `<div class="row small muted"><span class="spinner" style="width:16px;height:16px;border-width:2px"></span> Searching bookings…</div>`;
+    try { found = await api.orders(q); }
+    catch (err) { box.innerHTML = `<p class="note warn small">${esc(err.message)}</p>`; return; }
+    box.innerHTML = found.length ? found.map((o, i) => orderCard(o, (o.files || []).length
+        ? o.files.map(f => `<a class="btn primary" href="#/p/${encodeURIComponent(f.id)}">${o.files.length > 1 ? "Open " + esc(f.id) : "Open existing file"}</a>`).join("") + `<button type="button" class="btn ghost" data-pick="${i}">Create another file</button>`
+        : `<button type="button" class="btn primary" data-pick="${i}">Use this order</button>`)
+      + ((o.files || []).length ? `<p class="small muted" style="margin:-4px 0 0">${o.files.length > 1 ? o.files.length + " customer files already exist" : "A customer file already exists"} for this order.</p>` : "")).join("")
+      : `<p class="small muted">No booking matches “${esc(q)}”. Check the order ID, or use <b>Custom create</b>.</p>`;
+    $$("[data-pick]", box).forEach(b => b.addEventListener("click", () => pick(found[+b.dataset.pick])));
+  });
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const f = new FormData(form);
-    const btn = $("button.primary", form); btn.disabled = true; btn.textContent = "Creating…";
+    const btn = $("#createBtn"); btn.disabled = true; btn.textContent = "Creating…";
     try {
       const p = await api.create({ customer: String(f.get("customer")).trim(), phone: String(f.get("phone")).trim(), format: fmt,
-        config: readFormat(form, fmt), draftsAllowed: +f.get("drafts") || 3, notes: String(f.get("notes")).trim() });
+        config: readFormat(form, fmt), draftsAllowed: +f.get("drafts") || 3, notes: String(f.get("notes")).trim(), order });
       location.hash = "#/p/" + encodeURIComponent(p.id);
     } catch (err) { toast(err.message, true); btn.disabled = false; btn.textContent = "Create file"; }
   });
+  setMode(newMode);
 }
 
 /* ======================= editor: customer file ======================= */
@@ -1017,6 +1092,7 @@ function drawProject() {
       <div class="panel-head"><div><span class="eyebrow">${esc(p.id)} · ${esc(formatName(p))}</span><h1 style="font-size:1.7rem">${esc(p.customer)}</h1></div>
         <div class="row">${statusChip(p.status)}<span class="chip">Draft ${sh.length}/${p.draftsAllowed}</span><button class="btn" id="edit">Edit</button></div></div>
       <div class="row small">${p.phone ? `<a href="tel:${esc(p.phone)}">${esc(p.phone)}</a> · ` : ""}<span class="muted">Created ${esc(fmtDay(p.created))} by ${esc(p.editor || "—")}</span></div>
+      ${p.order ? orderCard(p.order) : ""}
       ${p.notes ? `<div class="note small" style="white-space:pre-wrap">${esc(p.notes)}</div>` : ""}
       <div class="row">
         <button class="btn" id="copyLink">Copy customer link</button>

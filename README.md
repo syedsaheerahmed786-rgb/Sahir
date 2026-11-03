@@ -48,7 +48,11 @@ Address: `https://syedsaheerahmed786-rgb.github.io/Sahir/approval/`. It is conne
 
 ## How it works
 
-1. **Editor creates a customer file:** name, WhatsApp number and card format. The default is the **A4 folded card**.
+1. **Editor creates a customer file.** *+ New customer* has two options:
+   - **Find by order ID:** search the website's bookings sheet ("Meraki Wedding Bookings(cards)") by order ID (`ORD-711576` or just `711576`), name or phone. Picking the order fills in the name and phone and links the order (product, quantity, wedding date, pincode, design images) to the file. If a file already exists for that order, the portal offers to open it.
+   - **Custom create:** type the name and phone yourself.
+
+   The default card format is the **A4 folded card**.
 2. **Editor uploads the drafts.** Drop single pages, a multi-page PDF exported from Canva, or A4 spreads. The portal places the pages itself:
    - It finds the QR code and puts that page on the back. If an A4 spread has the QR, that spread becomes the outside of the card and the QR half becomes the back.
    - It warns about a missing QR on the back, a page that isn't A5 shape, or low resolution.
@@ -75,5 +79,7 @@ To add another standard format, copy a block in `FORMATS` near the top of the sc
 3. Click **Deploy → New deployment → Web app**. Set *Execute as* to **Me** and *Who has access* to **Anyone**, then approve the permissions (Sheets, Drive and email).
 4. Copy the **Web app URL** (it ends in `/exec`) into `endpoint` in the `CONFIG` block of `approval/index.html`.
 5. Editors open the portal and sign in with their name and the team passcode.
+
+The bookings sheet is set in `BOOKINGS_SHEET_ID` at the top of the script. The account that deploys the script must be able to open it. After updating the script, choose **authorize** in the toolbar and press **Run** once so Google asks for access to that sheet.
 
 The script makes three tabs, **Projects**, **Drafts** and **Messages**, plus a Drive folder called **Meraki Design Approvals** with one folder per customer. Customers can see only their own shared drafts, through the private link. After editing the script, use **Deploy → Manage deployments → Edit → New version** so the URL stays the same.
