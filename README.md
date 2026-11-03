@@ -68,10 +68,15 @@ step 2 so a change to the guidelines applies to every editor's work from then on
 
 The mode switch at the top right decides where the two renders happen.
 
-**Manual — ChatGPT &amp; Gemini apps.** The page builds the prompts and holds the guidelines; the
-editor copies each prompt into the ChatGPT app and the Gemini app, downloads what comes back, and
-drops it into the next step. Works with ordinary ChatGPT and Gemini subscriptions, costs nothing
-per image, and needs no keys or signup. More clicks, and the editor has to move three files.
+**Manual — ChatGPT &amp; Gemini apps.** One button copies the prompt and opens the app in a window
+docked to the right half of the screen; the editor pastes, attaches, downloads, and drops the
+result back into the next step, where the page is already nudging the right drop zone. Works with
+ordinary ChatGPT and Gemini subscriptions, costs nothing per image, and needs no keys or signup.
+
+The two apps cannot be embedded *inside* the page — ChatGPT and Gemini both send
+`X-Frame-Options` / CSP `frame-ancestors` headers that forbid being put in an iframe, so a
+docked window is as close as a browser allows. If the pop-up is blocked, each step also has a
+plain "open in a tab" link.
 
 **Automatic — API keys.** The page calls both APIs itself: upload, pick a theme, press two
 buttons. Needs developer API keys (which are *not* included in a ChatGPT Plus or Gemini Advanced

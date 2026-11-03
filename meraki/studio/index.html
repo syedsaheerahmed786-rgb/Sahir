@@ -154,7 +154,8 @@ body[data-mode="manual"] .only-auto { display: none !important; }
 .manual { display: flex; flex-direction: column; gap: 13px; background: var(--gold-soft); border-radius: 8px; padding: 15px 17px; }
 .howto { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 9px; font-size: .9rem; }
 .howto b { font-weight: 600; }
-.howto .btn { margin-top: 5px; }
+.howto .btn { margin-top: 5px; margin-right: 6px; }
+.howto a.small { color: var(--muted); }
 .btn.sm { padding: 5px 12px; font-size: .82rem; }
 label.drop.sm { padding: 15px 14px; background: var(--panel); }
 .hide { display: none !important; }
@@ -343,8 +344,11 @@ label.drop.sm { padding: 15px 14px; background: var(--panel); }
 
     <div class="manual only-manual">
       <ol class="howto">
-        <li><b>Copy the prompt</b> above.<br><button class="btn ghost sm" id="copyPrompt2">Copy the prompt</button></li>
-        <li><b>Open <a href="https://chatgpt.com" target="_blank" rel="noopener">ChatGPT</a></b>, attach the customer photo, paste the prompt and send it.</li>
+        <li><b>Open ChatGPT beside this page.</b> The prompt is copied to your clipboard at the same time.<br>
+          <button class="btn sm" id="openGpt">Copy prompt &amp; open ChatGPT ▸</button>
+          <button class="btn ghost sm" id="copyPrompt2">Copy only</button>
+          <a class="small" href="https://chatgpt.com" target="_blank" rel="noopener">open in a tab</a></li>
+        <li><b>Attach the customer photo</b>, paste the prompt and send it.</li>
         <li><b>Download</b> the image ChatGPT gives you, then drop it back here.</li>
       </ol>
       <label class="drop sm" id="dropAttire">
@@ -384,8 +388,11 @@ label.drop.sm { padding: 15px 14px; background: var(--panel); }
     <div class="manual only-manual">
       <ol class="howto">
         <li><b>Download the attire image</b> above if you haven't yet — you need the file to attach.</li>
-        <li><b>Copy the Gemini prompt</b> above.<br><button class="btn ghost sm" id="copyVector2">Copy the prompt</button></li>
-        <li><b>Open <a href="https://gemini.google.com" target="_blank" rel="noopener">Gemini</a></b>, attach that image, paste the prompt and send it.</li>
+        <li><b>Open Gemini beside this page.</b> The prompt is copied at the same time.<br>
+          <button class="btn sm" id="openGem">Copy prompt &amp; open Gemini ▸</button>
+          <button class="btn ghost sm" id="copyVector2">Copy only</button>
+          <a class="small" href="https://gemini.google.com" target="_blank" rel="noopener">open in a tab</a></li>
+        <li><b>Attach that image</b>, paste the prompt and send it.</li>
         <li><b>Download</b> the artwork and drop it below.</li>
       </ol>
       <label class="drop sm" id="dropVector">
@@ -1005,6 +1012,49 @@ async function copyTo(text, sid, what) {
   try { await navigator.clipboard.writeText(text); status(sid, what + " copied — paste it into the app.", "ok"); }
   catch (_) { status(sid, "Could not copy. Select the text above and copy it by hand.", "err"); }
 }
+/* Neither app can be embedded in an iframe — both send X-Frame-Options /
+   frame-ancestors that forbid it — so the next best thing is a window docked to
+   the right half of the screen, with the prompt already on the clipboard. */
+const APPS = { chatgpt: "https://chatgpt.com/", gemini: "https://gemini.google.com/" };
+const popups = {};
+function openApp(which, sid) {
+  const held = popups[which];
+  if (held && !held.closed) { held.focus(); return true; }
+  const w = Math.max(480, Math.round((screen.availWidth || 1280) * 0.5));
+  const h = screen.availHeight || 800;
+  const left = (screen.availLeft || 0) + (screen.availWidth || 1280) - w;
+  const top = screen.availTop || 0;
+  const win = window.open(APPS[which], "meraki-" + which,
+    "popup=yes,noopener=no,width=" + w + ",height=" + h + ",left=" + left + ",top=" + top);
+  if (!win) {
+    status(sid, "Your browser blocked the pop-up. Allow pop-ups for this page, or use the \u201copen in a tab\u201d link.", "err");
+    return false;
+  }
+  popups[which] = win;
+  try { win.focus(); } catch (_) {}
+  return true;
+}
+async function handoff(which, text, sid, what) {
+  let copied = true;
+  try { await navigator.clipboard.writeText(text); }
+  catch (_) { copied = false; }
+  const opened = openApp(which, sid);
+  if (!opened) return;
+  status(sid, copied
+    ? what + " copied — paste it into " + (which === "chatgpt" ? "ChatGPT" : "Gemini") + ", attach the image, and send."
+    : "Opened, but the copy was blocked — select the prompt above and copy it by hand.", copied ? "ok" : "err");
+}
+$("openGpt").addEventListener("click", () => handoff("chatgpt", $("attirePrompt").value, "s2m", "Prompt"));
+$("openGem").addEventListener("click", () => handoff("gemini", fullVectorPrompt(), "s3m", "Gemini prompt"));
+
+/* When the editor comes back from the app, point at the drop zone they need. */
+window.addEventListener("focus", () => {
+  if (cfg.mode !== "manual" || !st.src) return;
+  if (!$("attirePrompt").value.trim()) return;
+  if (!st.attire) { if (popups.chatgpt) status("s2m", "Back? Drop ChatGPT's image below.", "ok"); return; }
+  if (!st.vector && popups.gemini) status("s3m", "Back? Drop Gemini's artwork below.", "ok");
+});
+
 $("copyPrompt2").addEventListener("click", () => copyTo($("attirePrompt").value, "s2m", "Prompt"));
 $("copyVector2").addEventListener("click", () => copyTo(fullVectorPrompt(), "s3m", "Gemini prompt"));
 $("fileAttire").addEventListener("change", (e) => takeStageFile(e.target.files && e.target.files[0], "attire"));
