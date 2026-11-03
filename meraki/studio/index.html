@@ -133,6 +133,12 @@ label.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .err-box { background: var(--bad-soft); color: var(--bad); border-radius: 8px; padding: 11px 14px; font-size: .85rem; white-space: pre-wrap; word-break: break-word; font-family: var(--f-mono); }
 .log { font-family: var(--f-mono); font-size: .76rem; color: var(--muted); background: var(--sunk); border-radius: 8px; padding: 12px 14px; max-height: 180px; overflow: auto; display: flex; flex-direction: column; gap: 3px; }
 .log .e { color: var(--bad); } .log .s { color: var(--ok); }
+.test-out { display: flex; flex-direction: column; gap: 7px; background: var(--sunk); border-radius: 8px; padding: 12px 14px; font-size: .86rem; }
+.test-out .line { display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: start; }
+.test-out .line i { font-style: normal; font-weight: 700; }
+.test-out .line.good i { color: var(--ok); } .test-out .line.bad i { color: var(--bad); }
+.test-out .line.bad span { color: var(--bad); }
+.test-out .line small { display: block; color: var(--muted); font-size: .8rem; margin-top: 2px; }
 .hide { display: none !important; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -238,10 +244,12 @@ label.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
       </details>
       <div class="actions">
         <button class="btn" id="saveCfg">Save settings</button>
+        <button class="btn ghost" id="testKeys"><span class="spin hide"></span>Test both keys</button>
         <button class="btn ghost" id="resetCfg">Reset to defaults</button>
         <button class="btn ghost" id="clearKeys">Forget keys</button>
         <span class="status" id="cfgStatus"></span>
       </div>
+      <div class="test-out hide" id="testOut" aria-live="polite"></div>
     </div>
   </details>
 
@@ -916,6 +924,74 @@ document.addEventListener("paste", (e) => {
   if (/^(INPUT|TEXTAREA)$/.test(document.activeElement && document.activeElement.tagName)) return;
   const items = (e.clipboardData && e.clipboardData.files) || [];
   if (items.length) { e.preventDefault(); takeFile(items[0]); }
+});
+
+/* Check both keys without spending anything: list the OpenAI models, and read the
+   Gemini model's metadata. Catches a wrong key, a wrong model name and an unverified
+   OpenAI org before an editor burns a render finding out. */
+async function testOpenAIKey() {
+  if (!cfg.oaKey) return [{ ok: false, text: "No OpenAI key set.", hint: "Paste it in the box above and save." }];
+  let res;
+  try {
+    res = await fetch(cfg.oaBase.replace(/\/+$/, "") + "/models", { headers: { "Authorization": "Bearer " + cfg.oaKey } });
+  } catch (err) { throw netError(err, "OpenAI"); }
+  if (!res.ok) throw await readApiError(res, "OpenAI");
+  const j = await res.json();
+  const ids = ((j && j.data) || []).map(m => m.id);
+  const out = [{ ok: true, text: "OpenAI key works — " + ids.length + " models available." }];
+  out.push(ids.includes(cfg.mImage)
+    ? { ok: true, text: "Image model " + cfg.mImage + " is available." }
+    : { ok: false, text: "Image model " + cfg.mImage + " is not listed on this key.",
+        hint: "Either the name is wrong, or the OpenAI organisation still needs verifying before gpt-image-1 unlocks. Step 3 will fail until one of those is fixed." });
+  out.push(ids.includes(cfg.mText)
+    ? { ok: true, text: "Text model " + cfg.mText + " is available." }
+    : { ok: false, text: "Text model " + cfg.mText + " is not listed on this key.",
+        hint: "Only needed for \u201clet ChatGPT rewrite the prompt\u201d. Pick a model name this key can see." });
+  return out;
+}
+async function testGeminiKey() {
+  if (!cfg.gmKey) return [{ ok: false, text: "No Gemini key set.", hint: "Paste it in the box above and save." }];
+  const url = cfg.gmBase.replace(/\/+$/, "") + "/models/" + encodeURIComponent(cfg.mGem);
+  let res;
+  try { res = await fetch(url, { headers: { "x-goog-api-key": cfg.gmKey } }); }
+  catch (err) { throw netError(err, "Gemini"); }
+  if (res.status === 404) return [{ ok: false, text: "Gemini has no model called " + cfg.mGem + ".",
+    hint: "The key is being read, but that model name is wrong or not available to it. Try gemini-2.5-flash-image." }];
+  if (!res.ok) throw await readApiError(res, "Gemini");
+  const j = await res.json();
+  const methods = (j && j.supportedGenerationMethods) || [];
+  const out = [{ ok: true, text: "Gemini key works — " + (j.displayName || cfg.mGem) + " found." }];
+  if (methods.length && methods.indexOf("generateContent") < 0)
+    out.push({ ok: false, text: "That model does not support generateContent.",
+      hint: "Step 4 needs an image model that does. Try gemini-2.5-flash-image." });
+  return out;
+}
+$("testKeys").addEventListener("click", async (ev) => {
+  const btn = ev.currentTarget, box = $("testOut");
+  formToCfg(); saveCfg(); paintKeyState();
+  busy(btn, true);
+  box.classList.remove("hide"); box.innerHTML = "";
+  status("cfgStatus", "Testing…");
+  const lines = [];
+  for (const [name, fn] of [["OpenAI", testOpenAIKey], ["Gemini", testGeminiKey]]) {
+    try { (await fn()).forEach(l => lines.push(l)); }
+    catch (err) { lines.push({ ok: false, text: name + " check failed.", hint: err.message }); }
+  }
+  box.innerHTML = "";
+  lines.forEach(l => {
+    const row = document.createElement("div");
+    row.className = "line " + (l.ok ? "good" : "bad");
+    const mark = document.createElement("i"); mark.textContent = l.ok ? "\u2713" : "\u2717";
+    const body = document.createElement("span");
+    body.appendChild(document.createTextNode(l.text));
+    if (l.hint) { const h = document.createElement("small"); h.textContent = l.hint; body.appendChild(h); }
+    row.appendChild(mark); row.appendChild(body);
+    box.appendChild(row);
+  });
+  const bad = lines.filter(l => !l.ok).length;
+  status("cfgStatus", bad ? bad + " thing" + (bad > 1 ? "s" : "") + " to fix" : "Both keys are good to go.", bad ? "err" : "ok");
+  lines.forEach(l => log((l.ok ? "OK  " : "ERR ") + l.text, l.ok ? "s" : "e"));
+  busy(btn, false);
 });
 
 /* settings wiring */

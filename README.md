@@ -84,6 +84,11 @@ Two things follow from that:
   **Advanced → API endpoints** fields at the bottom of the settings panel point the page at it —
   it calls the same paths, so a plain pass-through proxy works.
 
+Then press **Test both keys**. It lists the OpenAI models the key can see and reads the Gemini
+model's details — no renders, so it costs nothing — and says exactly what is wrong: a bad key, a
+model name that key can't see, or an OpenAI org that still needs verifying. Do this before the
+first real order rather than finding out mid-render.
+
 Also in settings: which models to use, render size (portrait / square / landscape), quality, and
 transparent vs. white background. The model names are plain text fields on purpose — when OpenAI
 or Google renames a model, change it here instead of editing the HTML.
