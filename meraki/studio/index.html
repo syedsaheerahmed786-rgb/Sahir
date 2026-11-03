@@ -139,6 +139,24 @@ label.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .test-out .line.good i { color: var(--ok); } .test-out .line.bad i { color: var(--bad); }
 .test-out .line.bad span { color: var(--bad); }
 .test-out .line small { display: block; color: var(--muted); font-size: .8rem; margin-top: 2px; }
+body[data-mode="auto"] .only-manual { display: none !important; }
+body[data-mode="manual"] .only-auto { display: none !important; }
+.modepick { display: flex; gap: 4px; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--panel); }
+.modepick label { padding: 6px 14px; border-radius: 999px; font-size: .85rem; cursor: pointer; white-space: nowrap; }
+.modepick label:has(input:checked) { background: var(--ink); color: var(--bg); }
+.modepick input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.modepick label:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 620px) {
+  .modepick .wide-only { display: none; }
+  .top > div:last-child { align-items: flex-start !important; width: 100%; }
+  .top .small.only-manual { text-align: left !important; max-width: none !important; }
+}
+.manual { display: flex; flex-direction: column; gap: 13px; background: var(--gold-soft); border-radius: 8px; padding: 15px 17px; }
+.howto { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 9px; font-size: .9rem; }
+.howto b { font-weight: 600; }
+.howto .btn { margin-top: 5px; }
+.btn.sm { padding: 5px 12px; font-size: .82rem; }
+label.drop.sm { padding: 15px 14px; background: var(--panel); }
 .hide { display: none !important; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -152,7 +170,14 @@ label.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
       <h1>Couple <span>artwork</span> studio</h1>
       <p class="muted">Upload the customer photo, pick the theme, and work down the page. ChatGPT dresses the couple, Gemini turns it into vector art.</p>
     </div>
-    <div class="keys-state"><i class="dot" id="keyDot"></i><span id="keyText">Checking keys…</span></div>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+      <div class="modepick" id="modepick" role="radiogroup" aria-label="How the renders are made">
+        <label><input type="radio" name="mode" value="auto">Automatic<span class="wide-only"> · API keys</span></label>
+        <label><input type="radio" name="mode" value="manual">Manual<span class="wide-only"> · ChatGPT &amp; Gemini apps</span></label>
+      </div>
+      <div class="keys-state only-auto"><i class="dot" id="keyDot"></i><span id="keyText">Checking keys…</span></div>
+      <p class="small muted only-manual" style="max-width:34ch;text-align:right">Uses your ChatGPT and Gemini subscriptions. No API key, no per-image cost.</p>
+    </div>
   </header>
 
   <nav class="steps" aria-label="Progress">
@@ -163,7 +188,7 @@ label.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
   </nav>
 
   <!-- ───────────── settings ───────────── -->
-  <details class="setup" id="setup">
+  <details class="setup only-auto" id="setup">
     <summary>Keys &amp; models <span class="small muted" id="setupSummary"></span></summary>
     <div class="setup-body">
       <div class="warn-box">
@@ -302,7 +327,7 @@ label.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
     <p class="small muted">This is what goes to ChatGPT with the photo. Edit it freely — the house guidelines at the bottom are added automatically.</p>
     <textarea id="attirePrompt" rows="9" aria-label="Attire prompt"></textarea>
     <div class="actions">
-      <button class="btn ghost" id="gptPrompt"><span class="spin hide"></span>Let ChatGPT read the photo and rewrite this</button>
+      <button class="btn ghost only-auto" id="gptPrompt"><span class="spin hide"></span>Let ChatGPT read the photo and rewrite this</button>
       <button class="btn link" id="rebuildPrompt">Reset to the theme template</button>
     </div>
     <details>
@@ -310,11 +335,25 @@ label.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
       <textarea id="guidelines" rows="6" style="margin-top:10px" aria-label="House guidelines"></textarea>
       <button class="btn link" id="resetGuides">Reset guidelines</button>
     </details>
-    <div class="actions">
+    <div class="actions only-auto">
       <button class="btn" id="runAttire"><span class="spin hide"></span>Render the attire with ChatGPT</button>
       <span class="status" id="s2"></span>
     </div>
-    <div class="err-box hide" id="e2"></div>
+    <div class="err-box hide only-auto" id="e2"></div>
+
+    <div class="manual only-manual">
+      <ol class="howto">
+        <li><b>Copy the prompt</b> above.<br><button class="btn ghost sm" id="copyPrompt2">Copy the prompt</button></li>
+        <li><b>Open <a href="https://chatgpt.com" target="_blank" rel="noopener">ChatGPT</a></b>, attach the customer photo, paste the prompt and send it.</li>
+        <li><b>Download</b> the image ChatGPT gives you, then drop it back here.</li>
+      </ol>
+      <label class="drop sm" id="dropAttire">
+        <input type="file" id="fileAttire" accept="image/png,image/jpeg,image/webp,image/*">
+        <span class="big">Drop ChatGPT's image here, click to choose, or paste</span><br>
+        <span class="small muted">A PNG with a transparent background is best — ask ChatGPT for one if it gave you a white box.</span>
+      </label>
+      <span class="status" id="s2m"></span>
+    </div>
   </section>
 
   <!-- ───────────── 3. attire render ───────────── -->
@@ -323,10 +362,11 @@ label.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
     <div class="shot">
       <div class="frame"><img id="attireImg" alt="The couple restyled in the chosen wedding attire"></div>
       <div style="display:flex;flex-direction:column;gap:12px">
-        <p class="small muted">Check the faces and the attire before you go on. Not right? Edit the prompt above and render again.</p>
+        <p class="small muted only-auto">Check the faces and the attire before you go on. Not right? Edit the prompt above and render again.</p>
+        <p class="small muted only-manual">Check the faces and the attire before you go on. Not right? Edit the prompt in step 2 and run it in ChatGPT again.</p>
         <div class="actions">
           <button class="btn ghost" id="dlAttire">Download this PNG</button>
-          <button class="btn link" id="redoAttire">Render again</button>
+          <button class="btn link only-auto" id="redoAttire">Render again</button>
         </div>
       </div>
     </div>
@@ -335,11 +375,25 @@ label.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
       <textarea id="vectorPrompt" rows="5"></textarea>
       <button class="btn link" id="resetVector" style="align-self:flex-start">Reset to the default</button>
     </div>
-    <div class="actions">
+    <div class="actions only-auto">
       <button class="btn" id="runVector"><span class="spin hide"></span>Send to Gemini for the vector artwork</button>
       <span class="status" id="s3"></span>
     </div>
-    <div class="err-box hide" id="e3"></div>
+    <div class="err-box hide only-auto" id="e3"></div>
+
+    <div class="manual only-manual">
+      <ol class="howto">
+        <li><b>Download the attire image</b> above if you haven't yet — you need the file to attach.</li>
+        <li><b>Copy the Gemini prompt</b> above.<br><button class="btn ghost sm" id="copyVector2">Copy the prompt</button></li>
+        <li><b>Open <a href="https://gemini.google.com" target="_blank" rel="noopener">Gemini</a></b>, attach that image, paste the prompt and send it.</li>
+        <li><b>Download</b> the artwork and drop it below.</li>
+      </ol>
+      <label class="drop sm" id="dropVector">
+        <input type="file" id="fileVector" accept="image/png,image/jpeg,image/webp,image/*">
+        <span class="big">Drop Gemini's artwork here, click to choose, or paste</span>
+      </label>
+      <span class="status" id="s3m"></span>
+    </div>
   </section>
 
   <!-- ───────────── 4. final ───────────── -->
@@ -351,7 +405,7 @@ label.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
         <p class="small muted">The finished artwork, ready for the card layout. It's a high-resolution PNG — trace it in Illustrator or CorelDRAW if the job needs true curves.</p>
         <div class="actions">
           <button class="btn" id="dlVector">Download the artwork</button>
-          <button class="btn ghost" id="redoVector">Run Gemini again</button>
+          <button class="btn ghost only-auto" id="redoVector">Run Gemini again</button>
         </div>
         <div class="actions">
           <button class="btn link" id="dlBoth">Download both renders</button>
@@ -434,6 +488,7 @@ const DEFAULTS = {
   size: "1024x1536", quality: "high", bg: "transparent", fidelity: true,
   oaBase: "https://api.openai.com/v1",
   gmBase: "https://generativelanguage.googleapis.com/v1beta",
+  mode: "auto",
   guidelines: DEFAULT_GUIDELINES,
   vectorPrompt: DEFAULT_VECTOR_PROMPT,
   theme: "assamese"
@@ -475,7 +530,7 @@ function paintKeyState() {
   dot.className = "dot " + (oa && gm ? "on" : "off");
   text.textContent = oa && gm ? "Both keys set" : !oa && !gm ? "No keys yet — open Keys & models" : oa ? "Gemini key missing" : "OpenAI key missing";
   $("setupSummary").textContent = oa && gm ? "· ready" : "· needs setup";
-  if (!oa || !gm) $("setup").open = true;
+  if ((!oa || !gm) && cfg.mode === "auto") $("setup").open = true;
 }
 
 /* ─────────── small helpers ─────────── */
@@ -744,7 +799,53 @@ async function geminiVectorize(prompt) {
     (said ? " It said: " + said.slice(0, 400) : " Check that the model in Keys & models is an image model."));
 }
 
+/* ─────────── mode ─────────── */
+function paintMode() {
+  document.body.dataset.mode = cfg.mode;
+  const r = document.querySelector('#modepick input[value="' + cfg.mode + '"]');
+  if (r) r.checked = true;
+  if (cfg.mode === "auto") paintKeyState();
+}
+document.querySelectorAll('#modepick input').forEach(r => {
+  r.addEventListener("change", () => {
+    cfg.mode = r.value; saveCfg(); paintMode();
+    log("Switched to " + (r.value === "auto" ? "automatic (API keys)" : "manual (ChatGPT & Gemini apps)") + " mode");
+  });
+});
+
 /* ─────────── flow ─────────── */
+/* Both the API render and a manual upload land here, so the rest of the page
+   behaves the same whichever mode the editor is in. */
+function setAttire(img, how) {
+  st.attire = { b64: img.b64, mime: img.mime || "image/png", dataUrl: img.dataUrl || ("data:image/png;base64," + img.b64) };
+  st.vector = null;
+  $("attireImg").src = st.attire.dataUrl;
+  lock("p3", false); lock("p4", true);
+  status("s3", ""); status("s3m", "");
+  log("Attire image set (" + how + ", " + Math.round(st.attire.b64.length * 0.75 / 1024) + " KB)", "s");
+  $("p3").scrollIntoView({ behavior: "smooth", block: "start" });
+  paintSteps();
+}
+function setVector(img, how) {
+  st.vector = { b64: img.b64, mime: img.mime || "image/png", dataUrl: img.dataUrl || ("data:image/png;base64," + img.b64) };
+  $("vectorImg").src = st.vector.dataUrl;
+  lock("p4", false);
+  log("Vector artwork set (" + how + ", " + Math.round(st.vector.b64.length * 0.75 / 1024) + " KB)", "s");
+  $("p4").scrollIntoView({ behavior: "smooth", block: "start" });
+  paintSteps();
+}
+async function takeStageFile(file, which) {
+  const sid = which === "attire" ? "s2m" : "s3m";
+  if (!file) return;
+  status(sid, "Reading…");
+  try {
+    const img = await normalizeImage(file);
+    if (which === "attire") setAttire(img, "uploaded from ChatGPT");
+    else setVector(img, "uploaded from Gemini");
+    status(sid, "Done — it's in step " + (which === "attire" ? "3" : "4") + " below.", "ok");
+  } catch (err) { status(sid, err.message, "err"); log(err.message, "e"); }
+}
+
 async function takeFile(file) {
   if (!file) return;
   if (!/^image\//.test(file.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name || "")) {
@@ -774,7 +875,8 @@ async function takeFile(file) {
 }
 function clearShot() {
   st.src = null; st.attire = null; st.vector = null;
-  $("file").value = "";
+  $("file").value = ""; $("fileAttire").value = ""; $("fileVector").value = "";
+  status("s2m", ""); status("s3m", "");
   $("shot").classList.add("hide");
   $("drop").classList.remove("hide");
   $("clearShot").classList.add("hide");
@@ -841,15 +943,8 @@ async function runAttire(btn) {
     busy(btn, true); status("s2", "ChatGPT is rendering the attire — this usually takes 20–60 seconds…");
     log("Rendering with " + cfg.mImage + " (" + cfg.size + ", " + cfg.quality + ", " + cfg.bg + ")");
     const b64 = await gptRenderAttire(prompt);
-    st.attire = { b64, mime: "image/png", dataUrl: "data:image/png;base64," + b64 };
-    st.vector = null;
-    $("attireImg").src = st.attire.dataUrl;
-    lock("p3", false); lock("p4", true);
+    setAttire({ b64, mime: "image/png" }, "rendered by " + cfg.mImage);
     status("s2", "Attire render done.", "ok");
-    status("s3", "");
-    log("Attire render done (" + Math.round(b64.length * 0.75 / 1024) + " KB)", "s");
-    $("p3").scrollIntoView({ behavior: "smooth", block: "start" });
-    paintSteps();
   } catch (err) {
     status("s2", "The render failed.", "err");
     showErr("e2", err.message); log(err.message, "e");
@@ -869,13 +964,8 @@ async function runVector(btn) {
     busy(btn, true); status("s3", "Gemini is drawing the vector artwork…");
     log("Vectorising with " + cfg.mGem);
     const out = await geminiVectorize(prompt);
-    st.vector = { b64: out.b64, mime: out.mime, dataUrl: "data:" + out.mime + ";base64," + out.b64 };
-    $("vectorImg").src = st.vector.dataUrl;
-    lock("p4", false);
+    setVector({ b64: out.b64, mime: out.mime, dataUrl: "data:" + out.mime + ";base64," + out.b64 }, "rendered by " + cfg.mGem);
     status("s3", "Artwork ready below.", "ok");
-    log("Vector artwork done (" + Math.round(out.b64.length * 0.75 / 1024) + " KB)", "s");
-    $("p4").scrollIntoView({ behavior: "smooth", block: "start" });
-    paintSteps();
   } catch (err) {
     status("s3", "Gemini failed.", "err");
     showErr("e3", err.message); log(err.message, "e");
@@ -910,6 +1000,35 @@ $("startOver").addEventListener("click", () => {
 $("clearShot").addEventListener("click", clearShot);
 $("clearLog").addEventListener("click", () => { $("log").innerHTML = ""; });
 
+/* manual-mode wiring */
+async function copyTo(text, sid, what) {
+  try { await navigator.clipboard.writeText(text); status(sid, what + " copied — paste it into the app.", "ok"); }
+  catch (_) { status(sid, "Could not copy. Select the text above and copy it by hand.", "err"); }
+}
+$("copyPrompt2").addEventListener("click", () => copyTo($("attirePrompt").value, "s2m", "Prompt"));
+$("copyVector2").addEventListener("click", () => copyTo(fullVectorPrompt(), "s3m", "Gemini prompt"));
+$("fileAttire").addEventListener("change", (e) => takeStageFile(e.target.files && e.target.files[0], "attire"));
+$("fileVector").addEventListener("change", (e) => takeStageFile(e.target.files && e.target.files[0], "vector"));
+[["dropAttire", "attire"], ["dropVector", "vector"]].forEach(([id, which]) => {
+  const z = $(id);
+  ["dragenter","dragover"].forEach(t => z.addEventListener(t, (e) => { e.preventDefault(); z.classList.add("over"); }));
+  ["dragleave","dragend","drop"].forEach(t => z.addEventListener(t, () => z.classList.remove("over")));
+  z.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) takeStageFile(f, which);
+  });
+});
+/* In manual mode a paste goes to whichever stage is waiting for an image. */
+function pasteTarget() {
+  if (!st.src) return "src";
+  if (cfg.mode !== "manual") return "src";
+  if (!$("attirePrompt").value.trim()) return "src";
+  if (!st.attire) return "attire";
+  if (!st.vector) return "vector";
+  return "src";
+}
+
 /* upload wiring: click, drop, paste */
 $("file").addEventListener("change", (e) => takeFile(e.target.files && e.target.files[0]));
 const drop = $("drop");
@@ -923,7 +1042,10 @@ drop.addEventListener("drop", (e) => {
 document.addEventListener("paste", (e) => {
   if (/^(INPUT|TEXTAREA)$/.test(document.activeElement && document.activeElement.tagName)) return;
   const items = (e.clipboardData && e.clipboardData.files) || [];
-  if (items.length) { e.preventDefault(); takeFile(items[0]); }
+  if (!items.length) return;
+  e.preventDefault();
+  const t = pasteTarget();
+  if (t === "src") takeFile(items[0]); else takeStageFile(items[0], t);
 });
 
 /* Check both keys without spending anything: list the OpenAI models, and read the
@@ -1022,7 +1144,7 @@ $("notes").addEventListener("change", () => {
 $("attirePrompt").addEventListener("input", paintSteps);
 
 /* boot */
-cfgToForm(); paintThemes(); paintAttireNote(); paintKeyState(); paintSteps();
+cfgToForm(); paintThemes(); paintAttireNote(); paintMode(); paintKeyState(); paintSteps();
 log("Studio ready");
 </script>
 </body>

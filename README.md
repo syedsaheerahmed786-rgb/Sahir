@@ -64,9 +64,26 @@ The house guidelines — keep the faces recognisable, both people full-length, n
 text or watermark — are added to every prompt automatically, and are editable in one place at
 step 2 so a change to the guidelines applies to every editor's work from then on.
 
-## Setting it up (each editor, once)
+## Two ways to run it
 
-Open **Keys & models** at the top of the page and paste two keys:
+The mode switch at the top right decides where the two renders happen.
+
+**Manual — ChatGPT &amp; Gemini apps.** The page builds the prompts and holds the guidelines; the
+editor copies each prompt into the ChatGPT app and the Gemini app, downloads what comes back, and
+drops it into the next step. Works with ordinary ChatGPT and Gemini subscriptions, costs nothing
+per image, and needs no keys or signup. More clicks, and the editor has to move three files.
+
+**Automatic — API keys.** The page calls both APIs itself: upload, pick a theme, press two
+buttons. Needs developer API keys (which are *not* included in a ChatGPT Plus or Gemini Advanced
+subscription — they are separate products, billed per image).
+
+Either way the prompts, the guidelines, the themes and the file naming are identical, so the work
+is consistent whichever mode an editor uses. Start in manual mode; switch to automatic later if
+the volume justifies the setup.
+
+## Setting up automatic mode (each editor, once)
+
+Switch the mode to **Automatic**, open **Keys & models**, and paste two keys:
 
 | Key | Where it comes from |
 |---|---|
