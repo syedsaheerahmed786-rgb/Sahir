@@ -7,6 +7,7 @@ A booking page for **Run for All**: Sunday 11 October 2026, 6:00 AM, Jyoti Bishn
 | `index.html` | The booking page. It's a single file with no build step. |
 | `apps-script/Code.gs` | The Google Sheet backend. It saves each registration as a row. |
 | `register-qr.png` / `.svg` | A QR code for `https://syedsaheerahmed786-rgb.github.io/Sahir/`, for the poster. |
+| `meraki/studio/index.html` | **Art studio** — the editor tool that turns a customer photo into regional-theme vector artwork. |
 
 ## 1. Connect a Google Sheet (about 5 minutes)
 
@@ -32,3 +33,75 @@ Each registration becomes a row in the **Registrations** tab: ID, name, mobile, 
 `https://syedsaheerahmed786-rgb.github.io/Sahir/`. The QR code in this repo already points to that address.
 
 **Option B: the GRR website.** Upload `index.html` as a page, for example `yoursite.com/register`. You can also add a "Register" button that links to the GitHub Pages address. If you use the GRR website, make a new QR code for that address.
+
+
+---
+
+# Meraki Art Studio (editor tool)
+
+`meraki/studio/index.html` — one page where an editor turns a customer photo into finished
+couple artwork. Open it at
+`https://syedsaheerahmed786-rgb.github.io/Sahir/meraki/studio/`
+(there's also a link in the top of the Growth hub).
+
+## What it does
+
+1. **Photo & theme.** The editor drops in the customer photo and picks a theme — Assamese,
+   Bengali, Punjabi, Tamil, Malayali, Telugu, Marathi, Gujarati, Rajasthani, Odia, Manipuri,
+   Kashmiri, or *Other* to type the attire by hand. Each theme carries a written description of
+   what the bride and groom wear, so every editor sends the same brief.
+2. **Prompt.** The page builds the attire prompt from the theme, the order notes and the house
+   guidelines. The editor can edit it, or press **Let ChatGPT read the photo and rewrite this** —
+   that sends the photo to a vision model, which writes a prompt tailored to the actual pose and
+   positions.
+3. **Attire render.** ChatGPT (`gpt-image-1`) redraws the couple in that attire on a
+   transparent background. The editor checks the faces, downloads the PNG, or re-renders.
+4. **Vector artwork.** That render goes to Gemini with *"High quality detailed vector
+   illustration of this image. No backdrop needed…"*. Download the finished PNG and move on to
+   the next customer.
+
+The house guidelines — keep the faces recognisable, both people full-length, no background, no
+text or watermark — are added to every prompt automatically, and are editable in one place at
+step 2 so a change to the guidelines applies to every editor's work from then on.
+
+## Setting it up (each editor, once)
+
+Open **Keys & models** at the top of the page and paste two keys:
+
+| Key | Where it comes from |
+|---|---|
+| OpenAI | platform.openai.com → API keys |
+| Gemini | aistudio.google.com → Get API key |
+
+The keys are saved in that browser's localStorage and are sent straight to OpenAI and Google
+from the page. **They are never uploaded to the Meraki site and never committed to this repo.**
+Two things follow from that:
+
+- Each editor pastes their own key on their own machine. Don't set this up on a shared or public
+  computer — anyone using that browser profile can read the key out of localStorage.
+- Usage is billed to whoever's key is in the browser. If you'd rather have one shared key and
+  per-editor access, that needs a small server (or a Cloudflare Worker) holding the key, and the
+  **Advanced → API endpoints** fields at the bottom of the settings panel point the page at it —
+  it calls the same paths, so a plain pass-through proxy works.
+
+Also in settings: which models to use, render size (portrait / square / landscape), quality, and
+transparent vs. white background. The model names are plain text fields on purpose — when OpenAI
+or Google renames a model, change it here instead of editing the HTML.
+
+## Things that will trip you up
+
+- **`gpt-image-1` needs a verified OpenAI organisation.** Until that's done, step 3 returns a 400
+  and the page shows the message. Verification is on the OpenAI platform settings page.
+- **Faces.** "Keep faces close to the photo" (`input_fidelity: high`) is on by default because
+  likeness matters more than anything else here. If OpenAI ever rejects that parameter, turn the
+  checkbox off. Even so, neither model copies a face exactly — always eyeball the attire render
+  before sending it to Gemini.
+- **iPhone photos.** HEIC files won't decode in Chrome. Export as JPEG first; the page says so
+  when it happens.
+- **"Vector".** Gemini returns a high-resolution PNG drawn in a vector *style*, not an SVG with
+  real curves. For print jobs that need true curves, trace the PNG in Illustrator or CorelDRAW.
+- **Customer photos leave the building.** The photo is sent to OpenAI and Google to make the
+  artwork. Make sure the customer is fine with that before uploading.
+
+Nothing is stored on a server: the photo, both renders and the keys all stay in the editor's
+browser, and the run log at the bottom of the page is cleared when the tab closes.

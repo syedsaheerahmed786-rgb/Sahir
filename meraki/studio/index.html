@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Meraki Art Studio</title>
+<meta name="description" content="Editor tool: upload a customer photo, pick a regional wedding theme, let ChatGPT restyle the attire and Gemini turn it into vector artwork — on one page.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column, four numbered work panels top to bottom — photo+theme, prompt, attire render, vector render.
+   Panels stay locked (dimmed) until the step before them has produced something. */
+:root {
+  --bg: #FAF6F5; --panel: #FFFFFF; --sunk: #F3ECEB; --ink: #2A1A1F; --muted: #6E5A60; --line: #E6DADB;
+  --accent: #A3192A; --accent-soft: #F6E3E5; --gold: #9A6F14; --gold-soft: #F5EBD6;
+  --ok: #2E7D4F; --ok-soft: #E2F1E8; --warn: #A8650F; --warn-soft: #FBEEDB; --bad: #B3261E; --bad-soft: #F9E1DF;
+  --f-display: "Marcellus", "Cormorant Garamond", Georgia, serif;
+  --f-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 10px;
+  --check: #EDE6E5;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #171012; --panel: #21181B; --sunk: #2A1F23; --ink: #F3E9EA; --muted: #B5A2A7; --line: #3A2C31;
+  --accent: #E8667A; --accent-soft: #3D1D24; --gold: #D9AE52; --gold-soft: #3A2E17;
+  --ok: #62C08B; --ok-soft: #173325; --warn: #E7AA4E; --warn-soft: #3A2A12; --bad: #F07167; --bad-soft: #3D1A18;
+  --check: #2E2327; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #171012; --panel: #21181B; --sunk: #2A1F23; --ink: #F3E9EA; --muted: #B5A2A7; --line: #3A2C31;
+  --accent: #E8667A; --accent-soft: #3D1D24; --gold: #D9AE52; --gold-soft: #3A2E17;
+  --ok: #62C08B; --ok-soft: #173325; --warn: #E7AA4E; --warn-soft: #3A2A12; --bad: #F07167; --bad-soft: #3D1A18;
+  --check: #2E2327; color-scheme: dark }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1060px; margin: 0 auto; padding-block: 28px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 22px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 400; margin: 0; text-wrap: balance; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1rem; font-family: var(--f-body); font-weight: 600; }
+p { margin: 0; }
+a { color: var(--accent); }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.mono { font-family: var(--f-mono); }
+.eyebrow { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 18px; }
+.brand { display: flex; flex-direction: column; gap: 4px; }
+.brand h1 { font-size: clamp(1.9rem, 5vw, 2.6rem); letter-spacing: .02em; line-height: 1.05; }
+.brand h1 span { color: var(--accent); }
+.keys-state { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: 7px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; flex: none; }
+.dot.on { background: var(--ok); } .dot.off { background: var(--bad); }
+
+/* stepper */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.steps > div { background: var(--panel); padding: 11px 14px; display: flex; align-items: center; gap: 9px; min-width: 0; font-size: .85rem; color: var(--muted); }
+.steps b { font-family: var(--f-mono); font-size: .75rem; width: 20px; height: 20px; border-radius: 50%; background: var(--sunk); color: var(--muted);
+  display: inline-flex; align-items: center; justify-content: center; flex: none; font-weight: 500; }
+.steps > div.active { color: var(--ink); } .steps > div.active b { background: var(--accent); color: #fff; }
+.steps > div.done b { background: var(--ok); color: #fff; }
+
+/* panels */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.panel-head .n { font-family: var(--f-mono); font-size: .75rem; color: var(--accent); font-weight: 500; }
+.panel[data-locked="true"] { opacity: .45; }
+.panel[data-locked="true"] :is(button, input, select, textarea, label.drop) { pointer-events: none; }
+
+/* settings */
+details.setup { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 20px; }
+details.setup > summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+details.setup > summary::-webkit-details-marker { display: none; }
+details.setup > summary::after { content: "▾"; color: var(--muted); font-size: .8rem; }
+details.setup[open] > summary::after { content: "▴"; }
+details.setup[open] > .setup-body { margin-top: 16px; }
+.setup-body { display: flex; flex-direction: column; gap: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field > label, .lbl { font-size: .78rem; font-weight: 600; color: var(--muted); }
+.field .hint { font-size: .76rem; color: var(--muted); }
+input[type=text], input[type=password], select, textarea { padding: 9px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); width: 100%; }
+textarea { resize: vertical; line-height: 1.45; }
+.warn-box { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 10px 14px; font-size: .85rem; }
+.chk { display: flex; align-items: flex-start; gap: 9px; font-size: .88rem; }
+.chk input { width: 17px; height: 17px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+
+/* buttons */
+.btn { background: var(--accent); color: #fff; border: none; border-radius: 7px; padding: 10px 17px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
+.btn:hover:not(:disabled) { filter: brightness(1.08); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.btn.link { background: none; border: none; color: var(--accent); padding: 2px 0; font-weight: 600; font-size: .85rem; text-decoration: underline; text-underline-offset: 3px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn[data-busy="true"] { opacity: .7; cursor: progress; }
+.btn[data-busy="true"] .spin { width: 13px; height: 13px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; display: inline-block; animation: sp .7s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* upload */
+label.drop { border: 1.5px dashed var(--line); border-radius: var(--r); padding: 26px 18px; text-align: center; cursor: pointer; display: block; background: var(--sunk); }
+label.drop:hover, label.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+label.drop .big { font-weight: 600; }
+label.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.shot { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px; align-items: start; }
+.frame { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background-color: var(--check);
+  background-image: linear-gradient(45deg, rgba(128,128,128,.14) 25%, transparent 25%, transparent 75%, rgba(128,128,128,.14) 75%),
+                    linear-gradient(45deg, rgba(128,128,128,.14) 25%, transparent 25%, transparent 75%, rgba(128,128,128,.14) 75%);
+  background-size: 18px 18px; background-position: 0 0, 9px 9px; }
+.frame img { display: block; width: 100%; height: auto; max-height: min(440px, 55vh); object-fit: contain; }
+.file-meta { font-size: .8rem; color: var(--muted); font-family: var(--f-mono); word-break: break-all; }
+
+/* themes */
+.themes { display: flex; flex-wrap: wrap; gap: 8px; }
+.themes label { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 7px 15px; font-size: .88rem; cursor: pointer; }
+.themes label:has(input:checked) { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.themes input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.themes label:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.attire-note { background: var(--sunk); border-radius: 8px; padding: 12px 14px; font-size: .86rem; display: flex; flex-direction: column; gap: 6px; }
+.attire-note b { font-weight: 600; }
+
+/* status + log */
+.status { font-size: .88rem; display: flex; align-items: center; gap: 8px; min-height: 22px; }
+.status.err { color: var(--bad); } .status.ok { color: var(--ok); }
+.err-box { background: var(--bad-soft); color: var(--bad); border-radius: 8px; padding: 11px 14px; font-size: .85rem; white-space: pre-wrap; word-break: break-word; font-family: var(--f-mono); }
+.log { font-family: var(--f-mono); font-size: .76rem; color: var(--muted); background: var(--sunk); border-radius: 8px; padding: 12px 14px; max-height: 180px; overflow: auto; display: flex; flex-direction: column; gap: 3px; }
+.log .e { color: var(--bad); } .log .s { color: var(--ok); }
+.hide { display: none !important; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow">Meraki Cards · Art studio</span>
+      <h1>Couple <span>artwork</span> studio</h1>
+      <p class="muted">Upload the customer photo, pick the theme, and work down the page. ChatGPT dresses the couple, Gemini turns it into vector art.</p>
+    </div>
+    <div class="keys-state"><i class="dot" id="keyDot"></i><span id="keyText">Checking keys…</span></div>
+  </header>
+
+  <nav class="steps" aria-label="Progress">
+    <div id="st1"><b>1</b><span>Photo &amp; theme</span></div>
+    <div id="st2"><b>2</b><span>Prompt</span></div>
+    <div id="st3"><b>3</b><span>Attire render</span></div>
+    <div id="st4"><b>4</b><span>Vector artwork</span></div>
+  </nav>
+
+  <!-- ───────────── settings ───────────── -->
+  <details class="setup" id="setup">
+    <summary>Keys &amp; models <span class="small muted" id="setupSummary"></span></summary>
+    <div class="setup-body">
+      <div class="warn-box">
+        Both keys are saved in <b>this browser only</b> (localStorage) and are sent straight to OpenAI and Google from this page.
+        They are never uploaded to the Meraki site or committed to the repo. Each editor pastes their own keys on their own machine,
+        and anyone who can use this browser profile can read them — don't set them up on a shared or public computer.
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label for="oaKey">OpenAI API key</label>
+          <input type="password" id="oaKey" autocomplete="off" spellcheck="false" placeholder="sk-…">
+          <span class="hint">platform.openai.com → API keys</span>
+        </div>
+        <div class="field">
+          <label for="gmKey">Gemini API key</label>
+          <input type="password" id="gmKey" autocomplete="off" spellcheck="false" placeholder="AIza…">
+          <span class="hint">aistudio.google.com → Get API key</span>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label for="mImage">ChatGPT image model</label>
+          <input type="text" id="mImage" spellcheck="false">
+          <span class="hint">Does the attire render. Needs a verified OpenAI org.</span>
+        </div>
+        <div class="field">
+          <label for="mText">ChatGPT text model</label>
+          <input type="text" id="mText" spellcheck="false">
+          <span class="hint">Reads the photo and writes the prompt.</span>
+        </div>
+        <div class="field">
+          <label for="mGem">Gemini image model</label>
+          <input type="text" id="mGem" spellcheck="false">
+          <span class="hint">Does the vector pass.</span>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label for="size">Render size</label>
+          <select id="size">
+            <option value="1024x1536">Portrait 1024 × 1536</option>
+            <option value="1024x1024">Square 1024 × 1024</option>
+            <option value="1536x1024">Landscape 1536 × 1024</option>
+            <option value="auto">Auto (match the photo)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="quality">Render quality</label>
+          <select id="quality">
+            <option value="high">High — slowest, best detail</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low — quick test</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="bg">Background</label>
+          <select id="bg">
+            <option value="transparent">Transparent PNG</option>
+            <option value="opaque">Opaque (white)</option>
+          </select>
+        </div>
+      </div>
+      <div class="chk"><input type="checkbox" id="fidelity">
+        <label for="fidelity">Keep faces close to the photo (<span class="mono">input_fidelity: high</span>) — turn this off if OpenAI rejects the parameter</label></div>
+      <details>
+        <summary class="small muted" style="cursor:pointer">Advanced: API endpoints</summary>
+        <div class="grid" style="margin-top:12px">
+          <div class="field">
+            <label for="oaBase">OpenAI base URL</label>
+            <input type="text" id="oaBase" spellcheck="false">
+          </div>
+          <div class="field">
+            <label for="gmBase">Gemini base URL</label>
+            <input type="text" id="gmBase" spellcheck="false">
+          </div>
+        </div>
+        <p class="hint" style="margin-top:8px">Only change these if you put a proxy in front of the APIs (same paths, e.g. a Cloudflare Worker).</p>
+      </details>
+      <div class="actions">
+        <button class="btn" id="saveCfg">Save settings</button>
+        <button class="btn ghost" id="resetCfg">Reset to defaults</button>
+        <button class="btn ghost" id="clearKeys">Forget keys</button>
+        <span class="status" id="cfgStatus"></span>
+      </div>
+    </div>
+  </details>
+
+  <!-- ───────────── 1. photo + theme ───────────── -->
+  <section class="panel" aria-labelledby="h1a">
+    <div class="panel-head"><h2 id="h1a"><span class="n">01</span> Customer photo &amp; theme</h2>
+      <button class="btn link hide" id="clearShot">Remove photo</button></div>
+
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="image/png,image/jpeg,image/webp,image/*">
+      <span class="big">Drop the photo here, click to choose, or paste it</span><br>
+      <span class="small muted">JPEG, PNG or WebP. A clear, well-lit photo of the couple works best.</span>
+    </label>
+
+    <div class="shot hide" id="shot">
+      <div class="frame"><img id="shotImg" alt="The uploaded customer photo"></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <p class="file-meta" id="shotMeta"></p>
+        <p class="small muted">This photo is sent to OpenAI and Google to make the artwork. Make sure the customer is happy with that before you upload.</p>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="lbl">Regional theme</span>
+      <div class="themes" id="themes"></div>
+    </div>
+
+    <div class="attire-note" id="attireNote"></div>
+
+    <div class="field hide" id="customWrap">
+      <label for="customAttire">Describe the attire yourself</label>
+      <textarea id="customAttire" rows="3" placeholder="The woman: … The man: …"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="notes">Extra notes for this order <span class="muted" style="font-weight:400">(optional)</span></label>
+      <input type="text" id="notes" placeholder="e.g. bride on the left, keep her glasses, groom in a cream turban">
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="buildPrompt">Build the prompt →</button>
+      <span class="status" id="s1"></span>
+    </div>
+  </section>
+
+  <!-- ───────────── 2. prompt ───────────── -->
+  <section class="panel" id="p2" data-locked="true" aria-labelledby="h2a">
+    <div class="panel-head"><h2 id="h2a"><span class="n">02</span> The attire prompt</h2>
+      <button class="btn link" id="copyPrompt">Copy</button></div>
+    <p class="small muted">This is what goes to ChatGPT with the photo. Edit it freely — the house guidelines at the bottom are added automatically.</p>
+    <textarea id="attirePrompt" rows="9" aria-label="Attire prompt"></textarea>
+    <div class="actions">
+      <button class="btn ghost" id="gptPrompt"><span class="spin hide"></span>Let ChatGPT read the photo and rewrite this</button>
+      <button class="btn link" id="rebuildPrompt">Reset to the theme template</button>
+    </div>
+    <details>
+      <summary class="small muted" style="cursor:pointer">House guidelines added to every prompt</summary>
+      <textarea id="guidelines" rows="6" style="margin-top:10px" aria-label="House guidelines"></textarea>
+      <button class="btn link" id="resetGuides">Reset guidelines</button>
+    </details>
+    <div class="actions">
+      <button class="btn" id="runAttire"><span class="spin hide"></span>Render the attire with ChatGPT</button>
+      <span class="status" id="s2"></span>
+    </div>
+    <div class="err-box hide" id="e2"></div>
+  </section>
+
+  <!-- ───────────── 3. attire render ───────────── -->
+  <section class="panel" id="p3" data-locked="true" aria-labelledby="h3a">
+    <div class="panel-head"><h2 id="h3a"><span class="n">03</span> Attire render</h2></div>
+    <div class="shot">
+      <div class="frame"><img id="attireImg" alt="The couple restyled in the chosen wedding attire"></div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <p class="small muted">Check the faces and the attire before you go on. Not right? Edit the prompt above and render again.</p>
+        <div class="actions">
+          <button class="btn ghost" id="dlAttire">Download this PNG</button>
+          <button class="btn link" id="redoAttire">Render again</button>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="vectorPrompt">Gemini prompt</label>
+      <textarea id="vectorPrompt" rows="5"></textarea>
+      <button class="btn link" id="resetVector" style="align-self:flex-start">Reset to the default</button>
+    </div>
+    <div class="actions">
+      <button class="btn" id="runVector"><span class="spin hide"></span>Send to Gemini for the vector artwork</button>
+      <span class="status" id="s3"></span>
+    </div>
+    <div class="err-box hide" id="e3"></div>
+  </section>
+
+  <!-- ───────────── 4. final ───────────── -->
+  <section class="panel" id="p4" data-locked="true" aria-labelledby="h4a">
+    <div class="panel-head"><h2 id="h4a"><span class="n">04</span> Vector artwork</h2></div>
+    <div class="shot">
+      <div class="frame"><img id="vectorImg" alt="The final vector illustration of the couple"></div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <p class="small muted">The finished artwork, ready for the card layout. It's a high-resolution PNG — trace it in Illustrator or CorelDRAW if the job needs true curves.</p>
+        <div class="actions">
+          <button class="btn" id="dlVector">Download the artwork</button>
+          <button class="btn ghost" id="redoVector">Run Gemini again</button>
+        </div>
+        <div class="actions">
+          <button class="btn link" id="dlBoth">Download both renders</button>
+          <button class="btn link" id="copyBoth">Copy both prompts</button>
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="startOver">Start the next customer</button>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h5a">
+    <div class="panel-head"><h3 id="h5a">Run log</h3><button class="btn link" id="clearLog">Clear</button></div>
+    <div class="log" id="log" aria-live="polite"></div>
+  </section>
+
+  <p class="small muted">Meraki Cards · internal editor tool. Nothing on this page is stored on a server — the photo, the renders and the keys stay in this browser.</p>
+</div>
+
+<script>
+"use strict";
+
+/* ─────────── themes: the attire each regional theme means ─────────── */
+const THEMES = [
+  { id: "assamese", label: "Assamese",
+    bride: "a two-piece Assamese Mekhela Sador in cream-and-gold Muga silk with woven red-and-gold Assamese motifs, the sador pleated and draped over the left shoulder; traditional Assamese gold jewellery — a Jonbiri or Dugdugi necklace, Thuria earrings, Gam Kharu bangles — and hair in a low bun with white or orange flowers",
+    groom: "a cream Muga silk dhoti and kurta with a gold-bordered Seleng Sador draped over one shoulder, and a woven Gamusa with red motifs" },
+  { id: "bengali", label: "Bengali",
+    bride: "a red Banarasi silk saree with a heavy gold zari border worn in the Bengali atpoure drape, red-and-white Shakha-Pola bangles with gold Chur, a gold Tikli and Nath, a conical white shola-pith Mukut, and white Chandan dots painted on the forehead and cheeks",
+    groom: "an off-white silk dhoti and Panjabi with a red border, a shola-pith Topor on the head, and a gold-bordered uttario draped over the shoulder" },
+  { id: "punjabi", label: "Punjabi",
+    bride: "a deep red and gold embroidered lehenga or salwar suit with a heavy dupatta draped over the head, ivory-and-red Chooda bangles with hanging Kaleere, a Maang Tikka, Nath and layered gold Rani Haar",
+    groom: "a cream or gold embroidered Sherwani with a churidar, a pink or cream turban with a Kalgi and a pearl Sarpech, a draped dupatta at the shoulder and a kamarbandh" },
+  { id: "tamil", label: "Tamil",
+    bride: "a deep red or green Kanjeevaram silk saree with a broad gold zari border and pallu, Tamil temple jewellery — Nethichutti and Maang Tikka, Jhimki earrings, layered gold Haram — and a long plait wound with jasmine Gajra",
+    groom: "a white silk Veshti with a gold border, a matching Angavastram draped across the chest and shoulder, and a cream silk shirt" },
+  { id: "malayali", label: "Malayali / Kerala",
+    bride: "a white-and-gold Kasavu Kerala saree worn as a Set Mundu, traditional Kerala gold — a Palakka Mala, Kasu Mala and Jhimki earrings — and a bun covered in jasmine flowers",
+    groom: "a white Mundu with a gold Kara border and a cream silk shirt, with a gold-bordered Angavastram over one shoulder" },
+  { id: "telugu", label: "Telugu",
+    bride: "a cream-and-red Dharmavaram silk saree with heavy gold zari, a gold Vaddanam waist belt, Papidi Billa and Nethi Chutti on the parting, Buttalu earrings and layered gold necklaces, with turmeric-toned accents",
+    groom: "a white Panche dhoti with a gold border and a cream silk kurta, an Angavastram over the shoulder and a Basinga headband at the forehead" },
+  { id: "marathi", label: "Marathi",
+    bride: "a green or purple Paithani silk saree in the nine-yard Nauvari drape with a gold zari peacock border, a pearl Nath nose ring, a crescent Chandrakor bindi, Mundavalya pearl strings across the forehead, and a bun with Mogra flowers",
+    groom: "a cream silk dhoti with a gold border and a Bandhgala or kurta, an orange-and-gold Puneri Pheta turban, and Mundavalya pearl strings at the forehead" },
+  { id: "gujarati", label: "Gujarati",
+    bride: "a white-and-red Bandhani Panetar saree with a red-and-gold Gharchola dupatta draped over the head, green ivory Chuda bangles, a gold Borla and layered Rajwadi gold jewellery",
+    groom: "a cream silk Jabho or Kediyu with a churidar, a red-and-gold Safa turban, a dupatta at the shoulder and a kamarbandh" },
+  { id: "rajasthani", label: "Rajasthani",
+    bride: "a red-and-gold Gota-Patti lehenga with an embroidered Odhani draped over the head, a Borla or Rakhdi on the forehead, a Nath, Bajuband armlets and layered Kundan gold",
+    groom: "a cream-and-gold Achkan or Angrakha with a churidar, a saffron-and-red Pagri turban with a Kalangi, a Kamarbandh and a Mala of pearls" },
+  { id: "odia", label: "Odia",
+    bride: "a red Sambalpuri or Bomkai silk saree with woven gold motifs and a broad border, traditional Odia gold — a Tahia headpiece, Jhumka earrings and layered Haar — and a bun wound with jasmine",
+    groom: "a cream silk dhoti and kurta with a red-and-gold border, a Joda shawl over one shoulder and a cream turban" },
+  { id: "manipuri", label: "Manipuri",
+    bride: "a traditional Manipuri Potloi — a stiff cylindrical embroidered skirt in deep red and gold with mirror work — a green velvet blouse, a sheer white Innaphi shawl and a tall ornamented headdress",
+    groom: "a white Pheijom dhoti and kurta with a white Kokyet turban and a gold-bordered shawl at the shoulder" },
+  { id: "kashmiri", label: "Kashmiri",
+    bride: "a deep red Pheran with gold Tilla embroidery, a Kasaba headdress wound with a scarf, long Dejharoo gold earrings and a Halqaband choker",
+    groom: "a cream Pheran or Sherwani with Tilla embroidery, a churidar and a Karakuli cap" },
+  { id: "custom", label: "Other / custom", bride: "", groom: "" }
+];
+
+const DEFAULT_GUIDELINES =
+`Keep the faces, skin tones, hair and body proportions of the people in the photograph exactly as they are — they must still be clearly recognisable as the same two people. Keep the same pose and the same relative positions.
+Show both people in full, head to toe, nothing cropped.
+Remove the background completely: a fully transparent background with no scenery, no props, no furniture, no floor and no cast shadow.
+No text, no logos, no watermarks, no borders and no frame.`;
+
+const DEFAULT_VECTOR_PROMPT =
+`High quality detailed vector illustration of this image. No backdrop needed — a plain transparent background, no scenery, no floor and no shadow.
+Clean flat vector art: smooth even line work, crisp edges, flat colour fills with light shading. Keep both faces recognisable and keep every detail of the attire, jewellery and drape from the image. Both people in full, nothing cropped. No text, no logos and no watermark.`;
+
+const DEFAULTS = {
+  oaKey: "", gmKey: "",
+  mImage: "gpt-image-1",
+  mText: "gpt-4o-mini",
+  mGem: "gemini-2.5-flash-image",
+  size: "1024x1536", quality: "high", bg: "transparent", fidelity: true,
+  oaBase: "https://api.openai.com/v1",
+  gmBase: "https://generativelanguage.googleapis.com/v1beta",
+  guidelines: DEFAULT_GUIDELINES,
+  vectorPrompt: DEFAULT_VECTOR_PROMPT,
+  theme: "assamese"
+};
+
+const STORE = "meraki-studio-v1";
+const $ = (id) => document.getElementById(id);
+let cfg = loadCfg();
+const st = { src: null, attire: null, vector: null };   // each: {b64, mime, dataUrl}
+
+/* ─────────── config ─────────── */
+function loadCfg() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE) || "{}") || {}; } catch (_) {}
+  return Object.assign({}, DEFAULTS, saved);
+}
+function saveCfg() {
+  try { localStorage.setItem(STORE, JSON.stringify(cfg)); return true; }
+  catch (_) { return false; }
+}
+function cfgToForm() {
+  ["oaKey","gmKey","mImage","mText","mGem","oaBase","gmBase"].forEach(k => { $(k).value = cfg[k] || ""; });
+  $("size").value = cfg.size; $("quality").value = cfg.quality; $("bg").value = cfg.bg;
+  $("fidelity").checked = !!cfg.fidelity;
+  $("guidelines").value = cfg.guidelines;
+  $("vectorPrompt").value = cfg.vectorPrompt;
+}
+function formToCfg() {
+  ["oaKey","gmKey","mImage","mText","mGem","oaBase","gmBase"].forEach(k => { cfg[k] = $(k).value.trim(); });
+  cfg.size = $("size").value; cfg.quality = $("quality").value; cfg.bg = $("bg").value;
+  cfg.fidelity = $("fidelity").checked;
+  cfg.guidelines = $("guidelines").value;
+  cfg.vectorPrompt = $("vectorPrompt").value;
+  ["mImage","mText","mGem","oaBase","gmBase"].forEach(k => { if (!cfg[k]) cfg[k] = DEFAULTS[k]; });
+}
+function paintKeyState() {
+  const oa = !!cfg.oaKey, gm = !!cfg.gmKey;
+  const dot = $("keyDot"), text = $("keyText");
+  dot.className = "dot " + (oa && gm ? "on" : "off");
+  text.textContent = oa && gm ? "Both keys set" : !oa && !gm ? "No keys yet — open Keys & models" : oa ? "Gemini key missing" : "OpenAI key missing";
+  $("setupSummary").textContent = oa && gm ? "· ready" : "· needs setup";
+  if (!oa || !gm) $("setup").open = true;
+}
+
+/* ─────────── small helpers ─────────── */
+function log(msg, kind) {
+  const el = document.createElement("div");
+  if (kind) el.className = kind;
+  el.textContent = new Date().toLocaleTimeString() + "  " + msg;
+  $("log").appendChild(el);
+  $("log").scrollTop = $("log").scrollHeight;
+}
+function status(id, msg, kind) {
+  const el = $(id);
+  el.textContent = msg || "";
+  el.className = "status" + (kind ? " " + kind : "");
+}
+function showErr(id, msg) {
+  const el = $(id);
+  if (!msg) { el.classList.add("hide"); el.textContent = ""; return; }
+  el.classList.remove("hide"); el.textContent = msg;
+}
+function busy(btn, on, label) {
+  btn.dataset.busy = on ? "true" : "false";
+  btn.disabled = !!on;
+  const sp = btn.querySelector(".spin");
+  if (sp) sp.classList.toggle("hide", !on);
+  if (label !== undefined) {
+    if (on) { btn.dataset.label = btn.lastChild.textContent; btn.lastChild.textContent = label; }
+    else if (btn.dataset.label) { btn.lastChild.textContent = btn.dataset.label; }
+  }
+}
+function lock(panelId, locked) { $(panelId).dataset.locked = locked ? "true" : "false"; }
+function stamp() {
+  const d = new Date(), p = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes());
+}
+function themeById(id) { return THEMES.find(t => t.id === id) || THEMES[0]; }
+function b64ToBlob(b64, mime) {
+  const bin = atob(b64), len = bin.length, bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime || "image/png" });
+}
+function download(b64, mime, name) {
+  const url = URL.createObjectURL(b64ToBlob(b64, mime));
+  const a = document.createElement("a");
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  log("Downloaded " + name);
+}
+function paintSteps() {
+  const done = [!!st.src, !!$("attirePrompt").value.trim(), !!st.attire, !!st.vector];
+  const first = done.indexOf(false);
+  ["st1","st2","st3","st4"].forEach((id, i) => {
+    $(id).className = done[i] ? "done" : (i === (first < 0 ? 3 : first) ? "active" : "");
+  });
+}
+
+/* Decode whatever the editor gave us and re-encode as a PNG, capped on the long edge.
+   This normalises HEIC-from-Safari, huge phone photos and odd colour profiles into one
+   predictable thing to send to both APIs. */
+const MAX_EDGE = 2048;
+function normalizeImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read that file."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error(
+        "This browser could not decode that image. If it came straight off an iPhone it may be HEIC — " +
+        "save or export it as JPEG first, then upload again."));
+      img.onload = () => {
+        const scale = Math.min(1, MAX_EDGE / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        const ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = c.toDataURL("image/png");
+        resolve({ dataUrl, b64: dataUrl.split(",")[1], mime: "image/png", w, h,
+                  name: file.name || "photo", srcW: img.naturalWidth, srcH: img.naturalHeight });
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ─────────── prompts ─────────── */
+function attireLines() {
+  const t = themeById(cfg.theme);
+  if (t.id === "custom") {
+    const txt = $("customAttire").value.trim();
+    return txt || "traditional regional Indian wedding attire for both of them";
+  }
+  return "The woman: " + t.bride + ".\nThe man: " + t.groom + ".";
+}
+function buildAttirePrompt() {
+  const t = themeById(cfg.theme);
+  const label = t.id === "custom" ? "traditional" : t.label;
+  const notes = $("notes").value.trim();
+  return "Restyle the couple in this photograph so they are wearing traditional " + label + " wedding attire.\n\n" +
+         attireLines() + "\n\n" +
+         $("guidelines").value.trim() +
+         (notes ? "\n\nFor this order: " + notes : "");
+}
+function fullVectorPrompt() {
+  return $("vectorPrompt").value.trim();
+}
+function paintAttireNote() {
+  const t = themeById(cfg.theme);
+  const box = $("attireNote");
+  $("customWrap").classList.toggle("hide", t.id !== "custom");
+  if (t.id === "custom") {
+    box.innerHTML = "";
+    const p = document.createElement("p");
+    p.className = "small muted";
+    p.textContent = "Describe the attire for both people in the box below and it goes into the prompt as written.";
+    box.appendChild(p);
+    return;
+  }
+  box.innerHTML = "";
+  [["The woman", t.bride], ["The man", t.groom]].forEach(([who, what]) => {
+    const p = document.createElement("p");
+    const b = document.createElement("b"); b.textContent = who + ": ";
+    p.appendChild(b); p.appendChild(document.createTextNode(what + "."));
+    box.appendChild(p);
+  });
+}
+function paintThemes() {
+  const box = $("themes");
+  box.innerHTML = "";
+  THEMES.forEach(t => {
+    const lab = document.createElement("label");
+    const inp = document.createElement("input");
+    inp.type = "radio"; inp.name = "theme"; inp.value = t.id;
+    inp.checked = t.id === cfg.theme;
+    inp.addEventListener("change", () => {
+      cfg.theme = t.id; saveCfg(); paintAttireNote();
+      if ($("attirePrompt").value.trim()) { $("attirePrompt").value = buildAttirePrompt(); paintSteps(); }
+    });
+    lab.appendChild(inp);
+    lab.appendChild(document.createTextNode(t.label));
+    box.appendChild(lab);
+  });
+}
+
+/* ─────────── API plumbing ─────────── */
+async function readApiError(res, where) {
+  let detail = "";
+  try {
+    const j = await res.json();
+    detail = (j && j.error && (j.error.message || j.error.status)) || JSON.stringify(j).slice(0, 600);
+  } catch (_) {
+    try { detail = (await res.text()).slice(0, 600); } catch (__) { detail = ""; }
+  }
+  let hint = "";
+  if (res.status === 401 || res.status === 403) hint = "\n\nCheck the API key in Keys & models.";
+  else if (res.status === 429) hint = "\n\nRate limit or no credit left on that key. Wait a moment and try again.";
+  else if (res.status === 400 && /organization|verif/i.test(detail)) hint = "\n\nOpenAI needs the organisation verified before gpt-image-1 will run.";
+  else if (res.status === 400 && /input_fidelity/i.test(detail)) hint = "\n\nTurn off \"Keep faces close to the photo\" in Keys & models and try again.";
+  else if (res.status >= 500) hint = "\n\nThe service is having trouble. Try again in a minute.";
+  return new Error(where + " failed (HTTP " + res.status + "). " + detail + hint);
+}
+function netError(err, where) {
+  if (err && err.name === "TypeError") {
+    return new Error(where + " could not be reached. The browser blocked the request or the network is down — " +
+      "check you are online, and that the base URL in Keys & models is right.");
+  }
+  return err;
+}
+
+/* ChatGPT reads the photo and writes the attire prompt. */
+async function gptWritePrompt() {
+  const t = themeById(cfg.theme);
+  const label = t.id === "custom" ? "traditional regional Indian" : t.label;
+  const instruction =
+    "You write prompts for an image-editing model. Look at this photograph of a couple and write ONE prompt that " +
+    "restyles them into traditional " + label + " wedding attire.\n\n" +
+    "Say concretely how many people there are and who is on which side, what the pose and framing are, and then the attire below.\n\n" +
+    "Attire to use —\n" + attireLines() + "\n\n" +
+    "The prompt must also carry these rules:\n" + $("guidelines").value.trim() + "\n\n" +
+    "Reply with the prompt text only: no preamble, no quotes, no markdown, no headings.";
+
+  const body = {
+    model: cfg.mText,
+    messages: [{ role: "user", content: [
+      { type: "text", text: instruction },
+      { type: "image_url", image_url: { url: st.src.dataUrl } }
+    ]}]
+  };
+  let res;
+  try {
+    res = await fetch(cfg.oaBase.replace(/\/+$/, "") + "/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + cfg.oaKey },
+      body: JSON.stringify(body)
+    });
+  } catch (err) { throw netError(err, "ChatGPT (prompt writer)"); }
+  if (!res.ok) throw await readApiError(res, "ChatGPT (prompt writer)");
+  const j = await res.json();
+  const txt = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+  if (!txt || !String(txt).trim()) throw new Error("ChatGPT returned an empty prompt. Try again, or write the prompt by hand.");
+  return String(txt).trim();
+}
+
+/* ChatGPT renders the couple in the chosen attire. */
+async function gptRenderAttire(prompt) {
+  const fd = new FormData();
+  fd.append("model", cfg.mImage);
+  fd.append("image[]", b64ToBlob(st.src.b64, "image/png"), "photo.png");
+  fd.append("prompt", prompt);
+  fd.append("n", "1");
+  fd.append("output_format", "png");
+  if (cfg.size && cfg.size !== "auto") fd.append("size", cfg.size);
+  if (cfg.quality) fd.append("quality", cfg.quality);
+  if (cfg.bg) fd.append("background", cfg.bg);
+  if (cfg.fidelity) fd.append("input_fidelity", "high");
+
+  let res;
+  try {
+    res = await fetch(cfg.oaBase.replace(/\/+$/, "") + "/images/edits", {
+      method: "POST", headers: { "Authorization": "Bearer " + cfg.oaKey }, body: fd
+    });
+  } catch (err) { throw netError(err, "ChatGPT (image)"); }
+  if (!res.ok) throw await readApiError(res, "ChatGPT (image)");
+  const j = await res.json();
+  const b64 = j && j.data && j.data[0] && j.data[0].b64_json;
+  if (!b64) throw new Error("ChatGPT returned no image. Response: " + JSON.stringify(j).slice(0, 400));
+  return b64;
+}
+
+/* Gemini turns the attire render into vector artwork. */
+async function geminiVectorize(prompt) {
+  const url = cfg.gmBase.replace(/\/+$/, "") + "/models/" + encodeURIComponent(cfg.mGem) + ":generateContent";
+  const body = {
+    contents: [{ role: "user", parts: [
+      { text: prompt },
+      { inline_data: { mime_type: st.attire.mime || "image/png", data: st.attire.b64 } }
+    ]}],
+    generationConfig: { responseModalities: ["TEXT", "IMAGE"] }
+  };
+  let res;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": cfg.gmKey },
+      body: JSON.stringify(body)
+    });
+  } catch (err) { throw netError(err, "Gemini"); }
+  if (!res.ok) throw await readApiError(res, "Gemini");
+  const j = await res.json();
+
+  if (j && j.promptFeedback && j.promptFeedback.blockReason)
+    throw new Error("Gemini refused the request (" + j.promptFeedback.blockReason + "). Try a different photo or soften the prompt.");
+
+  const parts = (j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
+  const img = parts.find(p => (p.inlineData && p.inlineData.data) || (p.inline_data && p.inline_data.data));
+  if (img) {
+    const d = img.inlineData || img.inline_data;
+    return { b64: d.data, mime: d.mimeType || d.mime_type || "image/png" };
+  }
+  const said = parts.map(p => p.text).filter(Boolean).join(" ").trim();
+  const finish = (j && j.candidates && j.candidates[0] && j.candidates[0].finishReason) || "";
+  throw new Error("Gemini returned no image" + (finish ? " (" + finish + ")" : "") + "." +
+    (said ? " It said: " + said.slice(0, 400) : " Check that the model in Keys & models is an image model."));
+}
+
+/* ─────────── flow ─────────── */
+async function takeFile(file) {
+  if (!file) return;
+  if (!/^image\//.test(file.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name || "")) {
+    status("s1", "That is not an image file.", "err"); return;
+  }
+  status("s1", "Reading the photo…");
+  try {
+    const img = await normalizeImage(file);
+    st.src = img; st.attire = null; st.vector = null;
+    $("shotImg").src = img.dataUrl;
+    $("shot").classList.remove("hide");
+    $("drop").classList.add("hide");
+    $("clearShot").classList.remove("hide");
+    $("shotMeta").textContent = img.name + " · " + img.srcW + "×" + img.srcH +
+      (img.srcW !== img.w ? " → sent as " + img.w + "×" + img.h : "") + " · " + Math.round(img.b64.length * 0.75 / 1024) + " KB";
+    lock("p3", true); lock("p4", true);
+    status("s1", "Photo ready.", "ok");
+    log("Photo loaded: " + img.name + " (" + img.srcW + "×" + img.srcH + ")");
+    paintSteps();
+  } catch (err) {
+    st.src = null;
+    status("s1", "", "");
+    showErr("e2", "");
+    log(err.message, "e");
+    alert(err.message);
+  }
+}
+function clearShot() {
+  st.src = null; st.attire = null; st.vector = null;
+  $("file").value = "";
+  $("shot").classList.add("hide");
+  $("drop").classList.remove("hide");
+  $("clearShot").classList.add("hide");
+  lock("p2", true); lock("p3", true); lock("p4", true);
+  status("s1", ""); paintSteps();
+}
+function requireKey(which) {
+  if (which === "oa" && !cfg.oaKey) { $("setup").open = true; throw new Error("Add the OpenAI API key in Keys & models first."); }
+  if (which === "gm" && !cfg.gmKey) { $("setup").open = true; throw new Error("Add the Gemini API key in Keys & models first."); }
+}
+
+$("buildPrompt").addEventListener("click", () => {
+  if (!st.src) { status("s1", "Upload the customer photo first.", "err"); return; }
+  if (themeById(cfg.theme).id === "custom" && !$("customAttire").value.trim()) {
+    status("s1", "Describe the attire for the custom theme first.", "err"); return;
+  }
+  $("attirePrompt").value = buildAttirePrompt();
+  lock("p2", false);
+  status("s1", "Prompt built below.", "ok");
+  $("p2").scrollIntoView({ behavior: "smooth", block: "start" });
+  paintSteps();
+});
+$("rebuildPrompt").addEventListener("click", () => {
+  $("attirePrompt").value = buildAttirePrompt();
+  status("s2", "Reset to the " + themeById(cfg.theme).label + " template.", "ok");
+});
+$("copyPrompt").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("attirePrompt").value); status("s2", "Prompt copied.", "ok"); }
+  catch (_) { status("s2", "Could not copy — select the text and copy it by hand.", "err"); }
+});
+$("resetGuides").addEventListener("click", () => {
+  $("guidelines").value = DEFAULT_GUIDELINES; cfg.guidelines = DEFAULT_GUIDELINES; saveCfg();
+});
+$("resetVector").addEventListener("click", () => {
+  $("vectorPrompt").value = DEFAULT_VECTOR_PROMPT; cfg.vectorPrompt = DEFAULT_VECTOR_PROMPT; saveCfg();
+});
+
+$("gptPrompt").addEventListener("click", async (ev) => {
+  const btn = ev.currentTarget;
+  showErr("e2", "");
+  try {
+    requireKey("oa");
+    if (!st.src) throw new Error("Upload the customer photo first.");
+    busy(btn, true); status("s2", "ChatGPT is reading the photo…");
+    log("Asking " + cfg.mText + " to write the prompt");
+    const txt = await gptWritePrompt();
+    $("attirePrompt").value = txt;
+    status("s2", "ChatGPT wrote the prompt. Read it before you render.", "ok");
+    log("Prompt written (" + txt.length + " characters)", "s");
+    paintSteps();
+  } catch (err) {
+    status("s2", "Could not write the prompt.", "err");
+    showErr("e2", err.message); log(err.message, "e");
+  } finally { busy(btn, false); }
+});
+
+async function runAttire(btn) {
+  showErr("e2", "");
+  try {
+    requireKey("oa");
+    if (!st.src) throw new Error("Upload the customer photo first.");
+    const prompt = $("attirePrompt").value.trim();
+    if (!prompt) throw new Error("The prompt is empty.");
+    busy(btn, true); status("s2", "ChatGPT is rendering the attire — this usually takes 20–60 seconds…");
+    log("Rendering with " + cfg.mImage + " (" + cfg.size + ", " + cfg.quality + ", " + cfg.bg + ")");
+    const b64 = await gptRenderAttire(prompt);
+    st.attire = { b64, mime: "image/png", dataUrl: "data:image/png;base64," + b64 };
+    st.vector = null;
+    $("attireImg").src = st.attire.dataUrl;
+    lock("p3", false); lock("p4", true);
+    status("s2", "Attire render done.", "ok");
+    status("s3", "");
+    log("Attire render done (" + Math.round(b64.length * 0.75 / 1024) + " KB)", "s");
+    $("p3").scrollIntoView({ behavior: "smooth", block: "start" });
+    paintSteps();
+  } catch (err) {
+    status("s2", "The render failed.", "err");
+    showErr("e2", err.message); log(err.message, "e");
+  } finally { busy(btn, false); }
+}
+$("runAttire").addEventListener("click", (ev) => runAttire(ev.currentTarget));
+$("redoAttire").addEventListener("click", () => { $("p2").scrollIntoView({ behavior: "smooth", block: "start" }); runAttire($("runAttire")); });
+
+async function runVector(btn) {
+  showErr("e3", "");
+  try {
+    requireKey("gm");
+    if (!st.attire) throw new Error("Render the attire first.");
+    const prompt = fullVectorPrompt();
+    if (!prompt) throw new Error("The Gemini prompt is empty.");
+    cfg.vectorPrompt = $("vectorPrompt").value; saveCfg();
+    busy(btn, true); status("s3", "Gemini is drawing the vector artwork…");
+    log("Vectorising with " + cfg.mGem);
+    const out = await geminiVectorize(prompt);
+    st.vector = { b64: out.b64, mime: out.mime, dataUrl: "data:" + out.mime + ";base64," + out.b64 };
+    $("vectorImg").src = st.vector.dataUrl;
+    lock("p4", false);
+    status("s3", "Artwork ready below.", "ok");
+    log("Vector artwork done (" + Math.round(out.b64.length * 0.75 / 1024) + " KB)", "s");
+    $("p4").scrollIntoView({ behavior: "smooth", block: "start" });
+    paintSteps();
+  } catch (err) {
+    status("s3", "Gemini failed.", "err");
+    showErr("e3", err.message); log(err.message, "e");
+  } finally { busy(btn, false); }
+}
+$("runVector").addEventListener("click", (ev) => runVector(ev.currentTarget));
+$("redoVector").addEventListener("click", (ev) => runVector(ev.currentTarget));
+
+function baseName() { return "meraki-" + cfg.theme + "-" + stamp(); }
+$("dlAttire").addEventListener("click", () => { if (st.attire) download(st.attire.b64, st.attire.mime, baseName() + "-attire.png"); });
+$("dlVector").addEventListener("click", () => { if (st.vector) download(st.vector.b64, st.vector.mime, baseName() + "-vector.png"); });
+$("dlBoth").addEventListener("click", () => {
+  if (st.attire) download(st.attire.b64, st.attire.mime, baseName() + "-attire.png");
+  if (st.vector) setTimeout(() => download(st.vector.b64, st.vector.mime, baseName() + "-vector.png"), 600);
+});
+$("copyBoth").addEventListener("click", async () => {
+  const txt = "THEME: " + themeById(cfg.theme).label +
+    "\n\n--- ChatGPT attire prompt ---\n" + $("attirePrompt").value.trim() +
+    "\n\n--- Gemini vector prompt ---\n" + fullVectorPrompt();
+  try { await navigator.clipboard.writeText(txt); status("s3", "Both prompts copied.", "ok"); }
+  catch (_) { status("s3", "Could not copy to the clipboard.", "err"); }
+});
+$("startOver").addEventListener("click", () => {
+  clearShot();
+  $("attirePrompt").value = ""; $("notes").value = "";
+  showErr("e2", ""); showErr("e3", "");
+  status("s2", ""); status("s3", "");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  log("Ready for the next customer");
+  paintSteps();
+});
+$("clearShot").addEventListener("click", clearShot);
+$("clearLog").addEventListener("click", () => { $("log").innerHTML = ""; });
+
+/* upload wiring: click, drop, paste */
+$("file").addEventListener("change", (e) => takeFile(e.target.files && e.target.files[0]));
+const drop = $("drop");
+["dragenter","dragover"].forEach(t => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave","dragend","drop"].forEach(t => drop.addEventListener(t, () => drop.classList.remove("over")));
+drop.addEventListener("drop", (e) => {
+  e.preventDefault();
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) takeFile(f);
+});
+document.addEventListener("paste", (e) => {
+  if (/^(INPUT|TEXTAREA)$/.test(document.activeElement && document.activeElement.tagName)) return;
+  const items = (e.clipboardData && e.clipboardData.files) || [];
+  if (items.length) { e.preventDefault(); takeFile(items[0]); }
+});
+
+/* settings wiring */
+$("saveCfg").addEventListener("click", () => {
+  formToCfg();
+  const ok = saveCfg();
+  cfgToForm(); paintKeyState();
+  status("cfgStatus", ok ? "Saved in this browser." : "Could not save — this browser is blocking storage.", ok ? "ok" : "err");
+  log("Settings saved");
+});
+$("resetCfg").addEventListener("click", () => {
+  const keys = { oaKey: cfg.oaKey, gmKey: cfg.gmKey };
+  cfg = Object.assign({}, DEFAULTS, keys);
+  saveCfg(); cfgToForm(); paintThemes(); paintAttireNote(); paintKeyState();
+  status("cfgStatus", "Models, sizes and prompts reset. Keys kept.", "ok");
+});
+$("clearKeys").addEventListener("click", () => {
+  cfg.oaKey = ""; cfg.gmKey = "";
+  saveCfg(); cfgToForm(); paintKeyState();
+  status("cfgStatus", "Keys forgotten.", "ok");
+});
+["guidelines","vectorPrompt"].forEach(k => {
+  $(k).addEventListener("change", () => { cfg[k] = $(k).value; saveCfg(); });
+});
+$("notes").addEventListener("change", () => {
+  if ($("attirePrompt").value.trim()) $("attirePrompt").value = buildAttirePrompt();
+});
+$("attirePrompt").addEventListener("input", paintSteps);
+
+/* boot */
+cfgToForm(); paintThemes(); paintAttireNote(); paintKeyState(); paintSteps();
+log("Studio ready");
+</script>
+</body>
+</html>
