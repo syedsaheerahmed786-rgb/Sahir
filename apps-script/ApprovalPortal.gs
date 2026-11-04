@@ -25,7 +25,15 @@ const TABS = {
 
 /* ---------- sheet helpers ---------- */
 
+// Each web-app request runs the script afresh, so this holds sheets and rows for one request only.
+const CACHE_ = { tabs: {}, rows: {} };
+
+function forget_() {
+  CACHE_.rows = {};
+}
+
 function tab_(name) {
+  if (CACHE_.tabs[name]) return CACHE_.tabs[name];
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(name);
   if (!sh) {
@@ -37,21 +45,27 @@ function tab_(name) {
     // A column was added in a newer version of this script: name it in the header row.
     sh.getRange(1, 1, 1, TABS[name].length).setValues([TABS[name]]);
   }
+  CACHE_.tabs[name] = sh;
   return sh;
 }
 
+// Rows of a tab as objects. Callers that change a row and save_ it keep the cache in step.
 function rows_(name) {
-  const values = tab_(name).getDataRange().getValues();
-  values.shift();
-  return values.map(function (r, i) {
-    const o = { _row: i + 2 };
-    TABS[name].forEach(function (h, j) { o[h] = r[j]; });
-    return o;
-  });
+  if (!CACHE_.rows[name]) {
+    const values = tab_(name).getDataRange().getValues();
+    values.shift();
+    CACHE_.rows[name] = values.map(function (r, i) {
+      const o = { _row: i + 2 };
+      TABS[name].forEach(function (h, j) { o[h] = r[j]; });
+      return o;
+    });
+  }
+  return CACHE_.rows[name];
 }
 
 function append_(name, o) {
   tab_(name).appendRow(TABS[name].map(function (h) { return o[h] === undefined ? '' : o[h]; }));
+  delete CACHE_.rows[name];
 }
 
 function save_(name, o) {
@@ -202,18 +216,6 @@ function touch_(p, fields) {
   save_('Projects', p);
 }
 
-function folder_(p) {
-  if (p['Folder ID']) {
-    try { return DriveApp.getFolderById(p['Folder ID']); } catch (e) { /* folder was removed: make a new one */ }
-  }
-  const roots = DriveApp.getFoldersByName(FOLDER_NAME);
-  const root = roots.hasNext() ? roots.next() : DriveApp.createFolder(FOLDER_NAME);
-  const f = root.createFolder(p.Customer + ' (' + p.ID + ')');
-  p['Folder ID'] = f.getId();
-  save_('Projects', p);
-  return f;
-}
-
 function notify_(p, subject, body) {
   if (!NOTIFY_EMAIL) return;
   try { MailApp.sendEmail(NOTIFY_EMAIL, subject, body); } catch (e) { /* email is optional */ }
@@ -281,12 +283,26 @@ function doGet(e) {
 /* ---------- POST: write ---------- */
 
 function doPost(e) {
+  let d, stored = null;
+  try {
+    d = JSON.parse(e.postData.contents);
+    // Saving images to Drive is the slow part of an upload; it needs no lock, so it happens first.
+    if (d.k === EDITOR_KEY && d.action === 'page') {
+      const p0 = findProject_(d.id);
+      if (p0) {
+        const bad = pageCheck_(p0, d);
+        if (bad) return json_(bad);
+        stored = storePage_(p0, d);
+      }
+    }
+  } catch (err) {
+    return json_({ status: 'error', message: String(err) });
+  }
+  const editor = d.k === EDITOR_KEY;
   const lock = LockService.getScriptLock();
   lock.waitLock(25000);
+  forget_(); // another request may have written while this one waited
   try {
-    const d = JSON.parse(e.postData.contents);
-    const editor = d.k === EDITOR_KEY;
-
     // Customer actions use the private link token.
     if (!editor) {
       const p = d.t ? findProject_(null, d.t) : null;
@@ -316,7 +332,7 @@ function doPost(e) {
     let r;
     switch (d.action) {
       case 'update': r = update_(p, d); break;
-      case 'page': r = uploadPage_(p, d); break;
+      case 'page': r = uploadPage_(p, d, stored); break;
       case 'share': r = share_(p, d); break;
       case 'message': r = addMessages_(p, d, 'editor'); break;
       case 'done': r = setDone_(p, d); break;
@@ -326,7 +342,10 @@ function doPost(e) {
         break;
       default: return json_({ status: 'invalid', message: 'Unknown action.' });
     }
-    if (r && r.status !== 'ok') return json_(r);
+    if (r && r.status !== 'ok') {
+      if (stored) trash_([stored.preview, stored.print]);
+      return json_(r);
+    }
     return json_({ status: 'ok', project: out_(findProject_(p.ID), true) });
   } catch (err) {
     return json_({ status: 'error', message: String(err) });
@@ -353,45 +372,70 @@ function update_(p, d) {
   return { status: 'ok' };
 }
 
-// Saves one page of the draft that's being prepared (not yet shared).
-function uploadPage_(p, d) {
-  const drafts = draftsOf_(p.ID);
+// Why a page can't go on draft d.draft right now, or null when it can.
+function pageCheck_(p, d) {
   const n = Number(d.draft);
-  const shared = sharedCount_(drafts);
+  const shared = sharedCount_(draftsOf_(p.ID));
   const allowed = Number(p['Drafts allowed']) || DEFAULT_DRAFTS;
   if (p.Status === 'approved') return { status: 'invalid', message: 'This design is already approved.' };
   if (n !== shared + 1) return { status: 'invalid', message: 'Draft ' + n + ' is not open for uploads.' };
   if (n > allowed) return { status: 'invalid', message: 'All ' + allowed + ' drafts are used. Grant an extra draft first.' };
   const slots = (parse_(p.Config, {}).pages || []).map(function (x) { return x.key; });
-  const slot = clean_(d.slot, 40);
-  if (slots.indexOf(slot) < 0) return { status: 'invalid', message: 'Unknown page.' };
+  if (slots.indexOf(clean_(d.slot, 40)) < 0) return { status: 'invalid', message: 'Unknown page.' };
+  return null;
+}
 
-  let draft = drafts.filter(function (x) { return Number(x.Draft) === n; })[0];
+// The customer's Drive folder, found by name so it needs no write to the sheet.
+function pageFolder_(p) {
+  if (p['Folder ID']) {
+    try { return DriveApp.getFolderById(p['Folder ID']); } catch (e) { /* folder was removed: find or make it again */ }
+  }
+  const roots = DriveApp.getFoldersByName(FOLDER_NAME);
+  const root = roots.hasNext() ? roots.next() : DriveApp.createFolder(FOLDER_NAME);
+  const name = p.Customer + ' (' + p.ID + ')';
+  const found = root.getFoldersByName(name);
+  return found.hasNext() ? found.next() : root.createFolder(name);
+}
+
+// Writes the page's preview and print images to Drive and returns their file IDs.
+function storePage_(p, d) {
+  const folder = pageFolder_(p);
+  const name = 'Draft ' + Number(d.draft) + ' - ' + clean_(d.slot, 40);
+  const save = function (b64, suffix) {
+    const bytes = Utilities.base64Decode(String(b64).replace(/^data:[^,]+,/, ''));
+    return folder.createFile(Utilities.newBlob(bytes, 'image/jpeg', name + suffix + '.jpg')).getId();
+  };
+  return { preview: save(d.preview, ' (preview)'), print: save(d.print, ''), folder: folder.getId() };
+}
+
+function trash_(ids) {
+  ids.forEach(function (id) {
+    try { DriveApp.getFileById(id).setTrashed(true); } catch (e) { /* already gone */ }
+  });
+}
+
+// Records one page of the draft that's being prepared (not yet shared). Runs under the lock.
+function uploadPage_(p, d, stored) {
+  const bad = pageCheck_(p, d);
+  if (bad) return bad;
+  if (!stored) return { status: 'invalid', message: 'The page could not be saved. Please try again.' };
+  const n = Number(d.draft);
+  const slot = clean_(d.slot, 40);
+  let draft = draftsOf_(p.ID).filter(function (x) { return Number(x.Draft) === n; })[0];
   if (!draft) {
     append_('Drafts', { 'Project ID': p.ID, Draft: n, Editor: clean_(d.editor, 60), Created: new Date(), Pages: '{}' });
     draft = draftsOf_(p.ID).filter(function (x) { return Number(x.Draft) === n; })[0];
   }
   const pages = parse_(draft.Pages, {});
-  const folder = folder_(p);
-  const old = pages[slot];
-  if (old) {
-    [old.preview, old.print].forEach(function (id) {
-      try { DriveApp.getFileById(id).setTrashed(true); } catch (e) { /* already gone */ }
-    });
-  }
-  const name = 'Draft ' + n + ' - ' + slot;
-  const save = function (b64, suffix) {
-    const bytes = Utilities.base64Decode(String(b64).replace(/^data:[^,]+,/, ''));
-    return folder.createFile(Utilities.newBlob(bytes, 'image/jpeg', name + suffix + '.jpg')).getId();
-  };
+  if (pages[slot]) trash_([pages[slot].preview, pages[slot].print]);
   pages[slot] = {
-    preview: save(d.preview, ' (preview)'), print: save(d.print, ''),
+    preview: stored.preview, print: stored.print,
     w: Number(d.w) || 0, h: Number(d.h) || 0, qr: clean_(d.qr, 1000)
   };
   draft.Pages = JSON.stringify(pages);
   draft.Editor = clean_(d.editor, 60) || draft.Editor;
   save_('Drafts', draft);
-  touch_(p, {});
+  touch_(p, p['Folder ID'] ? {} : { 'Folder ID': stored.folder });
   return { status: 'ok' };
 }
 
