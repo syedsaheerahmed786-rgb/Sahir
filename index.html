@@ -227,7 +227,7 @@ const LIB = {
 };
 const SOURCE_EDGE = 3508;   // longest side an upload is read at (A4 at 300 dpi), so A4 spreads split into sharp A5 halves
 const PRINT_EDGE = 2480;    // longest side of a stored print page: A5 at 300 dpi
-const PREVIEW_EDGE = 1400;  // longest side of the image customers see
+const PREVIEW_EDGE = 1200;  // longest side of the image customers see
 const PAPER = { A4: [210, 297], A5: [148, 210] };
 
 /* Card formats. Each one says which designs the editor uploads (pages), how the customer sees them (views),
@@ -333,6 +333,11 @@ const app = $("#app");
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmtDate = iso => iso ? new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
 const fmtDay = iso => iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+// Last loaded data per screen, shown at once on the next visit while fresh data loads.
+const cacheKey = k => DEMO ? null : "meraki-approval-cache-" + k;
+const cached = k => cacheKey(k) ? store.get(cacheKey(k), null) : null;
+const remember = (k, v) => { if (cacheKey(k)) store.set(cacheKey(k), v); };
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } },
@@ -557,19 +562,32 @@ const Local = {
 const TOKEN = new URLSearchParams(location.search).get("c");
 const DEMO = !CONFIG.endpoint;
 const api = DEMO ? Local : Remote;
-function imageSrc(p, f) {
-  if (!imgCache.has(f)) imgCache.set(f, api.image(p, f).catch(e => { imgCache.delete(f); throw e; }));
+// A file's image as a data URL. Previews are kept in this browser after the first load: a file ID never
+// changes content (a new upload gets a new ID), so a kept copy is never out of date.
+function imageSrc(p, f, keep = true) {
+  if (!imgCache.has(f)) {
+    const k = "cache:" + f;
+    const load = async () => {
+      if (!DEMO && keep) { try { const v = await idb.get(k); if (v) return v; } catch (e) { /* storage blocked: load from the script */ } }
+      const v = await api.image(p, f);
+      if (!DEMO && keep) idb.put(k, v).catch(() => {});
+      return v;
+    };
+    imgCache.set(f, load().catch(e => { imgCache.delete(f); throw e; }));
+  }
   return imgCache.get(f);
 }
 function loadImg(src) {
   return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("Couldn't read that image.")); i.src = src; });
 }
-// Fills every <img data-file> inside el once its image has loaded.
+// Fills every <img data-file> inside el once its preview has loaded.
 function hydrate(el, p) {
   $$("img[data-file]", el).forEach(img => {
     imageSrc(p, img.dataset.file).then(src => { img.src = src; }).catch(() => { img.alt = "Couldn't load this page"; });
   });
 }
+// Starts loading a preview before it is shown, so switching views is instant.
+function warm(p, f) { imageSrc(p, f).catch(() => {}); }
 
 /* ======================= dialogs ======================= */
 const dlg = $("#dlg");
@@ -653,6 +671,7 @@ function mountViewer(el, o) {
     }));
   }
   draw();
+  Object.values(o.draft.pages).forEach(pg => warm(o.project, pg.preview));
   return {
     redraw: draw,
     // Switches to a view that shows the page and makes the pin pulse.
@@ -818,7 +837,7 @@ async function buildPdf(p, opt) {
   const draft = p.drafts.find(d => d.n === p.approvedDraft);
   const srcs = {}, imgs = {};
   for (const k of new Set(opt.sheets.flatMap(s => s.slots))) {
-    srcs[k] = await imageSrc(p, draft.pages[k].print);
+    srcs[k] = await imageSrc(p, draft.pages[k].print, false);
     imgs[k] = await loadImg(srcs[k]);
   }
   let doc = null;
@@ -899,11 +918,25 @@ function bindHeader() {
 /* ======================= editor: dashboard ======================= */
 let dashFilter = "all", dashQuery = "";
 async function renderDashboard() {
-  app.innerHTML = editorHeader() + `<div class="empty"><span class="spinner"></span></div>`;
-  bindHeader();
+  const rid = routeId, old = cached("list");
+  let draw = null;
+  if (old) draw = showDashboard(old);
+  else { app.innerHTML = editorHeader() + `<div class="empty"><span class="spinner"></span></div>`; bindHeader(); }
   let list;
-  try { list = await api.list(); } catch (e) { if (e.code === "denied") { auth = null; store.del("meraki-approval-editor"); return route(); } return fail(e); }
-  list.sort((a, b) => (b.updated || "").localeCompare(a.updated || ""));
+  try { list = await api.list(); }
+  catch (e) {
+    if (rid !== routeId) return;
+    if (e.code === "denied") { auth = null; store.del("meraki-approval-editor"); return route(); }
+    return old ? toast("Couldn't refresh: " + e.message, true) : fail(e);
+  }
+  if (rid !== routeId) return;
+  remember("list", list);
+  if (!draw) showDashboard(list);
+  else if (!same(list, old)) draw(list);
+}
+// Shows the customer list; returns a function that redraws it with newer data.
+function showDashboard(list) {
+  list = list.slice().sort((a, b) => (b.updated || "").localeCompare(a.updated || ""));
   const needs = x => x.status === "corrections" || (x.status === "new");
   const groups = {
     all: ["All customers", () => true], todo: ["Needs editor", needs],
@@ -931,6 +964,11 @@ async function renderDashboard() {
   $$("[data-f]").forEach(b => b.addEventListener("click", () => { dashFilter = b.dataset.f; draw(); }));
   $("#q").addEventListener("input", e => { dashQuery = e.target.value; draw(); });
   draw();
+  return fresh => {
+    list = fresh.slice().sort((a, b) => (b.updated || "").localeCompare(a.updated || ""));
+    $$("[data-f]").forEach(b => { $(".val", b).textContent = list.filter(groups[b.dataset.f][1]).length; });
+    draw();
+  };
 }
 
 /* ======================= editor: new customer ======================= */
@@ -1057,11 +1095,25 @@ function renderNew() {
 /* ======================= editor: customer file ======================= */
 const E = { p: null, tab: null, busy: {}, notes: [] };
 async function renderProject(id) {
-  app.innerHTML = editorHeader() + `<div class="empty"><span class="spinner"></span></div>`;
-  bindHeader();
-  try { E.p = await api.project(id); } catch (e) { if (e.code === "denied") { auth = null; store.del("meraki-approval-editor"); return route(); } return fail(e); }
+  const rid = routeId, old = cached("p-" + id);
   E.tab = null; E.busy = {}; E.notes = [];
-  drawProject();
+  if (old) { E.p = old; drawProject(); }
+  else { app.innerHTML = editorHeader() + `<div class="empty"><span class="spinner"></span></div>`; bindHeader(); }
+  let fresh;
+  try { fresh = await api.project(id); }
+  catch (e) {
+    if (rid !== routeId) return;
+    if (e.code === "denied") { auth = null; store.del("meraki-approval-editor"); return route(); }
+    return old ? toast("Couldn't refresh: " + e.message, true) : fail(e);
+  }
+  if (rid !== routeId) return;
+  // Redraw only if something changed, and not in the middle of an upload or an open dialog.
+  if (!old) { E.p = fresh; drawProject(); }
+  else if (!same(fresh, old) && !Object.keys(E.busy).length && !dlg.open) {
+    const reply = $("#reply textarea"), text = reply ? reply.value : "";
+    E.p = fresh; drawProject();
+    if (text && $("#reply textarea")) $("#reply textarea").value = text;
+  }
 }
 function defaultTab(p) {
   const up = uploadDraftNo(p), last = latest(p);
@@ -1080,6 +1132,7 @@ function shareText(p) {
 }
 function drawProject() {
   const p = E.p, cfg = p.config;
+  remember("p-" + p.id, p);
   if (E.tab === null) E.tab = defaultTab(p);
   const up = uploadDraftNo(p);
   const sh = shared(p);
@@ -1242,16 +1295,25 @@ async function handleFiles(files, target) {
   }
   E.busy = {}; plan.assign.forEach(a => E.busy[a.key] = "Waiting…");
   E.notes = plan.notes; drawUpload();
-  for (const a of plan.assign) {
-    E.busy[a.key] = "Uploading…"; drawUpload();
+  const pagesIn = q => Object.keys((q.drafts.find(d => d.n === n) || { pages: {} }).pages).length;
+  const one = async a => {
+    E.busy[a.key] = "Uploading…"; if (E.tab === "up") drawUpload();
     try {
       const print = scaled(a.canvas, PRINT_EDGE), preview = scaled(a.canvas, PREVIEW_EDGE);
-      E.p = await api.act(p.id, "page", { draft: n, slot: a.key, w: print.width, h: print.height, qr: a.qr || "",
-        print: print.toDataURL("image/jpeg", 0.92), preview: preview.toDataURL("image/jpeg", 0.82) });
+      const q = await api.act(p.id, "page", { draft: n, slot: a.key, w: print.width, h: print.height, qr: a.qr || "",
+        print: print.toDataURL("image/jpeg", 0.92), preview: preview.toDataURL("image/jpeg", 0.8) });
+      // Uploads finish in any order: keep whichever answer has the most pages.
+      if (pagesIn(q) >= pagesIn(E.p)) E.p = q;
     } catch (e) { toast(slotLabel(cfg, a.key) + ": " + e.message, true); }
     delete E.busy[a.key];
     if (E.tab === "up") drawUpload();
-  }
+  };
+  const queue = plan.assign.slice();
+  if (queue.length) await one(queue.shift());
+  // Demo mode saves to this browser one write at a time, so it uploads in turn.
+  const lanes = DEMO ? 1 : 3;
+  await Promise.all(Array.from({ length: Math.min(lanes, queue.length) }, async () => { while (queue.length) await one(queue.shift()); }));
+  if (plan.assign.length > 1) { try { E.p = await api.project(p.id); } catch (e) { /* keep what the uploads returned */ } }
   if (E.tab === "up") drawProject();
 }
 
@@ -1300,12 +1362,22 @@ function flashItem(num) {
 const C = { p: null, view: null, viewer: null, viewIndex: 0 };
 const pendingKey = n => `meraki-approval-pending-${TOKEN}-${n}`;
 async function renderCustomer() {
-  try { C.p = await api.customer(TOKEN); } catch (e) { return fail(e); }
-  C.view = latest(C.p) ? latest(C.p).n : null;
+  const old = cached("c-" + TOKEN);
+  if (old) { C.p = old; C.view = latest(old) ? latest(old).n : null; drawCustomer(); }
+  let fresh;
+  try { fresh = await api.customer(TOKEN); }
+  catch (e) { return old && e.code !== "notfound" && e.code !== "denied" ? toast("Couldn't refresh: " + e.message, true) : fail(e); }
+  if (old && (same(fresh, old) || dlg.open)) return;
+  const wasLatest = !old || !latest(old) || C.view === latest(old).n;
+  C.p = fresh;
+  if (wasLatest || !fresh.drafts.some(d => d.n === C.view)) C.view = latest(fresh) ? latest(fresh).n : null;
+  const name = $("#cName") ? $("#cName").value : null;
   drawCustomer();
+  if (name !== null && $("#cName")) $("#cName").value = name;
 }
 function drawCustomer() {
   const p = C.p, cfg = p.config, last = latest(p);
+  remember("c-" + TOKEN, p);
   const right = `<span>${esc(p.customer)}</span>`;
   if (!last) {
     app.innerHTML = header(right) + `<section class="panel empty"><h2>Your design is being prepared</h2>
@@ -1429,7 +1501,9 @@ function composeCorrection(item, index) {
 }
 
 /* ======================= routing ======================= */
+let routeId = 0;
 function route() {
+  routeId++;
   if (TOKEN) return renderCustomer();
   if (!auth) return renderLogin();
   const h = location.hash;
