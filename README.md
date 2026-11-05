@@ -68,6 +68,7 @@ Address: `https://syedsaheerahmed786-rgb.github.io/Sahir/approval/`. It is conne
 | A4 folded card (default) | Front cover (names or caricatures), inside left (English), inside right (Assamese), back (QR) | Front · Opened · Back | **A4 sheets:** outside (back + front) and inside (English + Assamese). Print double-sided, flip on the short edge, fold. Also **A5 pages**. |
 | A5 card, front & back | Front, back | Front · Back | **A5** front and back, or **2 per A4 sheet** |
 | Two A5 cards, shared back | Card 1 front, card 2 front, common back | Card 1 · Card 2 · Back | **A5** (card 1 front, back, card 2 front, back), or **both cards on one A4 sheet** |
+| Signage | 1 to 10 boards (welcome board, menu, seating chart…), 18 × 24 in, 24 × 36 in, 36 × 48 in, A3, A2, A1 or a custom size, portrait or landscape, optional QR on the last board | A tab per board | **Actual size** (one page per board, at the board's real dimensions) and an **A4 proof** |
 | Custom | 1 to 12 designs, A5 or A4, folded or separate, your own page names, optional QR on the last page | As chosen | Pages at the chosen size, plus 2 per A4 sheet for A5 |
 
 To add another standard format, copy a block in `FORMATS` near the top of the script in `approval/index.html`.
