@@ -117,6 +117,7 @@ textarea { min-height: 90px; resize: vertical; }
 .fmt .mini { display: flex; gap: 6px; align-items: flex-end; height: 46px; }
 .fmt .mini i { display: block; width: 24px; height: 34px; border: 1.5px solid var(--muted); border-radius: 2px; background: var(--panel); font-style: normal; font-size: 8px; color: var(--muted); text-align: center; line-height: 31px; }
 .fmt .mini i.wide { width: 48px; background: linear-gradient(90deg, var(--panel) 49%, var(--muted) 49% 51%, var(--panel) 51%); }
+.fmt .mini i.board { width: 30px; height: 40px; border-width: 2px; border-radius: 1px; box-shadow: 0 4px 0 -2px var(--muted); }
 .fmt .mini i.qr { background: repeating-conic-gradient(var(--muted) 0 25%, var(--panel) 0 50%) 50% 50% / 6px 6px; }
 
 /* viewer */
@@ -297,9 +298,48 @@ const FORMATS = {
       ]
     }
   },
+  signage: { name: "Signage", tag: "Boards & standees", desc: "Welcome boards, menus, seating charts. Pick the board size; the print PDF comes out at actual size.", mini: ["board", "board"] },
   custom: { name: "Custom", tag: "Your own layout", desc: "Any number of designs, A5 or A4, folded or separate.", mini: ["?", "?", "?"] }
 };
 const DEFAULT_FORMAT = "a4fold";
+
+// Board sizes for signage, portrait, in mm.
+const SIGN_SIZES = {
+  "18x24in": { label: "18 × 24 in", w: 457, h: 610 },
+  "24x36in": { label: "24 × 36 in (2 × 3 ft)", w: 610, h: 914 },
+  "36x48in": { label: "36 × 48 in (3 × 4 ft)", w: 914, h: 1219 },
+  A3: { label: "A3 (297 × 420 mm)", w: 297, h: 420 },
+  A2: { label: "A2 (420 × 594 mm)", w: 420, h: 594 },
+  A1: { label: "A1 (594 × 841 mm)", w: 594, h: 841 }
+};
+// Boards are big, so their uploads keep more pixels than card pages: about 120 dpi on a 24 × 36 in board,
+// which prints sharp at viewing distance, while staying under the largest canvas phones can handle.
+const SIGN_EDGE = 4200;
+
+// Builds the config for signage chosen in the New customer form.
+function signageConfig({ size, cw, ch, unit, orient, count, labels, qrLast }) {
+  let w, h, label;
+  if (size === "custom") {
+    const mm = { in: 25.4, ft: 304.8, cm: 10 }[unit] || 25.4;
+    w = Math.round(cw * mm); h = Math.round(ch * mm);
+    if (!(w > 0 && h > 0)) throw new Error("Enter the board's width and height.");
+    label = `${cw} × ${ch} ${unit}`;
+  } else ({ w, h, label } = SIGN_SIZES[size] || SIGN_SIZES["24x36in"]);
+  if ((orient === "landscape") !== (w > h)) [w, h] = [h, w];
+  if (orient === "landscape") label += ", landscape";
+  count = Math.max(1, Math.min(10, count | 0));
+  const pages = Array.from({ length: count }, (_, i) => ({ key: "b" + (i + 1), label: (labels[i] || "").trim() || (count === 1 ? "Board" : "Board " + (i + 1)), hint: label }));
+  if (qrLast) { pages[count - 1].qr = true; pages[count - 1].hint += " · QR code"; }
+  const keys = pages.map(x => x.key);
+  return {
+    kind: "signage", size: label, mm: [w, h], ratio: Math.max(w, h) / Math.min(w, h), printEdge: SIGN_EDGE,
+    pages, views: pages.map(x => ({ label: x.label, pages: [x.key] })),
+    print: [
+      { id: "full", label: "Actual size", sheet: "custom", mm: [w, h], note: `${count === 1 ? "The board" : count + " boards, one per page,"} at ${label}, ready for the printer.`, sheets: keys.map(k => S(k)) },
+      { id: "proof", label: "A4 proof", sheet: "A4", note: "Scaled down to fit A4, to check on an office printer.", sheets: keys.map(k => S(k)) }
+    ]
+  };
+}
 
 // Builds the config for a custom layout chosen in the New customer form.
 function customConfig({ count, size, layout, labels, qrLast }) {
@@ -368,7 +408,7 @@ const STATUS = {
   corrections: ["Corrections received", "accent"], approved: ["Approved", "ok"]
 };
 const statusChip = s => `<span class="chip ${(STATUS[s] || STATUS.new)[1]}">${esc((STATUS[s] || STATUS.new)[0])}</span>`;
-const formatName = p => (FORMATS[p.format] || FORMATS.custom).name;
+const formatName = p => p.format === "signage" && p.config.size ? "Signage · " + p.config.size : (FORMATS[p.format] || FORMATS.custom).name;
 const slotDef = (cfg, key) => cfg.pages.find(x => x.key === key) || { key, label: key };
 const slotLabel = (cfg, key) => slotDef(cfg, key).label;
 const shared = p => p.drafts.filter(d => d.shared);
@@ -391,9 +431,11 @@ function pageWarnings(cfg, key, page) {
   const w = [];
   const def = slotDef(cfg, key);
   if (!page) return w;
-  const r = Math.max(page.w, page.h) / Math.max(1, Math.min(page.w, page.h));
-  if (page.w && Math.abs(r - Math.SQRT2) / Math.SQRT2 > 0.04) w.push(["warn", `Not ${cfg.size || "A5"} shape. It will be centred with white edges when printed.`]);
-  if (page.w && Math.max(page.w, page.h) < 1600) w.push(["warn", `Low resolution (${page.w}×${page.h}px). Export at 300 dpi for sharp print.`]);
+  const r = Math.max(page.w, page.h) / Math.max(1, Math.min(page.w, page.h)), want = cfg.ratio || Math.SQRT2;
+  const sign = cfg.kind === "signage";
+  if (page.w && Math.abs(r - want) / want > 0.04) w.push(["warn", `Not ${cfg.size || "A5"} shape. It will be centred with white edges when printed.`]);
+  else if (page.w && cfg.mm && (page.w > page.h) !== (cfg.mm[0] > cfg.mm[1])) w.push(["warn", `This design is ${page.w > page.h ? "landscape" : "portrait"} but the board is ${cfg.mm[0] > cfg.mm[1] ? "landscape" : "portrait"}.`]);
+  if (page.w && Math.max(page.w, page.h) < (sign ? 3000 : 1600)) w.push(["warn", `Low resolution (${page.w}×${page.h}px). ${sign ? "Export at least 3000 px on the long side for a sharp board." : "Export at 300 dpi for sharp print."}`]);
   if (def.qr && !page.qr) w.push(["bad", "No QR code found on this page."]);
   return w;
 }
@@ -723,7 +765,7 @@ function scaled(src, maxEdge, sx = 0, sy = 0, sw = src.width, sh = src.height) {
   g.drawImage(src, sx, sy, sw, sh, 0, 0, c.width, c.height);
   return c;
 }
-async function readFile(file) {
+async function readFile(file, edge = SOURCE_EDGE) {
   if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
     await loadScript(LIB.pdf);
     pdfjsLib.GlobalWorkerOptions.workerSrc = LIB.pdfWorker;
@@ -732,7 +774,7 @@ async function readFile(file) {
     for (let i = 1; i <= doc.numPages; i++) {
       const page = await doc.getPage(i);
       const v1 = page.getViewport({ scale: 1 });
-      const v = page.getViewport({ scale: Math.min(8, SOURCE_EDGE / Math.max(v1.width, v1.height)) });
+      const v = page.getViewport({ scale: Math.min(8, edge / Math.max(v1.width, v1.height)) });
       const c = makeCanvas(v.width, v.height), g = c.getContext("2d");
       g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
       await page.render({ canvasContext: g, viewport: v }).promise;
@@ -742,7 +784,7 @@ async function readFile(file) {
   }
   if (!/^image\//.test(file.type) && !/\.(jpe?g|png|webp)$/i.test(file.name)) throw new Error(file.name + " is not an image or PDF.");
   const url = URL.createObjectURL(file);
-  try { return [{ canvas: scaled(await loadImg(url), SOURCE_EDGE), name: file.name }]; }
+  try { return [{ canvas: scaled(await loadImg(url), edge), name: file.name }]; }
   finally { URL.revokeObjectURL(url); }
 }
 function halves(c) {
@@ -845,7 +887,10 @@ async function buildPdf(p, opt) {
     const first = imgs[sh.slots[0]];
     const land = first.naturalWidth > first.naturalHeight;
     let pw, ph, cells;
-    if (sh.slots.length === 1) {
+    if (sh.slots.length === 1 && opt.mm) {
+      [pw, ph] = opt.mm; // a board prints at its own size and orientation
+      cells = [{ x: 0, y: 0, w: pw, h: ph }];
+    } else if (sh.slots.length === 1) {
       const [a, b] = PAPER[opt.sheet] || PAPER.A5;
       [pw, ph] = land ? [b, a] : [a, b];
       cells = [{ x: 0, y: 0, w: pw, h: ph }];
@@ -916,7 +961,8 @@ function bindHeader() {
 }
 
 /* ======================= editor: dashboard ======================= */
-let dashFilter = "all", dashQuery = "";
+let dashFilter = "all", dashQuery = "", dashType = "all";
+const TYPES = { all: ["All", () => true], cards: ["Cards", x => x.format !== "signage"], signage: ["Signage", x => x.format === "signage"] };
 async function renderDashboard() {
   const rid = routeId, old = cached("list");
   let draw = null;
@@ -944,7 +990,10 @@ function showDashboard(list) {
   };
   function draw() {
     const q = dashQuery.toLowerCase();
-    const shown = list.filter(groups[dashFilter][1]).filter(x => !q || [x.customer, x.phone, x.id, x.orderId].join(" ").toLowerCase().includes(q));
+    const base = list.filter(TYPES[dashType][1]);
+    $$("[data-f]").forEach(b => { $(".val", b).textContent = base.filter(groups[b.dataset.f][1]).length; });
+    $$("[data-type]").forEach(b => b.setAttribute("aria-pressed", b.dataset.type === dashType));
+    const shown = base.filter(groups[dashFilter][1]).filter(x => !q || [x.customer, x.phone, x.id, x.orderId].join(" ").toLowerCase().includes(q));
     $("#plist").innerHTML = shown.length ? shown.map(x => `<a class="pcard" href="#/p/${encodeURIComponent(x.id)}">
         <div class="row" style="justify-content:space-between"><b>${esc(x.customer)}</b>${statusChip(x.status)}</div>
         <div class="meta"><span>${esc(x.phone || "No phone")}</span><span>·</span><span>${esc((FORMATS[x.format] || FORMATS.custom).name)}</span></div>
@@ -956,17 +1005,18 @@ function showDashboard(list) {
   }
   app.innerHTML = editorHeader() + `
     <div class="toolbar"><h1 style="font-size:1.7rem">Customer files</h1><a class="btn primary" href="#/new">+ New customer</a></div>
+    <div class="seg" role="group" aria-label="Show">${Object.entries(TYPES).map(([k, [l]]) => `<button type="button" data-type="${k}" aria-pressed="${k === dashType}">${l}</button>`).join("")}</div>
     <div class="kpis">${Object.entries(groups).map(([k, [label, fn]]) =>
       `<button class="kpi" data-f="${k}" aria-pressed="false"><span class="eyebrow">${esc(label)}</span><span class="val">${list.filter(fn).length}</span></button>`).join("")}</div>
     <input type="search" id="q" placeholder="Search name, phone or order ID" value="${esc(dashQuery)}" aria-label="Search customers">
     <div class="plist" id="plist"></div>`;
   bindHeader();
   $$("[data-f]").forEach(b => b.addEventListener("click", () => { dashFilter = b.dataset.f; draw(); }));
+  $$("[data-type]").forEach(b => b.addEventListener("click", () => { dashType = b.dataset.type; draw(); }));
   $("#q").addEventListener("input", e => { dashQuery = e.target.value; draw(); });
   draw();
   return fresh => {
     list = fresh.slice().sort((a, b) => (b.updated || "").localeCompare(a.updated || ""));
-    $$("[data-f]").forEach(b => { $(".val", b).textContent = list.filter(groups[b.dataset.f][1]).length; });
     draw();
   };
 }
@@ -974,7 +1024,7 @@ function showDashboard(list) {
 /* ======================= editor: new customer ======================= */
 function formatPicker(selected) {
   return `<div class="formats">${Object.entries(FORMATS).map(([k, f]) => `<button type="button" class="fmt" data-fmt="${k}" aria-pressed="${k === selected}">
-      <div class="mini">${f.mini.map(m => m === "wide" ? `<i class="wide"></i>` : m === "qr" ? `<i class="qr"></i>` : `<i>${esc(m)}</i>`).join("")}</div>
+      <div class="mini">${f.mini.map(m => m === "wide" || m === "qr" || m === "board" ? `<i class="${m}"></i>` : `<i>${esc(m)}</i>`).join("")}</div>
       <b>${esc(f.name)}${k === DEFAULT_FORMAT ? ` <span class="chip gold">Default</span>` : ""}</b>
       <span class="small muted">${esc(f.tag)}. ${esc(f.desc)}</span></button>`).join("")}</div>
     <div id="customBox" class="panel" style="background:var(--bg)" ${selected === "custom" ? "" : "hidden"}>
@@ -985,19 +1035,39 @@ function formatPicker(selected) {
         <label class="field" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" name="cQr"> Last page has a QR code</label>
       </div>
       <label class="field">Page names <span class="hint">One per line, in order. Leave empty for Page 1, Page 2…</span><textarea name="cLabels" rows="4" placeholder="Front&#10;Inside&#10;Back"></textarea></label>
+    </div>
+    <div id="signBox" class="panel" style="background:var(--bg)" ${selected === "signage" ? "" : "hidden"}>
+      <div class="grid-2" style="gap:12px">
+        <label class="field">Board size<select name="sSize">${Object.entries(SIGN_SIZES).map(([k, v]) => `<option value="${k}" ${k === "24x36in" ? "selected" : ""}>${esc(v.label)}</option>`).join("")}<option value="custom">Custom size…</option></select></label>
+        <label class="field">Orientation<select name="sOrient"><option value="portrait">Portrait (tall)</option><option value="landscape">Landscape (wide)</option></select></label>
+        <div class="field" id="sCustom" hidden><span>Custom size</span><div class="row" style="flex-wrap:nowrap">
+          <input type="number" name="sW" min="1" step="0.1" placeholder="Width" aria-label="Width"><span>×</span>
+          <input type="number" name="sH" min="1" step="0.1" placeholder="Height" aria-label="Height">
+          <select name="sUnit" style="width:auto" aria-label="Unit"><option value="in">in</option><option value="ft">ft</option><option value="cm">cm</option></select></div></div>
+        <label class="field">Number of boards<input type="number" name="sCount" min="1" max="10" value="1"></label>
+        <label class="field" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" name="sQr"> Last board has a QR code</label>
+      </div>
+      <label class="field">Board names <span class="hint">One per line, in order. Leave empty for Board 1, Board 2…</span><textarea name="sLabels" rows="3" placeholder="Welcome board&#10;Menu&#10;Seating chart"></textarea></label>
     </div>`;
 }
 function readFormat(form, fmt) {
-  if (fmt !== "custom") return JSON.parse(JSON.stringify(FORMATS[fmt].config));
   const f = new FormData(form);
+  if (fmt === "signage") {
+    return signageConfig({ size: f.get("sSize"), cw: +f.get("sW"), ch: +f.get("sH"), unit: f.get("sUnit"), orient: f.get("sOrient"),
+      count: +f.get("sCount"), labels: String(f.get("sLabels") || "").split("\n"), qrLast: !!f.get("sQr") });
+  }
+  if (fmt !== "custom") return JSON.parse(JSON.stringify(FORMATS[fmt].config));
   return customConfig({ count: +f.get("cCount"), size: f.get("cSize"), layout: f.get("cLayout"), labels: String(f.get("cLabels") || "").split("\n"), qrLast: !!f.get("cQr") });
 }
 function bindFormatPicker(root, onChange) {
   $$("[data-fmt]", root).forEach(b => b.addEventListener("click", () => {
     $$("[data-fmt]", root).forEach(x => x.setAttribute("aria-pressed", x === b));
     $("#customBox", root).hidden = b.dataset.fmt !== "custom";
+    $("#signBox", root).hidden = b.dataset.fmt !== "signage";
     onChange(b.dataset.fmt);
   }));
+  const size = $("[name=sSize]", root);
+  size.addEventListener("change", () => { $("#sCustom", root).hidden = size.value !== "custom"; });
 }
 // One booking from the website's bookings sheet, as a card.
 function orderCard(o, actions = "") {
@@ -1035,7 +1105,7 @@ function renderNew() {
         <label class="field">Customer name<input type="text" name="customer" required maxlength="80" placeholder="e.g. Priyanka & Rahul"></label>
         <label class="field">Phone (WhatsApp)<input type="tel" name="phone" inputmode="tel" maxlength="16" placeholder="10-digit mobile"></label>
       </div>
-      <div class="field" style="gap:8px"><span style="font-weight:600;font-size:.88rem">Card format</span>${formatPicker(fmt)}</div>
+      <div class="field" style="gap:8px"><span style="font-weight:600;font-size:.88rem">Format</span>${formatPicker(fmt)}</div>
       <div class="grid-2" style="gap:14px">
         <label class="field">Drafts for corrections<input type="number" name="drafts" min="1" max="10" value="3"></label>
         <label class="field">Notes for editors <span class="hint">Side (bride/groom), special requests… Customers don't see this.</span><textarea name="notes" rows="2"></textarea></label>
@@ -1126,7 +1196,7 @@ function shareText(p) {
   const last = latest(p), link = customerLink(p);
   if (!last) return `Hello ${p.customer}, this is ${CONFIG.studio}. Your card design will appear here: ${link}`;
   const final = last.n >= p.draftsAllowed;
-  return `Hello ${p.customer}! Draft ${last.n} of your ${CONFIG.studio} card design is ready.\n\nPlease open the link, check every page carefully, and tap on the design to mark any correction. When everything is correct, press Approve.\n\n${final
+  return `Hello ${p.customer}! Draft ${last.n} of your ${CONFIG.studio} ${p.config.kind === "signage" ? "signage" : "card"} design is ready.\n\nPlease open the link, check every page carefully, and tap on the design to mark any correction. When everything is correct, press Approve.\n\n${final
     ? "This is your final draft, so please send all remaining corrections now."
     : `You get ${p.draftsAllowed} drafts in total; this is draft ${last.n}. Please send all corrections together.`}\n\n${link}`;
 }
@@ -1199,7 +1269,7 @@ function editProject() {
     <label class="field">Phone<input type="tel" name="phone" maxlength="16" value="${esc(p.phone)}"></label>
     <label class="field">Drafts for corrections<input type="number" name="drafts" min="1" max="10" value="${p.draftsAllowed}"></label>
     <label class="field">Notes for editors<textarea name="notes" rows="3">${esc(p.notes || "")}</textarea></label>
-    ${canFormat ? `<div class="field" style="gap:8px"><span>Card format</span>${formatPicker(fmt)}</div>` : `<p class="small muted">Format: ${esc(formatName(p))}. It can't change after the first upload.</p>`}
+    ${canFormat ? `<div class="field" style="gap:8px"><span>Format</span>${formatPicker(fmt)}</div>` : `<p class="small muted">Format: ${esc(formatName(p))}. It can't change after the first upload.</p>`}
     <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary">Save</button></div></form>`, d => {
     const form = $("#editForm", d);
     if (canFormat) bindFormatPicker(form, f => fmt = f);
@@ -1207,8 +1277,10 @@ function editProject() {
       e.preventDefault();
       const f = new FormData(form);
       const body = { customer: String(f.get("customer")).trim(), phone: String(f.get("phone")).trim(), notes: String(f.get("notes")), draftsAllowed: +f.get("drafts") };
-      if (canFormat && (fmt !== p.format || fmt === "custom")) Object.assign(body, { format: fmt, config: readFormat(form, fmt) });
-      try { E.p = await api.act(p.id, "update", body); dlg.close(); drawProject(); toast("Saved."); } catch (err) { toast(err.message, true); }
+      try {
+        if (canFormat && (fmt !== p.format || fmt === "custom" || fmt === "signage")) Object.assign(body, { format: fmt, config: readFormat(form, fmt) });
+        E.p = await api.act(p.id, "update", body); dlg.close(); drawProject(); toast("Saved.");
+      } catch (err) { toast(err.message, true); }
     });
   });
 }
@@ -1287,7 +1359,7 @@ async function handleFiles(files, target) {
   let plan;
   try {
     const items = [];
-    for (const f of files) items.push(...await readFile(f));
+    for (const f of files) items.push(...await readFile(f, Math.max(SOURCE_EDGE, cfg.printEdge || 0)));
     busyKeys.forEach(k => E.busy[k] = "Checking QR…"); drawUpload();
     plan = await arrange(cfg, items, ($("#upMode") || {}).value || "auto", filled, target);
   } catch (e) {
@@ -1299,7 +1371,7 @@ async function handleFiles(files, target) {
   const one = async a => {
     E.busy[a.key] = "Uploading…"; if (E.tab === "up") drawUpload();
     try {
-      const print = scaled(a.canvas, PRINT_EDGE), preview = scaled(a.canvas, PREVIEW_EDGE);
+      const print = scaled(a.canvas, cfg.printEdge || PRINT_EDGE), preview = scaled(a.canvas, PREVIEW_EDGE);
       const q = await api.act(p.id, "page", { draft: n, slot: a.key, w: print.width, h: print.height, qr: a.qr || "",
         print: print.toDataURL("image/jpeg", 0.92), preview: preview.toDataURL("image/jpeg", 0.8) });
       // Uploads finish in any order: keep whichever answer has the most pages.
@@ -1401,7 +1473,7 @@ function drawCustomer() {
       <div class="panel-head"><div><span class="eyebrow">${esc(formatName(p))}</span><h1 style="font-size:1.6rem">Hello ${esc(p.customer)}</h1></div>
         ${shared(p).length > 1 ? `<label class="small row" style="gap:6px">Viewing <select id="draftSel" style="width:auto">${shared(p).map(x => `<option value="${x.n}" ${x.n === n ? "selected" : ""}>Draft ${x.n}${x.n === last.n ? " (latest)" : ""}</option>`).join("")}</select></label>` : ""}</div>
       <div class="steps">${steps}</div>
-      ${approved ? `<div class="note ok"><b>You approved draft ${p.approvedDraft} on ${esc(fmtDay(p.approvedAt))}.</b> Thank you! Your cards now go to print.</div>`
+      ${approved ? `<div class="note ok"><b>You approved draft ${p.approvedDraft} on ${esc(fmtDay(p.approvedAt))}.</b> Thank you! Your design now goes to print.</div>`
         : !viewingLatest ? `<div class="note">This is an older draft. <a href="#" id="toLatest">Go to the latest draft ${last.n}</a> to send corrections or approve.</div>`
         : p.status === "corrections" ? `<div class="note gold">We've received your corrections on draft ${n}. ${final ? CONFIG.studio + " will get in touch about them." : `We're preparing draft ${n + 1}.`} You can still add more corrections below.</div>`
         : `<div class="note ${final ? "warn" : "gold"}">${final
