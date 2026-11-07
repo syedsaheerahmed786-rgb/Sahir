@@ -13,6 +13,8 @@ const DEFAULT_DRAFTS = 3;
 const NOTIFY_EMAIL = '';
 // Drive folder for the uploaded designs. It's created in the owner's Drive on first use.
 const FOLDER_NAME = 'Meraki Design Approvals';
+// Catalogue designs a customer may switch to: images on the Meraki website.
+const CATALOGUE_URL = /^https:\/\/themerakievent\.in\/wp-content\/uploads\/[\w\/.%-]+\.(png|jpe?g|webp)$/i;
 // The website's order sheets. Editors search them by order ID to start a customer file.
 const BOOKING_SHEETS = [
   { id: '1MCNCnPgRyjigbpYoagGeVD4YNXewcOO5F2CqKUqW_Qk', kind: 'card' },  // "Meraki Wedding Bookings(cards)", ORD- orders
@@ -21,9 +23,10 @@ const BOOKING_SHEETS = [
 
 const TABS = {
   Projects: ['ID', 'Token', 'Customer', 'Phone', 'Format', 'Config', 'Drafts allowed', 'Status', 'Editor', 'Notes',
-    'Created', 'Updated', 'Approved draft', 'Approved at', 'Approved by', 'Folder ID', 'Order'],
+    'Created', 'Updated', 'Approved draft', 'Approved at', 'Approved by', 'Folder ID', 'Order', 'Delivery'],
   Drafts: ['Project ID', 'Draft', 'Editor', 'Created', 'Shared at', 'Pages'],
-  Messages: ['ID', 'Project ID', 'Draft', 'From', 'Name', 'Page', 'X', 'Y', 'Text', 'Time', 'Done']
+  // Type "design": a customer asking for a different design; Ref is a catalogue image URL or drive:<file id>.
+  Messages: ['ID', 'Project ID', 'Draft', 'From', 'Name', 'Page', 'X', 'Y', 'Text', 'Time', 'Done', 'Type', 'Ref']
 };
 
 /* ---------- sheet helpers ---------- */
@@ -139,7 +142,7 @@ function bookingsIn_(src) {
         customer: get('customer'), phone: get('phone'), quantity: get('quantity'),
         weddingDate: c.weddingDate < 0 ? '' : day_(r[c.weddingDate], 'yyyy-MM-dd'), pincode: pin,
         coverUrl: design, insideUrl: get('insideUrl'), details: details.slice(0, 500),
-        booked: day_(r[c.booked], 'dd/MM/yyyy HH:mm')
+        address: address.replace(/\n?PIN:\s*\d{6}\s*$/, '').trim(), booked: day_(r[c.booked], 'dd/MM/yyyy HH:mm')
       };
     });
   }
@@ -175,7 +178,7 @@ function findOrders_(q) {
 function cleanOrder_(o) {
   if (!o || !o.orderId) return '';
   const out = {};
-  ['kind', 'orderId', 'productId', 'product', 'events', 'customer', 'phone', 'quantity', 'weddingDate', 'pincode', 'coverUrl', 'insideUrl', 'details', 'booked']
+  ['kind', 'orderId', 'productId', 'product', 'events', 'customer', 'phone', 'quantity', 'weddingDate', 'pincode', 'coverUrl', 'insideUrl', 'details', 'address', 'booked']
     .forEach(function (k) { out[k] = clean_(o[k], 500); });
   return JSON.stringify(out);
 }
@@ -216,7 +219,7 @@ function out_(p, editor) {
     return {
       id: m.ID, draft: Number(m.Draft), from: m.From, name: m.Name, page: m.Page,
       x: m.X === '' ? null : Number(m.X), y: m.Y === '' ? null : Number(m.Y),
-      text: m.Text, time: iso_(m.Time), done: m.Done === true || m.Done === 'TRUE'
+      text: m.Text, time: iso_(m.Time), done: m.Done === true || m.Done === 'TRUE', type: m.Type || '', ref: m.Ref || ''
     };
   });
   const o = {
@@ -225,9 +228,16 @@ function out_(p, editor) {
     created: iso_(p.Created), updated: iso_(p.Updated),
     approvedDraft: p['Approved draft'] === '' ? null : Number(p['Approved draft']),
     approvedAt: iso_(p['Approved at']), approvedBy: p['Approved by'],
-    drafts: drafts, messages: messages
+    drafts: drafts, messages: messages, delivery: parse_(p.Delivery, null)
   };
-  if (editor) { o.token = p.Token; o.notes = p.Notes; o.order = parse_(p.Order, null); }
+  const order = parse_(p.Order, null);
+  if (editor) { o.token = p.Token; o.notes = p.Notes; o.order = order; }
+  else if (order) {
+    // The customer's own booking, for the tracking page and to fill in the delivery address.
+    o.orderInfo = { kind: order.kind, orderId: order.orderId, product: order.product, events: order.events,
+      quantity: order.quantity, weddingDate: order.weddingDate, coverUrl: order.coverUrl,
+      address: order.address || '', pincode: order.pincode || '' };
+  }
   return o;
 }
 
@@ -262,7 +272,8 @@ function doGet(e) {
           id: p.ID, customer: p.Customer, phone: String(p.Phone), format: p.Format, status: p.Status, editor: p.Editor,
           draftsAllowed: Number(p['Drafts allowed']) || DEFAULT_DRAFTS, shared: shared, drafts: mine.length,
           openCorrections: open, updated: iso_(p.Updated), created: iso_(p.Created),
-          orderId: (parse_(p.Order, {}) || {}).orderId || ''
+          orderId: (parse_(p.Order, {}) || {}).orderId || '',
+          delivery: (parse_(p.Delivery, {}) || {}).status || ''
         };
       });
       return json_({ status: 'ok', projects: list });
@@ -290,7 +301,8 @@ function doGet(e) {
           return pages[k].preview === q.f || (editor && pages[k].print === q.f);
         });
       });
-      if (!allowed) return json_({ status: 'denied' });
+      const ownRef = messagesOf_(p.ID).some(function (m) { return m.Ref === 'drive:' + q.f; });
+      if (!allowed && !ownRef) return json_({ status: 'denied' });
       const blob = DriveApp.getFileById(q.f).getBlob();
       return json_({ status: 'ok', mime: blob.getContentType(), data: Utilities.base64Encode(blob.getBytes()) });
     }
@@ -308,6 +320,7 @@ function doPost(e) {
   try {
     d = JSON.parse(e.postData.contents);
     // Saving images to Drive is the slow part of an upload; it needs no lock, so it happens first.
+    if (d.k !== EDITOR_KEY && d.action === 'refupload') return json_(refUpload_(d));
     if (d.k === EDITOR_KEY && d.action === 'page') {
       const p0 = findProject_(d.id);
       if (p0) {
@@ -329,6 +342,7 @@ function doPost(e) {
       const p = d.t ? findProject_(null, d.t) : null;
       if (!p) return json_({ status: 'denied' });
       if (d.action === 'message') return json_(addMessages_(p, d, 'customer'));
+      if (d.action === 'design') return json_(design_(p, d));
       if (d.action === 'approve') return json_(approve_(p, d));
       return json_({ status: 'denied' });
     }
@@ -357,6 +371,7 @@ function doPost(e) {
       case 'share': r = share_(p, d); break;
       case 'message': r = addMessages_(p, d, 'editor'); break;
       case 'done': r = setDone_(p, d); break;
+      case 'delivery': r = delivery_(p, d); break;
       case 'grant': touch_(p, { 'Drafts allowed': (Number(p['Drafts allowed']) || DEFAULT_DRAFTS) + 1 }); break;
       case 'reopen':
         touch_(p, { Status: 'corrections', 'Approved draft': '', 'Approved at': '', 'Approved by': '' });
@@ -510,11 +525,93 @@ function setDone_(p, d) {
   return { status: 'ok' };
 }
 
+// A delivery address from the page, checked; or an error message.
+function address_(a) {
+  a = a || {};
+  const out = { name: clean_(a.name, 80), phone: String(a.phone || '').replace(/[^\d+]/g, '').slice(0, 16),
+    address: clean_(a.address, 400), pincode: String(a.pincode || '').replace(/\D/g, '').slice(0, 6) };
+  if (out.name.length < 2) return 'Please enter the name of the person receiving the delivery.';
+  if (out.phone.replace(/\D/g, '').length < 10) return 'Please enter a 10-digit phone number for the delivery.';
+  if (out.address.length < 10) return 'Please enter the full delivery address.';
+  if (!/^\d{6}$/.test(out.pincode)) return 'Please enter the 6-digit PIN code.';
+  return out;
+}
+
 function approve_(p, d) {
   const shared = sharedCount_(draftsOf_(p.ID));
   if (p.Status === 'approved') return { status: 'ok', project: out_(p, false) };
   if (!shared || Number(d.draft) !== shared) return { status: 'invalid', message: 'Please approve the latest draft.' };
-  touch_(p, { Status: 'approved', 'Approved draft': shared, 'Approved at': new Date(), 'Approved by': clean_(d.name, 60) || p.Customer });
+  const a = address_(d.delivery);
+  if (typeof a === 'string') return { status: 'invalid', message: a };
+  a.status = 'confirmed'; a.confirmedAt = new Date().toISOString();
+  touch_(p, { Status: 'approved', 'Approved draft': shared, 'Approved at': new Date(), 'Approved by': clean_(d.name, 60) || p.Customer,
+    Delivery: JSON.stringify(a) });
   notify_(p, p.Customer + ' approved draft ' + shared, 'The design is approved and ready for print.');
   return { status: 'ok', project: out_(findProject_(p.ID), false) };
+}
+
+/* ---------- design changes and delivery ---------- */
+
+// Saves a design picture the customer uploads (before sending it as a design change) and returns its file ID.
+function refUpload_(d) {
+  const p = d.t ? findProject_(null, d.t) : null;
+  if (!p) return { status: 'denied' };
+  if (p.Status === 'approved') return { status: 'invalid', message: 'This design is already approved.' };
+  const b64 = String(d.data || '').replace(/^data:image\/jpeg;base64,/, '');
+  if (!b64 || b64.length > 4500000) return { status: 'invalid', message: 'Please choose a smaller picture.' };
+  const name = 'Customer design ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HHmmss') + '.jpg';
+  const file = pageFolder_(p).createFile(Utilities.newBlob(Utilities.base64Decode(b64), 'image/jpeg', name));
+  return { status: 'ok', file: file.getId() };
+}
+
+// A customer asks for a different design: one from the website catalogue, or a picture they uploaded.
+function design_(p, d) {
+  if (p.Status === 'approved') return { status: 'invalid', message: 'This design is already approved.' };
+  let ref;
+  if (d.url) {
+    if (!CATALOGUE_URL.test(String(d.url))) return { status: 'invalid', message: 'Please pick a design from the catalogue.' };
+    ref = String(d.url);
+  } else if (d.file) {
+    // Only a picture saved by refUpload_ into this customer's folder.
+    let inFolder = false;
+    try {
+      const folder = pageFolder_(p).getId(), parents = DriveApp.getFileById(String(d.file)).getParents();
+      while (parents.hasNext()) if (parents.next().getId() === folder) inFolder = true;
+    } catch (e) { inFolder = false; }
+    if (!inFolder) return { status: 'invalid', message: 'Please upload the picture again.' };
+    ref = 'drive:' + String(d.file);
+  } else return { status: 'invalid', message: 'Pick a design or upload a picture.' };
+  const slots = (parse_(p.Config, {}).pages || []).map(function (x) { return x.key; });
+  const page = slots.indexOf(clean_(d.page, 40)) >= 0 ? clean_(d.page, 40) : '';
+  const shared = sharedCount_(draftsOf_(p.ID));
+  const text = clean_(d.text, 1000) || (d.url ? 'Please use this design from the catalogue.' : 'Please use my own design.');
+  append_('Messages', {
+    ID: 'M' + uid_(8), 'Project ID': p.ID, Draft: shared, From: 'customer', Name: clean_(d.name, 60) || p.Customer,
+    Page: page, X: '', Y: '', Text: text, Time: new Date(), Done: false, Type: 'design', Ref: ref
+  });
+  touch_(p, shared ? { Status: 'corrections' } : {});
+  notify_(p, p.Customer + ' asked for a different design', text + '\n' + (d.url || 'Their own picture, in the portal.'));
+  return { status: 'ok', project: out_(findProject_(p.ID), false) };
+}
+
+// Editors update the delivery: the address, and dispatched / delivered with courier and tracking.
+function delivery_(p, d) {
+  const cur = parse_(p.Delivery, {}) || {};
+  if (d.address) {
+    const a = address_(d.address);
+    if (typeof a === 'string') return { status: 'invalid', message: a };
+    ['name', 'phone', 'address', 'pincode'].forEach(function (k) { cur[k] = a[k]; });
+  }
+  if (d.status !== undefined) {
+    const st = String(d.status);
+    if (['confirmed', 'dispatched', 'delivered'].indexOf(st) < 0) return { status: 'invalid', message: 'Unknown delivery status.' };
+    if (st !== 'confirmed' && p.Status !== 'approved') return { status: 'invalid', message: 'The design must be approved first.' };
+    cur.status = st;
+    if (st === 'dispatched') cur.dispatchedAt = new Date().toISOString();
+    if (st === 'delivered') cur.deliveredAt = new Date().toISOString();
+  }
+  if (d.courier !== undefined) cur.courier = clean_(d.courier, 80);
+  if (d.tracking !== undefined) cur.tracking = clean_(d.tracking, 300);
+  touch_(p, { Delivery: JSON.stringify(cur) });
+  return { status: 'ok' };
 }

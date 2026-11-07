@@ -5,21 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Meraki Design Approval</title>
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#FDFCFC">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
 <style>
 :root {
-  --bg: #FFFFFF; --panel: #FFFFFF; --sunk: #F5F5F5; --ink: #111111; --muted: #6B6B6B; --line: #E9E9E9;
-  --accent: #111111; --accent-ink: #FFFFFF; --accent-soft: #F3F3F3; --gold: #8A6100; --gold-soft: #FBF5E6;
+  --bg: #FDFCFC; --panel: #FFFFFF; --sunk: #F2EFEB; --ink: #1A0510; --muted: #5C4D54; --line: #ECE5E1;
+  --accent: #B31237; --accent-ink: #FFFFFF; --accent-soft: #FBE9ED; --gold: #9A5B12; --gold-soft: #FBF1E4;
   --ok: #1E7B46; --ok-soft: #EAF6EF; --warn: #8F5A00; --warn-soft: #FDF4E3; --bad: #C5221F; --bad-soft: #FDECEA;
   --pin: #E5322D;
-  --stage: #F5F5F5; --paper-shadow: 0 1px 2px rgba(0,0,0,.08), 0 6px 18px rgba(0,0,0,.08);
-  --f-display: "Figtree", "Segoe UI", system-ui, sans-serif;
-  --f-body: "Figtree", "Segoe UI", system-ui, sans-serif;
-  --r: 12px;
+  --grad: linear-gradient(135deg, #B31237 0%, #6D1C38 50%, #C77D2B 100%);
+  --shadow: 0 15px 35px -5px rgba(109, 28, 56, .08);
+  --stage: #F2EFEB; --paper-shadow: 0 1px 2px rgba(26,5,16,.08), 0 8px 22px rgba(26,5,16,.10);
+  --f-display: "Playfair Display", Georgia, serif;
+  --f-body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --r: 20px;
   color-scheme: light;
 }
 
@@ -29,11 +31,12 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .wrap { max-width: 1120px; margin: 0 auto; padding-block: 20px 72px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   display: flex; flex-direction: column; gap: 20px; }
-h1, h2, h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.01em; margin: 0; text-wrap: balance; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: 0; margin: 0; text-wrap: balance; }
+h1 { font-weight: 700; }
 h2 { font-size: 1.35rem; }
 h3 { font-size: 1.08rem; }
 p { margin: 0; }
-a { color: var(--ink); text-underline-offset: 2px; }
+a { color: var(--accent); text-underline-offset: 2px; }
 .muted { color: var(--muted); }
 .small { font-size: .85rem; }
 .eyebrow { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
@@ -51,23 +54,24 @@ button { cursor: pointer; }
 .top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .88rem; color: var(--muted); }
 
 /* panels and controls */
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 20px; align-items: start; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
-  border-radius: 8px; padding: 9px 14px; font-weight: 600; font-size: .92rem; text-decoration: none; line-height: 1.2; min-height: 40px; }
+  border-radius: 100px; padding: 10px 18px; font-weight: 700; font-size: .9rem; letter-spacing: .01em; text-decoration: none; line-height: 1.2; min-height: 42px; transition: all .25s ease; }
 .btn:hover { border-color: var(--muted); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.btn.primary:hover { background: #333; border-color: #333; }
+.btn.primary { background: var(--grad); border-color: transparent; color: var(--accent-ink); box-shadow: 0 4px 15px rgba(179, 18, 55, .25); }
+.btn.primary:hover { filter: brightness(1.07); box-shadow: 0 6px 20px rgba(179, 18, 55, .32); }
 .btn.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
-.btn.ghost { border-color: transparent; background: transparent; color: var(--ink); padding-inline: 8px; text-decoration: underline; text-underline-offset: 3px; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 8px; text-decoration: underline; text-underline-offset: 3px; }
 .btn.big { padding: 13px 22px; font-size: 1rem; min-height: 48px; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
 label.field { display: flex; flex-direction: column; gap: 5px; font-size: .88rem; font-weight: 600; }
 label.field .hint { font-weight: 400; color: var(--muted); font-size: .8rem; }
 input[type=text], input[type=tel], input[type=password], input[type=number], input[type=search], select, textarea {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); font-weight: 400; font-size: 16px; }
+  width: 100%; padding: 11px 14px; border: 1px solid var(--line); border-radius: 12px; background: #FFFFFF; font-weight: 500; font-size: 16px; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 textarea { min-height: 90px; resize: vertical; }
 .chip { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 600; border-radius: 999px; padding: 3px 10px; background: var(--sunk); color: var(--muted); white-space: nowrap; }
 .chip.accent { background: var(--bad-soft); color: var(--bad); }
@@ -75,7 +79,7 @@ textarea { min-height: 90px; resize: vertical; }
 .chip.ok { background: var(--ok-soft); color: var(--ok); }
 .chip.warn { background: var(--warn-soft); color: var(--warn); }
 .chip.bad { background: var(--bad-soft); color: var(--bad); }
-.note { border-radius: 8px; padding: 10px 14px; font-size: .9rem; background: var(--sunk); }
+.note { border-radius: 12px; padding: 10px 14px; font-size: .9rem; background: var(--sunk); }
 .note.gold { background: var(--gold-soft); }
 .note.ok { background: var(--ok-soft); }
 .note.warn { background: var(--warn-soft); }
@@ -84,21 +88,21 @@ textarea { min-height: 90px; resize: vertical; }
 .tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line); }
 .tabs button { border: none; background: none; padding: 9px 12px; font-weight: 600; font-size: .9rem; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; margin-bottom: -1px; }
 .tabs button[aria-selected=true] { color: var(--accent); border-bottom-color: var(--accent); }
-.seg { display: inline-flex; background: var(--sunk); border-radius: 9px; padding: 3px; gap: 2px; flex-wrap: wrap; }
-.seg button { border: none; background: none; padding: 6px 12px; border-radius: 7px; font-size: .85rem; font-weight: 600; color: var(--muted); }
-.seg button[aria-pressed=true] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.seg { display: inline-flex; background: var(--sunk); border-radius: 100px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { border: none; background: none; padding: 7px 14px; border-radius: 100px; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed=true] { background: var(--panel); color: var(--accent); box-shadow: 0 2px 8px rgba(109,28,56,.12); }
 
 /* dashboard */
 .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
 .toolbar input[type=search] { max-width: 280px; }
 .plist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
-.pcard { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; }
-.pcard:hover { border-color: var(--muted); }
+.pcard { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; }
+.pcard:hover { border-color: var(--accent); }
 .pcard b { font-size: 1.02rem; }
 .pcard .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .82rem; color: var(--muted); }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
 .kpi { background: var(--panel); padding: 12px 16px; border: none; text-align: left; display: flex; flex-direction: column; gap: 2px; }
-.kpi .val { font-family: var(--f-display); font-weight: 600; font-size: 1.6rem; line-height: 1.1; }
+.kpi .val { font-family: var(--f-display); font-weight: 700; color: var(--accent); font-size: 1.6rem; line-height: 1.1; }
 .kpi[aria-pressed=true] { background: var(--accent-soft); }
 
 /* bookings */
@@ -163,7 +167,7 @@ textarea { min-height: 90px; resize: vertical; }
 
 /* corrections and thread */
 .clist { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.citem { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.citem { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
 .citem .num { width: 26px; height: 26px; border-radius: 50%; background: var(--pin); color: #fff; font-size: .75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 .citem.sent .num { background: #B07A12; }
 .citem.done .num { background: #2E7D4F; }
@@ -179,11 +183,42 @@ textarea { min-height: 90px; resize: vertical; }
 .steps { display: flex; gap: 6px; flex-wrap: wrap; }
 .steps span { font-size: .78rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--sunk); color: var(--muted); }
 .steps span.done { background: var(--ok-soft); color: var(--ok); }
-.steps span.now { background: var(--accent); color: var(--accent-ink); }
+.steps span.now { background: var(--grad); color: var(--accent-ink); }
 .steps span.final { background: var(--gold-soft); color: var(--gold); }
 
+/* order tracker */
+.track { list-style: none; margin: 4px 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.track li { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 0 4px; font-size: .8rem; color: var(--muted); }
+.track li::before { content: ""; position: absolute; top: 15px; left: -50%; right: 50%; height: 2px; background: var(--line); }
+.track li:first-child::before { display: none; }
+.track li.done::before, .track li.now::before { background: var(--accent); }
+.track .dot { position: relative; width: 32px; height: 32px; border-radius: 50%; background: var(--sunk); color: var(--muted); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .8rem; border: 3px solid var(--panel); }
+.track li.done .dot { background: var(--grad); color: #fff; }
+.track li.now .dot { background: #fff; color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.track li b { color: var(--ink); font-size: .82rem; }
+.track li.now b { color: var(--accent); }
+.track small { font-size: .74rem; line-height: 1.3; }
+@media (max-width: 640px) {
+  .track { grid-template-columns: 1fr; gap: 12px; }
+  .track li { display: grid; grid-template-columns: 32px 1fr; column-gap: 10px; text-align: left; align-items: center; padding: 0; }
+  .track li::before { left: 15px; right: auto; width: 2px; top: -12px; height: 12px; }
+  .track small { grid-column: 2; margin-top: -4px; }
+}
+
+/* board designs */
+.dpick { display: flex; gap: 14px; align-items: center; }
+.dthumb { flex: none; width: 92px; aspect-ratio: 2 / 3; border-radius: 12px; overflow: hidden; background: var(--sunk); box-shadow: var(--paper-shadow); }
+.dthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dthumb.sm { width: 56px; box-shadow: none; }
+.cgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(30%, 120px), 1fr)); gap: 10px; max-height: 52vh; overflow: auto; padding: 3px; }
+.cimg { border: 2px solid transparent; padding: 0; border-radius: 14px; overflow: hidden; background: var(--sunk); aspect-ratio: 2 / 3; }
+.cimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cimg[aria-pressed=true] { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.citem.dreq { grid-template-columns: 56px 1fr auto; }
+dialog.wide { width: min(860px, calc(100vw - 24px)); }
+
 /* dialog and toast */
-dialog { border: none; border-radius: 14px; padding: 0; width: min(520px, calc(100vw - 24px)); background: var(--panel); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+dialog { border: none; border-radius: 20px; padding: 0; width: min(520px, calc(100vw - 24px)); background: var(--panel); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 dialog::backdrop { background: rgba(0,0,0,.45); }
 dialog form, dialog .dbody { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
 dialog.full { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; margin: 0; background: #111; }
@@ -330,6 +365,109 @@ const ENTRY_SIZES = {
 const SIGN_EDGE = 4200, ENTRY_EDGE = 6000;
 const MAX_PIXELS = 16e6;
 
+// Entry board designs from the website catalogue (themerakievent.in/order-my-board), by edition.
+const CATALOGUE = {
+ "Standard": [
+  "https://themerakievent.in/wp-content/uploads/2026/05/juroon-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/juroon-with-default-caricatures-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/gamusha-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/assamese-bless-standard-en-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/royal-indian-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/floral-bless-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/rajdeep-standard-simple-classic-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/pink-bless-with-default-caricatures-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/assamese-bless-english-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/assamese-theme-horai-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/classic-assamese-assamese-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/classic-assamese-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/default-islamic-caricatures-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/engagement-beige-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/engagement-green-emerald-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/floral-pink-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/blue-bless-standard-royal-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/bless-landscape-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/bg-floral-pink-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/babys-are-getting-married-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/assamese-theme-with-default-caricatures-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/apurva-engagement-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/green-pink-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/islamic-rahul-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/islamic-text-standard_-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/river-south-indian-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/muktadir-standard-green-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/mehendi-default-couple-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/mehendi-default-caricatures-couple-standard-scaled.png"
+ ],
+ "Caricature": [
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-2-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-3-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-4-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-5-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-6-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-8-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-9-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-10-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/caricatures-haldi-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/mehendi-caricatures-2-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/red-caricatures-royal-assamese-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/red-lehenga-caricatures-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/single-bride-haldi-caricatures-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1bv-1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1cccc-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1cvvg-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1gfds-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1jjijihg-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1jjjui-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-mjnnnjnii1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-mnkknkn1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-nnbhjuij1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-yggu1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitlnked-1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/vvvhyijn-scaled.png"
+ ],
+ "Photo": [
+  "https://themerakievent.in/wp-content/uploads/2026/06/26-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/27-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/28-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/29-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/30-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/31-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/32-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/7-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/8-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/9-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/10-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/11-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/12-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/13-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/14-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/15-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/16-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/17-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/18-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/19-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/20-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/21-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/Untitled-6-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/Untitled-5-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/Untitled-4-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/Untitled-3-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/Untitled-2-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/Untitled-1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/25-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/24-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/23-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/22-scaled.png"
+ ]
+};
+// WordPress keeps a small copy of each image next to it; the full image is the fallback.
+const thumbOf = u => u.replace(/\.(png|jpe?g|webp)$/i, "-212x300.$1");
+const catImg = u => `<img src="${esc(thumbOf(u))}" data-full="${esc(u)}" alt="" loading="lazy" onerror="if(this.src!==this.dataset.full)this.src=this.dataset.full">`;
+const refImg = ref => /^drive:/.test(ref || "") ? `<img data-file="${esc(ref.slice(6))}" alt="Customer's design">` : ref ? catImg(ref) : "";
+// An entry board job: the board order (ME-) or the Entry signage format.
+const boardJob = p => p.format === "entry" || ((p.orderInfo || p.order || {}).kind === "entry");
+
 // Builds the config for signage chosen in the New customer form.
 function signageConfig({ size, cw, ch, unit, orient, count, labels, qrLast, entry }) {
   let w, h, label;
@@ -418,6 +556,16 @@ function waLink(phone, text) {
   return "https://wa.me/" + d + "?text=" + encodeURIComponent(text);
 }
 const customerLink = p => location.origin + location.pathname + "?c=" + p.token;
+// The same checks as the script's address_(): returns the cleaned address, or an error message.
+function checkAddress(a = {}) {
+  const out = { name: String(a.name || "").trim(), phone: String(a.phone || "").replace(/[^\d+]/g, ""), address: String(a.address || "").trim(), pincode: String(a.pincode || "").replace(/\D/g, "") };
+  if (out.name.length < 2) return "Please enter the name of the person receiving the delivery.";
+  if (out.phone.replace(/\D/g, "").length < 10) return "Please enter a 10-digit phone number for the delivery.";
+  if (out.address.length < 10) return "Please enter the full delivery address.";
+  if (!/^\d{6}$/.test(out.pincode)) return "Please enter the 6-digit PIN code.";
+  return out;
+}
+const DELIVERY = { confirmed: ["Address confirmed", ""], dispatched: ["Dispatched", "gold"], delivered: ["Delivered", "ok"] };
 const STATUS = {
   new: ["Preparing draft", ""], review: ["With customer", "gold"],
   corrections: ["Corrections received", "accent"], approved: ["Approved", "ok"]
@@ -478,6 +626,7 @@ const Remote = {
   create: d => Remote.post({ action: "create", k: auth.key, editor: auth.name, ...d }).then(r => r.project),
   act: (id, action, d = {}) => Remote.post({ action, id, k: auth.key, editor: auth.name, ...d }).then(r => r.project),
   customerAct: (t, action, d = {}) => Remote.post({ action, t, ...d }).then(r => r.project),
+  customerUpload: (t, data) => Remote.post({ action: "refupload", t, data }).then(r => r.file),
   async image(p, f) {
     const q = p.token && !TOKEN ? { action: "image", p: p.id, f, k: auth.key } : { action: "image", t: TOKEN, f };
     const r = await Remote.get(q);
@@ -514,6 +663,11 @@ const Local = {
   out(p, editor) {
     const o = JSON.parse(JSON.stringify(p));
     if (!editor) {
+      if (o.order) {
+        const r = o.order;
+        o.orderInfo = { kind: r.kind, orderId: r.orderId, product: r.product, events: r.events, quantity: r.quantity,
+          weddingDate: r.weddingDate, coverUrl: r.coverUrl, address: r.address || "", pincode: r.pincode || "" };
+      }
       delete o.token; delete o.notes; delete o.order;
       o.drafts = o.drafts.filter(d => d.shared);
       o.drafts.forEach(d => Object.values(d.pages).forEach(pg => delete pg.print));
@@ -527,7 +681,8 @@ const Local = {
       const sh = shared(p).length;
       return { id: p.id, customer: p.customer, phone: p.phone, format: p.format, status: p.status, editor: p.editor,
         draftsAllowed: p.draftsAllowed, shared: sh, drafts: p.drafts.length, updated: p.updated, created: p.created,
-        openCorrections: p.messages.filter(m => m.from === "customer" && m.draft === sh && !m.done).length, orderId: (p.order || {}).orderId || "" };
+        openCorrections: p.messages.filter(m => m.from === "customer" && m.draft === sh && !m.done).length, orderId: (p.order || {}).orderId || "",
+        delivery: (p.delivery || {}).status || "" };
     });
   },
   async project(id) { return this.out(this.find(this.db(), id), true); },
@@ -579,6 +734,18 @@ const Local = {
         this.addMessages(p, d, "editor");
       } else if (action === "done") {
         const m = p.messages.find(x => x.id === d.msg); if (m) m.done = !!d.done;
+      } else if (action === "delivery") {
+        const cur = p.delivery || {};
+        if (d.address) { const a = checkAddress(d.address); if (typeof a === "string") check({ status: "invalid", message: a }); Object.assign(cur, a); }
+        if (d.status !== undefined) {
+          if (d.status !== "confirmed" && p.status !== "approved") check({ status: "invalid", message: "The design must be approved first." });
+          cur.status = d.status;
+          if (d.status === "dispatched") cur.dispatchedAt = new Date().toISOString();
+          if (d.status === "delivered") cur.deliveredAt = new Date().toISOString();
+        }
+        if (d.courier !== undefined) cur.courier = String(d.courier).trim();
+        if (d.tracking !== undefined) cur.tracking = String(d.tracking).trim();
+        p.delivery = cur;
       } else if (action === "grant") {
         p.draftsAllowed += 1;
       } else if (action === "reopen") {
@@ -606,14 +773,27 @@ const Local = {
       const p = db.projects.find(x => x.token === t);
       if (!p) check({ status: "denied" });
       if (action === "message") this.addMessages(p, d, "customer");
+      if (action === "design") {
+        if (p.status === "approved") check({ status: "invalid", message: "This design is already approved." });
+        if (!d.url && !d.file) check({ status: "invalid", message: "Pick a design or upload a picture." });
+        const sh = shared(p).length;
+        p.messages.push({ id: "M" + rid(8), draft: sh, from: "customer", name: (d.name || "").trim() || p.customer, page: d.page || "", x: null, y: null,
+          text: (d.text || "").trim() || (d.url ? "Please use this design from the catalogue." : "Please use my own design."),
+          time: new Date().toISOString(), done: false, type: "design", ref: d.url || "drive:" + d.file });
+        if (sh) p.status = "corrections";
+      }
       if (action === "approve" && p.status !== "approved") {
         if (d.draft !== shared(p).length) check({ status: "invalid", message: "Please approve the latest draft." });
+        const a = checkAddress(d.delivery);
+        if (typeof a === "string") check({ status: "invalid", message: a });
+        p.delivery = { ...a, status: "confirmed", confirmedAt: new Date().toISOString() };
         p.status = "approved"; p.approvedDraft = d.draft; p.approvedAt = new Date().toISOString(); p.approvedBy = (d.name || "").trim() || p.customer;
       }
       this.touch(p);
       return this.out(p, false);
     });
   },
+  async customerUpload(t, data) { const id = "u" + rid(12); await idb.put(id, data); return id; },
   async image(p, f) { const v = await idb.get(f); if (!v) throw new Error("Image not found in this browser."); return v; }
 };
 
@@ -650,7 +830,7 @@ function warm(p, f) { imageSrc(p, f).catch(() => {}); }
 /* ======================= dialogs ======================= */
 const dlg = $("#dlg");
 function openDialog(html, bind, full) {
-  dlg.className = full ? "full" : "";
+  dlg.className = full === true ? "full" : full || "";
   dlg.innerHTML = html;
   dlg.showModal();
   $$("[data-close]", dlg).forEach(b => b.addEventListener("click", e => { e.preventDefault(); dlg.close(); }));
@@ -688,7 +868,7 @@ function zoomPage(p, fileId, label) {
 // Numbers every customer correction on a draft; pins are the ones placed on a page.
 function corrections(p, n, pending = []) {
   let i = 0;
-  const list = p.messages.filter(m => m.draft === n && m.from === "customer").map(m => ({ ...m, num: ++i, kind: m.done ? "done" : "sent" }));
+  const list = p.messages.filter(m => m.draft === n && m.from === "customer" && m.type !== "design").map(m => ({ ...m, num: ++i, kind: m.done ? "done" : "sent" }));
   pending.forEach((m, j) => list.push({ ...m, num: ++i, kind: "pending", pi: j }));
   return list;
 }
@@ -754,7 +934,7 @@ function correctionItem(cfg, m, opts = {}) {
 function threadHTML(p, n, me, compact) {
   const cfg = p.config;
   const list = corrections(p, n);
-  const msgs = p.messages.filter(m => m.draft === n).sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+  const msgs = p.messages.filter(m => m.draft === n && m.type !== "design").sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
   if (!msgs.length) return `<p class="muted small">No messages on this draft.</p>`;
   // Group a customer's batch (same time) into one block of numbered items.
   const out = []; let batch = null;
@@ -769,6 +949,141 @@ function threadHTML(p, n, me, compact) {
     ? `<div><span class="by small muted">${esc(b.name)} sent ${b.items.length} correction${b.items.length > 1 ? "s" : ""} · ${esc(fmtDate(b.time))}</span>${compact ? ""
         : `<ul class="clist" style="margin-top:6px">${b.items.map(it => correctionItem(cfg, it)).join("")}</ul>`}</div>`
     : `<div class="bubble ${me === "editor" ? "me" : ""}"><span class="by">${esc(b.name)} · ${esc(fmtDate(b.time))}</span>${esc(b.text)}</div>`).join("")}</div>`;
+}
+
+/* ======================= order tracker, board designs, delivery ======================= */
+// Booking confirmed -> draft coming soon -> drafts -> approved -> out for delivery -> delivered.
+function trackerHTML(p) {
+  const last = latest(p), approved = p.status === "approved", d = p.delivery || {};
+  const sent = d.status === "dispatched" || d.status === "delivered";
+  const steps = [
+    ["Booking confirmed", fmtDay(p.created), true],
+    ["Draft coming soon", last ? "Draft 1 shared " + fmtDay(shared(p)[0].shared) : "Our designers are on it", !!last],
+    [last && !approved ? `Draft ${last.n} of ${p.draftsAllowed}` : "Drafts",
+      approved ? `Draft ${p.approvedDraft} approved` : last ? (p.status === "corrections" ? "Corrections received" : "Ready for your check") : `Up to ${p.draftsAllowed} drafts`, approved],
+    ["Approved for print", approved ? fmtDay(p.approvedAt) : "After your final OK", approved],
+    ["Out for delivery", sent ? [d.courier, fmtDay(d.dispatchedAt)].filter(Boolean).join(" · ") : approved ? "Printing now" : "", sent],
+    ["Delivered", d.status === "delivered" ? fmtDay(d.deliveredAt) : "", d.status === "delivered"]
+  ];
+  const now = steps.findIndex(x => !x[2]);
+  return `<ol class="track" aria-label="Order progress">${steps.map(([t, sub, done], i) =>
+    `<li class="${done ? "done" : i === now ? "now" : ""}"><span class="dot">${done ? "✓" : i + 1}</span><b>${esc(t)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</li>`).join("")}</ol>`;
+}
+const designRequests = p => p.messages.filter(m => m.type === "design").sort((a, b) => a.time < b.time ? 1 : -1);
+// The customer's board design, with buttons to switch to a catalogue design or their own.
+function designPanelHTML(p) {
+  const reqs = designRequests(p);
+  const current = reqs.length ? reqs[0].ref : (p.orderInfo || {}).coverUrl;
+  return `<section class="panel" id="designPanel">
+    <div class="panel-head"><h2>Your board design</h2>${reqs.length ? `<span class="chip gold">Change sent</span>` : ""}</div>
+    <div class="dpick">${current ? `<div class="dthumb">${refImg(current)}</div>` : ""}
+      <p class="small muted">${reqs.length ? "We've received your design change. Our designers will use it in your next draft." : "This is the design you booked."}
+      Want a different one? Pick another from our catalogue or upload your own design.</p></div>
+    <div class="row"><button class="btn primary" id="pickCat">Choose from catalogue</button><button class="btn" id="pickOwn">Upload your own</button></div>
+    ${reqs.length > 1 ? `<details><summary class="small">Earlier design changes (${reqs.length - 1})</summary><ul class="clist" style="margin-top:8px">${reqs.slice(1).map(m =>
+      `<li class="citem dreq sent"><div class="dthumb sm">${refImg(m.ref)}</div><div><div class="txt">${esc(m.text)}</div><div class="where">${esc(fmtDate(m.time))}</div></div><span></span></li>`).join("")}</ul></details>` : ""}
+  </section>`;
+}
+function bindDesignPanel() {
+  const panel = $("#designPanel");
+  if (!panel) return;
+  hydrate(panel, C.p);
+  $("#pickCat").addEventListener("click", () => chooseDesign("cat"));
+  $("#pickOwn").addEventListener("click", () => chooseDesign("own"));
+}
+function chooseDesign(mode) {
+  const p = C.p, boards = p.config.pages;
+  const booked = String((p.orderInfo || {}).product || "").split(",").map(x => x.trim());
+  let ed = booked.find(x => CATALOGUE[x]) || "Standard", pick = "", own = "";
+  const name = $("#cName") ? $("#cName").value.trim() : "";
+  openDialog(`<form id="dForm"><h2>${mode === "cat" ? "Choose a design" : "Upload your own design"}</h2>
+    ${mode === "cat" ? `<div class="seg" role="group" aria-label="Edition">${Object.keys(CATALOGUE).map(k => `<button type="button" data-ed="${k}" aria-pressed="${k === ed}">${k}</button>`).join("")}</div>
+      <div class="cgrid" id="cgrid"></div>`
+      : `<p class="small muted">A photo or screenshot of the design you'd like. Our designers will recreate it with your details.</p>
+      <label class="btn" style="align-self:flex-start">Choose a picture<input type="file" accept="image/*" id="ownFile" hidden></label>
+      <div class="dthumb" id="ownPrev" hidden><img alt="Your design"></div>`}
+    ${boards.length > 1 ? `<label class="field">For which board?<select name="page"><option value="">All boards</option>${boards.map(b => `<option value="${esc(b.key)}">${esc(b.label)}</option>`).join("")}</select></label>` : ""}
+    <label class="field">Anything to add? <span class="hint">Optional</span><textarea name="text" rows="2" maxlength="1000" placeholder="e.g. This design, with our caricatures"></textarea></label>
+    <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary" id="dSend" disabled>Send to ${esc(CONFIG.studio)}</button></div></form>`, d => {
+    const form = $("#dForm", d), send = $("#dSend", d);
+    const grid = () => {
+      $("#cgrid", d).innerHTML = CATALOGUE[ed].map(u => `<button type="button" class="cimg" data-u="${esc(u)}" aria-pressed="${u === pick}" aria-label="Design">${catImg(u)}</button>`).join("");
+      $$(".cimg", d).forEach(b => b.addEventListener("click", () => {
+        pick = b.dataset.u; send.disabled = false;
+        $$(".cimg", d).forEach(x => x.setAttribute("aria-pressed", x === b));
+      }));
+    };
+    if (mode === "cat") {
+      grid();
+      $$("[data-ed]", d).forEach(b => b.addEventListener("click", () => { ed = b.dataset.ed; $$("[data-ed]", d).forEach(x => x.setAttribute("aria-pressed", x === b)); grid(); }));
+    } else {
+      $("#ownFile", d).addEventListener("change", async e => {
+        const f = e.target.files[0]; if (!f) return;
+        try {
+          const [it] = await readFile(f, 1600);
+          own = scaled(it.canvas, 1600).toDataURL("image/jpeg", 0.85);
+          const pv = $("#ownPrev", d); pv.hidden = false; $("img", pv).src = own; send.disabled = false;
+        } catch (err) { toast(err.message, true); }
+      });
+    }
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      send.disabled = true; send.textContent = "Sending…";
+      const body = { page: form.page ? form.page.value : "", text: form.text.value.trim(), name };
+      try {
+        if (mode === "cat") body.url = pick; else body.file = await api.customerUpload(TOKEN, own);
+        C.p = await api.customerAct(TOKEN, "design", body);
+        dlg.close(); drawCustomer();
+        toast("Design change sent. Our designers will use it in your next draft.");
+      } catch (err) { toast(err.message, true); send.disabled = false; send.textContent = "Send to " + CONFIG.studio; }
+    });
+  }, mode === "cat" ? "wide" : "");
+}
+// What the customer sees once they approve: the address and the courier's tracking.
+function deliveryCardHTML(p) {
+  const d = p.delivery || {};
+  const sent = d.status === "dispatched" || d.status === "delivered";
+  const st = d.status === "delivered" ? ["Delivered", "ok"] : d.status === "dispatched" ? ["On the way", "gold"] : ["Printing", "gold"];
+  return `<section class="panel"><div class="panel-head"><h2>Delivery</h2><span class="chip ${st[1]}">${st[0]}</span></div>
+    ${d.address ? `<p><b>${esc(d.name)}</b> · ${esc(d.phone)}<br><span class="muted">${esc(d.address)} – ${esc(d.pincode)}</span></p>` : ""}
+    ${sent ? `<p class="small">${d.courier ? "Courier: <b>" + esc(d.courier) + "</b>" : ""}${d.courier && d.tracking ? " · " : ""}${d.tracking
+        ? (isUrl(d.tracking) ? `<a href="${esc(d.tracking)}" target="_blank" rel="noopener">Track your parcel ↗</a>` : "Tracking number: <b>" + esc(d.tracking) + "</b>") : ""}</p>`
+      : `<p class="small muted">We'll share the courier and tracking details here when your order is dispatched.</p>`}
+  </section>`;
+}
+// The editor's delivery controls on an approved file.
+function deliveryAdminHTML(p) {
+  const d = p.delivery || {};
+  return `<div class="panel" id="delivery" style="padding:16px;gap:10px;background:var(--bg);box-shadow:none">
+    <div class="panel-head"><h3>Delivery</h3>${d.status ? `<span class="chip ${DELIVERY[d.status][1]}">${DELIVERY[d.status][0]}</span>` : ""}</div>
+    ${d.address ? `<div class="small"><b>${esc(d.name)}</b> · ${esc(d.phone)}<br>${esc(d.address)} – ${esc(d.pincode)}</div>` : `<p class="small muted">No delivery address yet.</p>`}
+    <div class="grid-2" style="gap:10px">
+      <label class="field">Courier<input type="text" id="dCourier" maxlength="80" value="${esc(d.courier || "")}" placeholder="e.g. DTDC"></label>
+      <label class="field">Tracking number or link<input type="text" id="dTracking" maxlength="300" value="${esc(d.tracking || "")}"></label></div>
+    <div class="row">
+      <button class="btn primary" data-deliv="dispatched">${d.status === "dispatched" ? "Update tracking" : "Mark as dispatched"}</button>
+      <button class="btn" data-deliv="delivered">Mark as delivered</button>
+      <button class="btn ghost" id="editAddr">${d.address ? "Edit address" : "Add address"}</button>
+      ${p.phone && d.status === "dispatched" ? `<a class="btn" target="_blank" rel="noopener" href="${esc(waLink(p.phone, `Hello ${p.customer}! Your ${CONFIG.studio} order is on the way${d.courier ? " with " + d.courier : ""}.${d.tracking ? " Tracking: " + d.tracking : ""}\n\nTrack it here: ${customerLink(p)}`))}">Send tracking on WhatsApp</a>` : ""}
+    </div></div>`;
+}
+function addressFields(a = {}) {
+  return `<div class="grid-2" style="gap:10px">
+      <label class="field">Receiver's name<input type="text" name="dName" maxlength="80" value="${esc(a.name || "")}" required></label>
+      <label class="field">Phone<input type="tel" name="dPhone" maxlength="16" value="${esc(a.phone || "")}" required></label></div>
+    <label class="field">Full address<textarea name="dAddr" rows="3" maxlength="400" required placeholder="House, street, area, city">${esc(a.address || "")}</textarea></label>
+    <label class="field">PIN code<input type="text" name="dPin" inputmode="numeric" maxlength="6" value="${esc(a.pincode || "")}" required></label>`;
+}
+const readAddress = form => ({ name: form.dName.value, phone: form.dPhone.value, address: form.dAddr.value, pincode: form.dPin.value });
+// Editor: design change requests from the customer.
+function designRequestsHTML(p) {
+  const reqs = designRequests(p);
+  if (!reqs.length) return "";
+  return `<section class="panel" id="dreqs"><div class="panel-head"><h2>Design change requests</h2><span class="small muted">${reqs.filter(m => !m.done).length} open</span></div>
+    <ul class="clist">${reqs.map(m => `<li class="citem dreq ${m.done ? "done" : "sent"}"><div class="dthumb sm">${refImg(m.ref)}</div>
+      <div><div class="txt">${esc(m.text)}</div><div class="where">${esc(m.page ? slotLabel(p.config, m.page) : "All boards")} · ${esc(fmtDate(m.time))} ·
+        ${/^drive:/.test(m.ref) ? "Customer's own design" : `<a href="${esc(m.ref)}" target="_blank" rel="noopener">Catalogue design ↗</a>`}</div></div>
+      <label class="small row" style="gap:4px;cursor:pointer"><input type="checkbox" data-done="${esc(m.id)}" ${m.done ? "checked" : ""}> Done</label></li>`).join("")}</ul></section>`;
 }
 
 /* ======================= upload: reading, splitting, QR detection ======================= */
@@ -1011,7 +1326,7 @@ function showDashboard(list) {
     $$("[data-type]").forEach(b => b.setAttribute("aria-pressed", b.dataset.type === dashType));
     const shown = base.filter(groups[dashFilter][1]).filter(x => !q || [x.customer, x.phone, x.id, x.orderId].join(" ").toLowerCase().includes(q));
     $("#plist").innerHTML = shown.length ? shown.map(x => `<a class="pcard" href="#/p/${encodeURIComponent(x.id)}">
-        <div class="row" style="justify-content:space-between"><b>${esc(x.customer)}</b>${statusChip(x.status)}</div>
+        <div class="row" style="justify-content:space-between"><b>${esc(x.customer)}</b><span class="row" style="gap:4px">${statusChip(x.status)}${x.status === "approved" && DELIVERY[x.delivery] && x.delivery !== "confirmed" ? `<span class="chip ${DELIVERY[x.delivery][1]}">${DELIVERY[x.delivery][0]}</span>` : ""}</span></div>
         <div class="meta"><span>${esc(x.phone || "No phone")}</span><span>·</span><span>${esc((FORMATS[x.format] || FORMATS.custom).name)}</span></div>
         <div class="meta"><span class="chip">Draft ${x.shared}/${x.draftsAllowed}</span>
           ${x.openCorrections ? `<span class="chip accent">${x.openCorrections} open correction${x.openCorrections > 1 ? "s" : ""}</span>` : ""}
@@ -1230,7 +1545,7 @@ function defaultTab(p) {
 }
 function shareText(p) {
   const last = latest(p), link = customerLink(p);
-  if (!last) return `Hello ${p.customer}, this is ${CONFIG.studio}. Your card design will appear here: ${link}`;
+  if (!last) return `Hello ${p.customer}! Your ${CONFIG.studio} booking is confirmed.\n\nTrack your order here. You'll see each draft as soon as it's ready, send corrections and approve${boardJob(p) ? ", and you can change your board design from our catalogue or upload your own" : ""}:\n${link}`;
   const final = last.n >= p.draftsAllowed;
   return `Hello ${p.customer}! Draft ${last.n} of your ${CONFIG.studio} ${p.config.kind === "signage" ? "signage" : "card"} design is ready.\n\nPlease open the link, check every page carefully, and tap on the design to mark any correction. When everything is correct, press Approve.\n\n${final
     ? "This is your final draft, so please send all remaining corrections now."
@@ -1260,6 +1575,7 @@ function drawProject() {
       </div>
     </section>
     ${p.status === "approved" ? approvedPanel(p) : ""}
+    ${designRequestsHTML(p)}
     ${!up && p.status !== "approved" && last ? `<div class="note warn row" style="justify-content:space-between">
         <span>All ${p.draftsAllowed} drafts have been shared. The customer can approve, or you can give one more draft.</span>
         <button class="btn" id="grant">Give an extra draft</button></div>` : ""}
@@ -1280,6 +1596,30 @@ function drawProject() {
     if (!await confirmDialog("Undo approval?", "<p>The customer will be able to send corrections again.</p>", "Undo approval")) return;
     try { E.p = await api.act(p.id, "reopen"); E.tab = null; drawProject(); } catch (e) { toast(e.message, true); }
   });
+  if ($("#dreqs")) {
+    hydrate($("#dreqs"), p);
+    $$("#dreqs [data-done]").forEach(cb => cb.addEventListener("change", async () => {
+      try { E.p = await api.act(p.id, "done", { msg: cb.dataset.done, done: cb.checked }); drawProject(); }
+      catch (e) { toast(e.message, true); cb.checked = !cb.checked; }
+    }));
+  }
+  $$("[data-deliv]").forEach(b => b.addEventListener("click", async () => {
+    b.disabled = true;
+    try {
+      E.p = await api.act(p.id, "delivery", { status: b.dataset.deliv, courier: $("#dCourier").value.trim(), tracking: $("#dTracking").value.trim() });
+      drawProject(); toast(b.dataset.deliv === "delivered" ? "Marked as delivered." : "Dispatch saved. The customer sees it on their link.");
+    } catch (e) { toast(e.message, true); b.disabled = false; }
+  }));
+  $("#editAddr") && $("#editAddr").addEventListener("click", () => {
+    openDialog(`<form id="adForm"><h2>Delivery address</h2>${addressFields(p.delivery || { name: p.customer, phone: p.phone, address: (p.order || {}).address, pincode: (p.order || {}).pincode })}
+      <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary">Save</button></div></form>`, d => {
+      $("#adForm", d).addEventListener("submit", async e => {
+        e.preventDefault();
+        try { E.p = await api.act(p.id, "delivery", { address: readAddress(e.target) }); dlg.close(); drawProject(); toast("Address saved."); }
+        catch (err) { toast(err.message, true); }
+      });
+    });
+  });
   if (E.tab === "up") drawUpload(); else drawSharedDraft(E.tab);
 }
 function approvedPanel(p) {
@@ -1290,7 +1630,8 @@ function approvedPanel(p) {
     <p class="muted small">Download the print-ready PDF:</p>
     <div class="grid-2" style="gap:10px">${p.config.print.map((o, i) => `<div class="panel" style="padding:14px;gap:8px;background:var(--bg)">
       <b>${esc(o.label)}</b><span class="small muted">${esc(o.note)}</span>
-      <button class="btn ${i === 0 ? "ok" : ""}" data-print="${esc(o.id)}">Download PDF</button></div>`).join("")}</div></section>`;
+      <button class="btn ${i === 0 ? "ok" : ""}" data-print="${esc(o.id)}">Download PDF</button></div>`).join("")}</div>
+    ${deliveryAdminHTML(p)}</section>`;
 }
 async function copy(text) {
   try { await navigator.clipboard.writeText(text); toast("Link copied."); }
@@ -1487,9 +1828,17 @@ function drawCustomer() {
   const p = C.p, cfg = p.config, last = latest(p);
   remember("c-" + TOKEN, p);
   const right = `<span>${esc(p.customer)}</span>`;
+  const board = boardJob(p) && p.status !== "approved";
+  const intro = (extra, note) => `<section class="panel">
+      <div class="panel-head"><div><span class="eyebrow">${esc(formatName(p))}${p.orderInfo && p.orderInfo.orderId ? " · Order " + esc(p.orderInfo.orderId) : ""}</span>
+        <h1 style="font-size:1.75rem">Hello ${esc(p.customer)}</h1></div>${extra}</div>
+      ${trackerHTML(p)}
+      ${note}
+    </section>`;
   if (!last) {
-    app.innerHTML = header(right) + `<section class="panel empty"><h2>Your design is being prepared</h2>
-      <p>Hello ${esc(p.customer)}! ${esc(CONFIG.studio)} will send you a message as soon as draft 1 is ready to check on this page.</p></section>`;
+    app.innerHTML = header(right) + intro("", `<div class="note gold"><b>Your booking is confirmed.</b> Our designers are preparing draft 1. ${esc(CONFIG.studio)} will message you on WhatsApp as soon as it's ready to check on this page.</div>`)
+      + (board ? designPanelHTML(p) : "");
+    bindDesignPanel();
     return;
   }
   const n = C.view, d = p.drafts.find(x => x.n === n);
@@ -1504,21 +1853,19 @@ function drawCustomer() {
     `<span class="${i < last.n || (approved && i === last.n) ? "done" : i === last.n ? "now" : i === p.draftsAllowed ? "final" : ""}">Draft ${i}${i === p.draftsAllowed ? " (final)" : ""}</span>`).join("")
     + `<span class="${approved ? "now" : ""}">Approved</span>`;
 
-  app.innerHTML = header(right) + `
-    <section class="panel">
-      <div class="panel-head"><div><span class="eyebrow">${esc(formatName(p))}</span><h1 style="font-size:1.6rem">Hello ${esc(p.customer)}</h1></div>
-        ${shared(p).length > 1 ? `<label class="small row" style="gap:6px">Viewing <select id="draftSel" style="width:auto">${shared(p).map(x => `<option value="${x.n}" ${x.n === n ? "selected" : ""}>Draft ${x.n}${x.n === last.n ? " (latest)" : ""}</option>`).join("")}</select></label>` : ""}</div>
-      <div class="steps">${steps}</div>
+  app.innerHTML = header(right) + intro(shared(p).length > 1 ? `<label class="small row" style="gap:6px">Viewing <select id="draftSel" style="width:auto">${shared(p).map(x => `<option value="${x.n}" ${x.n === n ? "selected" : ""}>Draft ${x.n}${x.n === last.n ? " (latest)" : ""}</option>`).join("")}</select></label>` : "",
+      `<div class="steps">${steps}</div>
       ${approved ? `<div class="note ok"><b>You approved draft ${p.approvedDraft} on ${esc(fmtDay(p.approvedAt))}.</b> Thank you! Your design now goes to print.</div>`
         : !viewingLatest ? `<div class="note">This is an older draft. <a href="#" id="toLatest">Go to the latest draft ${last.n}</a> to send corrections or approve.</div>`
         : p.status === "corrections" ? `<div class="note gold">We've received your corrections on draft ${n}. ${final ? CONFIG.studio + " will get in touch about them." : `We're preparing draft ${n + 1}.`} You can still add more corrections below.</div>`
         : `<div class="note ${final ? "warn" : "gold"}">${final
           ? `<b>This is your final draft (${n} of ${p.draftsAllowed}).</b> Please check everything carefully and approve. If something is still wrong, mark it below.`
-          : `<b>Draft ${n} of ${p.draftsAllowed}.</b> Check every page: names, dates, times, venue, phone numbers and the QR code. Mark all corrections at once, because you get ${p.draftsAllowed} drafts in total.`}</div>`}
-    </section>
+          : `<b>Draft ${n} of ${p.draftsAllowed}.</b> Check every page: names, dates, times, venue, phone numbers and the QR code. Mark all corrections at once, because you get ${p.draftsAllowed} drafts in total.`}</div>`}`)
+    + (approved ? deliveryCardHTML(p) : "") + `
     <div class="grid-2">
       <div id="viewer"></div>
       <div style="display:flex;flex-direction:column;gap:20px">
+        ${board ? designPanelHTML(p) : ""}
         ${canEdit ? `<section class="panel" id="corrPanel">
           <div class="panel-head"><h2>Your corrections</h2><span class="small muted">${pending.length} not sent yet</span></div>
           <p class="small muted">Tap on the design where something needs to change, then write what to change. You can also add a general note.</p>
@@ -1551,6 +1898,7 @@ function drawCustomer() {
     if (e.target.closest("button")) return;
     C.viewer.show(li.dataset.page, +li.dataset.num);
   }));
+  bindDesignPanel();
   if (!canEdit) return;
   $("#cName").addEventListener("change", e => store.set("meraki-approval-name", e.target.value.trim()));
   $("#addGeneral").addEventListener("click", () => composeCorrection({ page: "", x: null, y: null }));
@@ -1570,13 +1918,27 @@ function drawCustomer() {
       toast("Corrections sent. Thank you!");
     } catch (err) { toast(err.message, true); e.target.disabled = false; e.target.textContent = "Send corrections"; }
   });
-  $("#approve").addEventListener("click", async () => {
-    const ok = await confirmDialog(`Approve draft ${n}?`, `<p>The design goes to print exactly as it is now. It can't be changed after approval.</p>
-      <label class="row" style="margin-top:12px;gap:8px;align-items:flex-start"><input type="checkbox" data-required="Please tick the box to confirm." style="margin-top:4px">
-      <span>I have checked all names, dates, times, the venue, phone numbers and the QR code.</span></label>`, "Approve for printing", "ok");
-    if (!ok) return;
-    try { C.p = await api.customerAct(TOKEN, "approve", { draft: n, name: $("#cName").value.trim() }); drawCustomer(); toast("Approved. Thank you!"); }
-    catch (err) { toast(err.message, true); }
+  $("#approve").addEventListener("click", () => {
+    // Approving also confirms where to deliver: filled in from the booking, and editable.
+    const name = $("#cName").value.trim(), o = p.orderInfo || {};
+    const a = p.delivery || { name: p.customer, phone: p.phone, address: o.address, pincode: o.pincode };
+    openDialog(`<form id="aForm"><h2>Approve draft ${n} for printing</h2>
+      <p class="small muted">The design goes to print exactly as it is now. It can't be changed after approval.</p>
+      <label class="row" style="gap:8px;align-items:flex-start"><input type="checkbox" name="ok" data-required style="margin-top:4px">
+      <span>I have checked all names, dates, times, the venue, phone numbers and the QR code.</span></label>
+      <h3>Where should we deliver?</h3>${addressFields(a)}
+      <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn ok" id="dOk">Approve & confirm delivery</button></div></form>`, d => {
+      const form = $("#aForm", d), btn = $("#dOk", d);
+      form.addEventListener("submit", async e => {
+        e.preventDefault();
+        if (!form.ok.checked) { toast("Please tick the box to confirm.", true); return; }
+        const delivery = checkAddress(readAddress(form));
+        if (typeof delivery === "string") { toast(delivery, true); return; }
+        btn.disabled = true; btn.textContent = "Approving…";
+        try { C.p = await api.customerAct(TOKEN, "approve", { draft: n, name, delivery }); dlg.close(); drawCustomer(); toast("Approved. Thank you!"); }
+        catch (err) { toast(err.message, true); btn.disabled = false; btn.textContent = "Approve & confirm delivery"; }
+      });
+    });
   });
 }
 function composeCorrection(item, index) {

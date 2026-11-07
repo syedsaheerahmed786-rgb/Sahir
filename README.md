@@ -59,7 +59,10 @@ Address: `https://syedsaheerahmed786-rgb.github.io/Sahir/approval/`. It is conne
 3. **Share:** press *Share draft*, then *Send on WhatsApp*. The customer gets a private link.
 4. **Customer checks the design** in card form (front, opened, back, or all pages) and taps on the design to pin each correction, or adds a general note. Then they send all corrections together. Corrections and replies stay on the site.
 5. **3 drafts:** the customer gets 3 drafts in total (you can change this per customer). When all are used, the editor can *Give an extra draft*.
-6. **Approve:** the customer presses *Approve*. The editor then downloads the PDF.
+6. **Approve and confirm delivery:** the customer presses *Approve* and confirms the delivery address (filled in from the booking). The editor then downloads the PDF.
+7. **Tracking:** the customer's link is also their order tracker: Booking confirmed → Draft coming soon → Drafts → Approved for print → Out for delivery → Delivered. Editors add the courier and tracking number or link, mark it dispatched and then delivered, and can send the tracking on WhatsApp.
+
+For entry boards, customers can also **change their board design** at any time before approving: pick another design from the website catalogue (Standard, Caricature or Photo) or upload their own picture. Editors see these under *Design change requests*.
 
 ## Formats
 
