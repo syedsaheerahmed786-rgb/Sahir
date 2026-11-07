@@ -49,7 +49,7 @@ Address: `https://syedsaheerahmed786-rgb.github.io/Sahir/approval/`. It is conne
 ## How it works
 
 1. **Editor creates a customer file.** *+ New customer* has two options:
-   - **Find by order ID:** search the website's bookings sheet ("Meraki Wedding Bookings(cards)") by order ID (`ORD-711576` or just `711576`), name or phone. Picking the order fills in the name and phone and links the order (product, quantity, wedding date, pincode, design images) to the file. If a file already exists for that order, the portal offers to open it.
+   - **Find by order ID:** search the website's order sheets by order ID, name or phone: card orders (`ORD-711576`, from "Meraki Wedding Bookings(cards)") and entry board orders (`ME-837285`, from "Meraki Entry Signages"). Just the number works too. Picking an entry board order sets up Entry signage, 2 × 3 ft, with one board per event. Picking the order fills in the name and phone and links the order (product, quantity, wedding date, pincode, design images) to the file. If a file already exists for that order, the portal offers to open it.
    - **Custom create:** type the name and phone yourself.
 
    The default card format is the **A4 folded card**.
@@ -69,6 +69,7 @@ Address: `https://syedsaheerahmed786-rgb.github.io/Sahir/approval/`. It is conne
 | A5 card, front & back | Front, back | Front · Back | **A5** front and back, or **2 per A4 sheet** |
 | Two A5 cards, shared back | Card 1 front, card 2 front, common back | Card 1 · Card 2 · Back | **A5** (card 1 front, back, card 2 front, back), or **both cards on one A4 sheet** |
 | Signage | 1 to 10 boards (welcome board, menu, seating chart…), 18 × 24 in, 24 × 36 in, 36 × 48 in, A3, A2, A1 or a custom size, portrait or landscape, optional QR on the last board | A tab per board | **Actual size** (one page per board, at the board's real dimensions) and an **A4 proof** |
+| Entry signage | 1 to 10 entrance pieces: Entry board 2 × 3 ft (sunboard, the default), roll-up standee 33 × 80 in, standee 3 × 6 ft, entry boards 4 × 6 and 6 × 8 ft, gate / arch banners 8 × 10 and 10 × 12 ft, or a custom size in feet | A tab per sign | **Actual size** and an **A4 proof** |
 | Custom | 1 to 12 designs, A5 or A4, folded or separate, your own page names, optional QR on the last page | As chosen | Pages at the chosen size, plus 2 per A4 sheet for A5 |
 
 To add another standard format, copy a block in `FORMATS` near the top of the script in `approval/index.html`.
@@ -81,6 +82,6 @@ To add another standard format, copy a block in `FORMATS` near the top of the sc
 4. Copy the **Web app URL** (it ends in `/exec`) into `endpoint` in the `CONFIG` block of `approval/index.html`.
 5. Editors open the portal and sign in with their name and the team passcode.
 
-The bookings sheet is set in `BOOKINGS_SHEET_ID` at the top of the script. The account that deploys the script must be able to open it. After updating the script, choose **authorize** in the toolbar and press **Run** once so Google asks for access to that sheet.
+The order sheets are listed in `BOOKING_SHEETS` at the top of the script. The account that deploys the script must be able to open them. After updating the script, choose **authorize** in the toolbar and press **Run** once so Google asks for access to them.
 
 The script makes three tabs, **Projects**, **Drafts** and **Messages**, plus a Drive folder called **Meraki Design Approvals** with one folder per customer. Customers can see only their own shared drafts, through the private link. After editing the script, use **Deploy → Manage deployments → Edit → New version** so the URL stays the same.

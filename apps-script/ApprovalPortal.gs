@@ -13,8 +13,11 @@ const DEFAULT_DRAFTS = 3;
 const NOTIFY_EMAIL = '';
 // Drive folder for the uploaded designs. It's created in the owner's Drive on first use.
 const FOLDER_NAME = 'Meraki Design Approvals';
-// The website's bookings sheet ("Meraki Wedding Bookings(cards)"). Editors search it by order ID to start a customer file.
-const BOOKINGS_SHEET_ID = '1MCNCnPgRyjigbpYoagGeVD4YNXewcOO5F2CqKUqW_Qk';
+// The website's order sheets. Editors search them by order ID to start a customer file.
+const BOOKING_SHEETS = [
+  { id: '1MCNCnPgRyjigbpYoagGeVD4YNXewcOO5F2CqKUqW_Qk', kind: 'card' },  // "Meraki Wedding Bookings(cards)", ORD- orders
+  { id: '1eE3GAv_x-1nvE-uf8GGq1j8gVBxUxMQ6kaBAVVoKm5k', kind: 'entry' }  // "Meraki Entry Signages", ME- entry board orders
+];
 
 const TABS = {
   Projects: ['ID', 'Token', 'Customer', 'Phone', 'Format', 'Config', 'Drafts allowed', 'Status', 'Editor', 'Notes',
@@ -95,9 +98,9 @@ function clean_(s, max) {
 
 /* ---------- bookings sheet ---------- */
 
-// Run this once from the Apps Script editor (choose it in the toolbar, press Run) so Google asks for access to the bookings sheet.
+// Run this once from the Apps Script editor (choose it in the toolbar, press Run) so Google asks for access to the order sheets.
 function authorize() {
-  SpreadsheetApp.openById(BOOKINGS_SHEET_ID).getName();
+  BOOKING_SHEETS.forEach(function (b) { SpreadsheetApp.openById(b.id).getName(); });
   DriveApp.getRootFolder();
 }
 
@@ -106,30 +109,48 @@ function day_(v, pattern) {
     ? Utilities.formatDate(v, Session.getScriptTimeZone(), pattern) : String(v == null ? '' : v).trim();
 }
 
-// Every order in the bookings sheet. The header row is the one with an "Order ID" cell.
-function bookings_() {
-  const values = SpreadsheetApp.openById(BOOKINGS_SHEET_ID).getSheets()[0].getDataRange().getValues();
-  const h = values.findIndex(function (r) { return r.some(function (c) { return String(c).trim().toLowerCase() === 'order id'; }); });
-  if (h < 0) return [];
-  const head = values[h].map(function (c) { return String(c).trim().toLowerCase(); });
-  const col = function (name) { return head.indexOf(name); };
-  const c = {
-    orderId: col('order id'), productId: col('product id'), product: col('product name'), customer: col('customer name'),
-    phone: col('whatsapp'), quantity: col('quantity'), weddingDate: col('wedding date'), pincode: col('pincode'),
-    coverUrl: col('cover image url'), insideUrl: col('inside card url')
-  };
-  return values.slice(h + 1).filter(function (r) { return String(r[c.orderId] || '').trim(); }).map(function (r) {
-    const get = function (k) { return c[k] < 0 ? '' : String(r[c[k]] == null ? '' : r[c[k]]).trim(); };
-    return {
-      orderId: get('orderId'), productId: get('productId'), product: get('product'), customer: get('customer'),
-      phone: get('phone'), quantity: get('quantity'), weddingDate: c.weddingDate < 0 ? '' : day_(r[c.weddingDate], 'yyyy-MM-dd'),
-      pincode: get('pincode'), coverUrl: get('coverUrl'), insideUrl: get('insideUrl'),
-      booked: day_(r[0], 'dd/MM/yyyy HH:mm') // the first column is the booking time
+// Every order in one order sheet: the first tab with an "Order ID" header cell. Card and board sheets name
+// their columns differently, so each field accepts the names either sheet uses.
+function bookingsIn_(src) {
+  const sheets = SpreadsheetApp.openById(src.id).getSheets();
+  for (let t = 0; t < sheets.length; t++) {
+    const values = sheets[t].getDataRange().getValues();
+    const h = values.findIndex(function (r) { return r.some(function (c) { return String(c).trim().toLowerCase() === 'order id'; }); });
+    if (h < 0) continue;
+    const head = values[h].map(function (c) { return String(c).trim().toLowerCase(); });
+    const col = function () {
+      for (let i = 0; i < arguments.length; i++) { const j = head.indexOf(arguments[i]); if (j >= 0) return j; }
+      return -1;
     };
-  });
+    const c = {
+      orderId: col('order id'), productId: col('product id'), product: col('product name', 'edition'), events: col('event name'),
+      customer: col('customer name', 'couple name'), phone: col('whatsapp'), quantity: col('quantity', 'package'),
+      weddingDate: col('wedding date', 'event date'), pincode: col('pincode'), coverUrl: col('cover image url'),
+      insideUrl: col('inside card url'), details: col('configuration & notes'), address: col('address'),
+      booked: col('timestamp') >= 0 ? col('timestamp') : 0 // the card sheet's first column is the booking time
+    };
+    return values.slice(h + 1).filter(function (r) { return String(r[c.orderId] || '').trim(); }).map(function (r) {
+      const get = function (k) { return c[k] < 0 ? '' : String(r[c[k]] == null ? '' : r[c[k]]).trim(); };
+      const details = get('details'), address = get('address');
+      const pin = get('pincode') || ((address.match(/PIN:\s*(\d{6})/) || [])[1] || '');
+      const design = get('coverUrl') || ((details.match(/https?:\/\/[^\s)|]+\.(?:png|jpe?g|webp)/i) || [])[0] || '');
+      return {
+        kind: src.kind, orderId: get('orderId'), productId: get('productId'), product: get('product'), events: get('events'),
+        customer: get('customer'), phone: get('phone'), quantity: get('quantity'),
+        weddingDate: c.weddingDate < 0 ? '' : day_(r[c.weddingDate], 'yyyy-MM-dd'), pincode: pin,
+        coverUrl: design, insideUrl: get('insideUrl'), details: details.slice(0, 500),
+        booked: day_(r[c.booked], 'dd/MM/yyyy HH:mm')
+      };
+    });
+  }
+  return [];
 }
 
-// An exact order ID (ORD-711576 or just 711576) wins; otherwise matches on order ID, name or phone, newest first.
+function bookings_() {
+  return BOOKING_SHEETS.reduce(function (all, src) { return all.concat(bookingsIn_(src)); }, []);
+}
+
+// An exact order ID (ORD-711576, ME-837285, or just the number) wins; otherwise matches on order ID, name or phone, newest first.
 function findOrders_(q) {
   q = String(q || '').trim();
   if (q.length < 3) return [];
@@ -154,7 +175,7 @@ function findOrders_(q) {
 function cleanOrder_(o) {
   if (!o || !o.orderId) return '';
   const out = {};
-  ['orderId', 'productId', 'product', 'customer', 'phone', 'quantity', 'weddingDate', 'pincode', 'coverUrl', 'insideUrl', 'booked']
+  ['kind', 'orderId', 'productId', 'product', 'events', 'customer', 'phone', 'quantity', 'weddingDate', 'pincode', 'coverUrl', 'insideUrl', 'details', 'booked']
     .forEach(function (k) { out[k] = clean_(o[k], 500); });
   return JSON.stringify(out);
 }

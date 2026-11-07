@@ -117,6 +117,7 @@ textarea { min-height: 90px; resize: vertical; }
 .fmt .mini { display: flex; gap: 6px; align-items: flex-end; height: 46px; }
 .fmt .mini i { display: block; width: 24px; height: 34px; border: 1.5px solid var(--muted); border-radius: 2px; background: var(--panel); font-style: normal; font-size: 8px; color: var(--muted); text-align: center; line-height: 31px; }
 .fmt .mini i.wide { width: 48px; background: linear-gradient(90deg, var(--panel) 49%, var(--muted) 49% 51%, var(--panel) 51%); }
+.fmt .mini i.gate { width: 44px; height: 40px; border-width: 2px; border-radius: 22px 22px 0 0; border-bottom: none; }
 .fmt .mini i.board { width: 30px; height: 40px; border-width: 2px; border-radius: 1px; box-shadow: 0 4px 0 -2px var(--muted); }
 .fmt .mini i.qr { background: repeating-conic-gradient(var(--muted) 0 25%, var(--panel) 0 50%) 50% 50% / 6px 6px; }
 
@@ -299,6 +300,7 @@ const FORMATS = {
     }
   },
   signage: { name: "Signage", tag: "Boards & standees", desc: "Welcome boards, menus, seating charts. Pick the board size; the print PDF comes out at actual size.", mini: ["board", "board"] },
+  entry: { name: "Entry signage", tag: "Gates, arches & standees", desc: "Entrance gate and arch banners, entry boards, roll-up and welcome standees. Sizes in feet; the print PDF comes out at actual size.", mini: ["gate", "board"] },
   custom: { name: "Custom", tag: "Your own layout", desc: "Any number of designs, A5 or A4, folded or separate.", mini: ["?", "?", "?"] }
 };
 const DEFAULT_FORMAT = "a4fold";
@@ -312,30 +314,43 @@ const SIGN_SIZES = {
   A2: { label: "A2 (420 × 594 mm)", w: 420, h: 594 },
   A1: { label: "A1 (594 × 841 mm)", w: 594, h: 841 }
 };
+// Entrance pieces, portrait, in mm. Gate and arch banners are usually printed on flex.
+const ENTRY_SIZES = {
+  "2x3ft": { label: "Entry board 2 × 3 ft (sunboard)", w: 610, h: 914 },
+  rollup: { label: "Roll-up standee 33 × 80 in", w: 838, h: 2032 },
+  "3x6ft": { label: "Standee 3 × 6 ft", w: 914, h: 1829 },
+  "4x6ft": { label: "Entry board 4 × 6 ft", w: 1219, h: 1829 },
+  "6x8ft": { label: "Entry board 6 × 8 ft", w: 1829, h: 2438 },
+  "8x10ft": { label: "Gate / arch banner 8 × 10 ft", w: 2438, h: 3048 },
+  "10x12ft": { label: "Gate / arch banner 10 × 12 ft", w: 3048, h: 3658 }
+};
 // Boards are big, so their uploads keep more pixels than card pages: about 120 dpi on a 24 × 36 in board,
-// which prints sharp at viewing distance, while staying under the largest canvas phones can handle.
-const SIGN_EDGE = 4200;
+// which prints sharp at viewing distance. Entry pieces keep more again: they are seen from further away,
+// and flex printing needs fewer dots per inch. scaled() keeps every image under the largest canvas phones handle.
+const SIGN_EDGE = 4200, ENTRY_EDGE = 6000;
+const MAX_PIXELS = 16e6;
 
 // Builds the config for signage chosen in the New customer form.
-function signageConfig({ size, cw, ch, unit, orient, count, labels, qrLast }) {
+function signageConfig({ size, cw, ch, unit, orient, count, labels, qrLast, entry }) {
   let w, h, label;
   if (size === "custom") {
     const mm = { in: 25.4, ft: 304.8, cm: 10 }[unit] || 25.4;
     w = Math.round(cw * mm); h = Math.round(ch * mm);
     if (!(w > 0 && h > 0)) throw new Error("Enter the board's width and height.");
     label = `${cw} × ${ch} ${unit}`;
-  } else ({ w, h, label } = SIGN_SIZES[size] || SIGN_SIZES["24x36in"]);
+  } else ({ w, h, label } = SIGN_SIZES[size] || ENTRY_SIZES[size] || (entry ? ENTRY_SIZES["2x3ft"] : SIGN_SIZES["24x36in"]));
   if ((orient === "landscape") !== (w > h)) [w, h] = [h, w];
   if (orient === "landscape") label += ", landscape";
   count = Math.max(1, Math.min(10, count | 0));
-  const pages = Array.from({ length: count }, (_, i) => ({ key: "b" + (i + 1), label: (labels[i] || "").trim() || (count === 1 ? "Board" : "Board " + (i + 1)), hint: label }));
+  const noun = entry ? "Entry sign" : "Board";
+  const pages = Array.from({ length: count }, (_, i) => ({ key: "b" + (i + 1), label: (labels[i] || "").trim() || (count === 1 ? noun : noun + " " + (i + 1)), hint: label }));
   if (qrLast) { pages[count - 1].qr = true; pages[count - 1].hint += " · QR code"; }
   const keys = pages.map(x => x.key);
   return {
-    kind: "signage", size: label, mm: [w, h], ratio: Math.max(w, h) / Math.min(w, h), printEdge: SIGN_EDGE,
+    kind: "signage", entry: !!entry, size: label, mm: [w, h], ratio: Math.max(w, h) / Math.min(w, h), printEdge: entry ? ENTRY_EDGE : SIGN_EDGE,
     pages, views: pages.map(x => ({ label: x.label, pages: [x.key] })),
     print: [
-      { id: "full", label: "Actual size", sheet: "custom", mm: [w, h], note: `${count === 1 ? "The board" : count + " boards, one per page,"} at ${label}, ready for the printer.`, sheets: keys.map(k => S(k)) },
+      { id: "full", label: "Actual size", sheet: "custom", mm: [w, h], note: `${count === 1 ? "The " + noun.toLowerCase() : count + " " + noun.toLowerCase() + "s, one per page,"} at ${label}, ready for the printer.`, sheets: keys.map(k => S(k)) },
       { id: "proof", label: "A4 proof", sheet: "A4", note: "Scaled down to fit A4, to check on an office printer.", sheets: keys.map(k => S(k)) }
     ]
   };
@@ -408,7 +423,8 @@ const STATUS = {
   corrections: ["Corrections received", "accent"], approved: ["Approved", "ok"]
 };
 const statusChip = s => `<span class="chip ${(STATUS[s] || STATUS.new)[1]}">${esc((STATUS[s] || STATUS.new)[0])}</span>`;
-const formatName = p => p.format === "signage" && p.config.size ? "Signage · " + p.config.size : (FORMATS[p.format] || FORMATS.custom).name;
+const isSign = f => f === "signage" || f === "entry";
+const formatName = p => isSign(p.format) && p.config.size ? (FORMATS[p.format] || FORMATS.signage).name + " · " + p.config.size : (FORMATS[p.format] || FORMATS.custom).name;
 const slotDef = (cfg, key) => cfg.pages.find(x => x.key === key) || { key, label: key };
 const slotLabel = (cfg, key) => slotDef(cfg, key).label;
 const shared = p => p.drafts.filter(d => d.shared);
@@ -758,7 +774,7 @@ function threadHTML(p, n, me, compact) {
 /* ======================= upload: reading, splitting, QR detection ======================= */
 function makeCanvas(w, h) { const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
 function scaled(src, maxEdge, sx = 0, sy = 0, sw = src.width, sh = src.height) {
-  const s = Math.min(1, maxEdge / Math.max(sw, sh));
+  const s = Math.min(1, maxEdge / Math.max(sw, sh), Math.sqrt(MAX_PIXELS / (sw * sh)));
   const c = makeCanvas(sw * s, sh * s), g = c.getContext("2d");
   g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
   g.imageSmoothingQuality = "high";
@@ -962,7 +978,7 @@ function bindHeader() {
 
 /* ======================= editor: dashboard ======================= */
 let dashFilter = "all", dashQuery = "", dashType = "all";
-const TYPES = { all: ["All", () => true], cards: ["Cards", x => x.format !== "signage"], signage: ["Signage", x => x.format === "signage"] };
+const TYPES = { all: ["All", () => true], cards: ["Cards", x => !isSign(x.format)], signage: ["Signage", x => isSign(x.format)] };
 async function renderDashboard() {
   const rid = routeId, old = cached("list");
   let draw = null;
@@ -1024,7 +1040,7 @@ function showDashboard(list) {
 /* ======================= editor: new customer ======================= */
 function formatPicker(selected) {
   return `<div class="formats">${Object.entries(FORMATS).map(([k, f]) => `<button type="button" class="fmt" data-fmt="${k}" aria-pressed="${k === selected}">
-      <div class="mini">${f.mini.map(m => m === "wide" || m === "qr" || m === "board" ? `<i class="${m}"></i>` : `<i>${esc(m)}</i>`).join("")}</div>
+      <div class="mini">${f.mini.map(m => ["wide", "qr", "board", "gate"].includes(m) ? `<i class="${m}"></i>` : `<i>${esc(m)}</i>`).join("")}</div>
       <b>${esc(f.name)}${k === DEFAULT_FORMAT ? ` <span class="chip gold">Default</span>` : ""}</b>
       <span class="small muted">${esc(f.tag)}. ${esc(f.desc)}</span></button>`).join("")}</div>
     <div id="customBox" class="panel" style="background:var(--bg)" ${selected === "custom" ? "" : "hidden"}>
@@ -1036,25 +1052,28 @@ function formatPicker(selected) {
       </div>
       <label class="field">Page names <span class="hint">One per line, in order. Leave empty for Page 1, Page 2…</span><textarea name="cLabels" rows="4" placeholder="Front&#10;Inside&#10;Back"></textarea></label>
     </div>
-    <div id="signBox" class="panel" style="background:var(--bg)" ${selected === "signage" ? "" : "hidden"}>
+    <div id="signBox" class="panel" style="background:var(--bg)" ${isSign(selected) ? "" : "hidden"}>
       <div class="grid-2" style="gap:12px">
-        <label class="field">Board size<select name="sSize">${Object.entries(SIGN_SIZES).map(([k, v]) => `<option value="${k}" ${k === "24x36in" ? "selected" : ""}>${esc(v.label)}</option>`).join("")}<option value="custom">Custom size…</option></select></label>
+        <label class="field">Size<select name="sSize">
+          <optgroup label="Boards">${Object.entries(SIGN_SIZES).map(([k, v]) => `<option value="${k}" ${k === "24x36in" && selected !== "entry" ? "selected" : ""}>${esc(v.label)}</option>`).join("")}</optgroup>
+          <optgroup label="Entry signage">${Object.entries(ENTRY_SIZES).map(([k, v]) => `<option value="${k}" ${k === "2x3ft" && selected === "entry" ? "selected" : ""}>${esc(v.label)}</option>`).join("")}</optgroup>
+          <option value="custom">Custom size…</option></select></label>
         <label class="field">Orientation<select name="sOrient"><option value="portrait">Portrait (tall)</option><option value="landscape">Landscape (wide)</option></select></label>
         <div class="field" id="sCustom" hidden><span>Custom size</span><div class="row" style="flex-wrap:nowrap">
           <input type="number" name="sW" min="1" step="0.1" placeholder="Width" aria-label="Width"><span>×</span>
           <input type="number" name="sH" min="1" step="0.1" placeholder="Height" aria-label="Height">
           <select name="sUnit" style="width:auto" aria-label="Unit"><option value="in">in</option><option value="ft">ft</option><option value="cm">cm</option></select></div></div>
-        <label class="field">Number of boards<input type="number" name="sCount" min="1" max="10" value="1"></label>
-        <label class="field" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" name="sQr"> Last board has a QR code</label>
+        <label class="field">How many<input type="number" name="sCount" min="1" max="10" value="1"></label>
+        <label class="field" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" name="sQr"> The last one has a QR code</label>
       </div>
-      <label class="field">Board names <span class="hint">One per line, in order. Leave empty for Board 1, Board 2…</span><textarea name="sLabels" rows="3" placeholder="Welcome board&#10;Menu&#10;Seating chart"></textarea></label>
+      <label class="field">Names <span class="hint">One per line, in order. Leave empty to number them.</span><textarea name="sLabels" rows="3" placeholder="${selected === "entry" ? "Entry gate&#10;Welcome standee&#10;Directions" : "Welcome board&#10;Menu&#10;Seating chart"}"></textarea></label>
     </div>`;
 }
 function readFormat(form, fmt) {
   const f = new FormData(form);
-  if (fmt === "signage") {
+  if (isSign(fmt)) {
     return signageConfig({ size: f.get("sSize"), cw: +f.get("sW"), ch: +f.get("sH"), unit: f.get("sUnit"), orient: f.get("sOrient"),
-      count: +f.get("sCount"), labels: String(f.get("sLabels") || "").split("\n"), qrLast: !!f.get("sQr") });
+      count: +f.get("sCount"), labels: String(f.get("sLabels") || "").split("\n"), qrLast: !!f.get("sQr"), entry: fmt === "entry" });
   }
   if (fmt !== "custom") return JSON.parse(JSON.stringify(FORMATS[fmt].config));
   return customConfig({ count: +f.get("cCount"), size: f.get("cSize"), layout: f.get("cLayout"), labels: String(f.get("cLabels") || "").split("\n"), qrLast: !!f.get("cQr") });
@@ -1063,9 +1082,17 @@ function bindFormatPicker(root, onChange) {
   $$("[data-fmt]", root).forEach(b => b.addEventListener("click", () => {
     $$("[data-fmt]", root).forEach(x => x.setAttribute("aria-pressed", x === b));
     $("#customBox", root).hidden = b.dataset.fmt !== "custom";
-    $("#signBox", root).hidden = b.dataset.fmt !== "signage";
+    $("#signBox", root).hidden = !isSign(b.dataset.fmt);
+    if (isSign(b.dataset.fmt)) {
+      const entry = b.dataset.fmt === "entry", size = $("[name=sSize]", root);
+      // Switching between Signage and Entry signage picks a size from that group, unless a custom size is set.
+      if (size.value !== "custom" && entry !== (size.value in ENTRY_SIZES)) size.value = entry ? "2x3ft" : "24x36in";
+      if (entry && !$("[name=sUnit]", root).dataset.touched) $("[name=sUnit]", root).value = "ft";
+      $("[name=sLabels]", root).placeholder = entry ? "Entry gate\nWelcome standee\nDirections" : "Welcome board\nMenu\nSeating chart";
+    }
     onChange(b.dataset.fmt);
   }));
+  $("[name=sUnit]", root).addEventListener("change", e => { e.target.dataset.touched = "1"; });
   const size = $("[name=sSize]", root);
   size.addEventListener("change", () => { $("#sCustom", root).hidden = size.value !== "custom"; });
 }
@@ -1076,7 +1103,7 @@ function orderCard(o, actions = "") {
     ${pics.length ? `<div class="othumbs">${pics.map(([l, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener" title="${l} design"><img src="${esc(u)}" alt="${l} design" loading="lazy"></a>`).join("")}</div>` : ""}
     <div class="obody">
       <div class="row" style="justify-content:space-between"><b>${esc(o.customer || "No name")}</b><span class="chip">${esc(o.orderId)}</span></div>
-      <div class="meta">${esc(o.product || "No product")}${o.quantity ? ` · ${esc(o.quantity)} cards` : ""}${o.weddingDate ? ` · Wedding ${esc(fmtDay(o.weddingDate) || o.weddingDate)}` : ""}${o.pincode ? ` · PIN ${esc(o.pincode)}` : ""}</div>
+      <div class="meta">${o.kind === "entry" ? "Entry board · " : ""}${esc(o.product || "No product")}${o.events ? ` (${esc(o.events)})` : ""}${o.quantity ? ` · ${esc(o.quantity)} ${o.kind === "entry" ? (+o.quantity === 1 ? "board" : "boards") : "cards"}` : ""}${o.weddingDate ? ` · ${o.kind === "entry" ? "Event" : "Wedding"} ${esc(fmtDay(o.weddingDate) || o.weddingDate)}` : ""}${o.pincode ? ` · PIN ${esc(o.pincode)}` : ""}</div>
       <div class="meta">${esc(o.phone || "No phone")}${o.booked ? ` · booked ${esc(o.booked)}` : ""}${o.insideUrl && !isUrl(o.insideUrl) ? ` · Inside card: ${esc(o.insideUrl)}` : ""}</div>
       ${actions ? `<div class="row" style="margin-top:4px">${actions}</div>` : ""}
     </div></div>`;
@@ -1093,7 +1120,7 @@ function renderNew() {
       </div>
       <div id="orderBox" style="display:flex;flex-direction:column;gap:12px">
         <form id="orderSearch" class="row" style="align-items:stretch">
-          <input type="search" name="q" placeholder="Order ID, e.g. ORD-711576 (or name or phone)" style="flex:1;min-width:200px" autocomplete="off" aria-label="Order ID, name or phone">
+          <input type="search" name="q" placeholder="Order ID, e.g. ORD-711576 or ME-837285 (or name or phone)" style="flex:1;min-width:200px" autocomplete="off" aria-label="Order ID, name or phone">
           <button class="btn primary">Search</button>
         </form>
         <div id="orderResults" class="olist"></div>
@@ -1129,6 +1156,15 @@ function renderNew() {
       ${orderCard(o, `<button type="button" class="btn ghost" id="unpick">Choose another order</button>`)}</div>` : "";
     if (o) {
       form.customer.value = o.customer; form.phone.value = o.phone;
+      if (o.kind === "entry") {
+        $("[data-fmt=entry]", form).click();
+        form.sSize.value = "2x3ft"; form.sOrient.value = "portrait"; $("#sCustom", form).hidden = true;
+        const n = Math.max(1, Math.min(10, parseInt(o.quantity, 10) || 1));
+        form.sCount.value = n;
+        const events = String(o.events || "").split(",").map(x => x.trim()).filter(Boolean);
+        form.sLabels.value = events.length === n ? events.map(x => x + " board").join("\n") : "";
+        if (o.details && !form.notes.value.trim()) form.notes.value = o.details;
+      } else if (isSign(fmt)) $(`[data-fmt=${DEFAULT_FORMAT}]`, form).click();
       form.hidden = false;
       $("#unpick").addEventListener("click", () => { pick(null); form.hidden = true; $("#orderSearch input").focus(); });
       form.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1278,7 +1314,7 @@ function editProject() {
       const f = new FormData(form);
       const body = { customer: String(f.get("customer")).trim(), phone: String(f.get("phone")).trim(), notes: String(f.get("notes")), draftsAllowed: +f.get("drafts") };
       try {
-        if (canFormat && (fmt !== p.format || fmt === "custom" || fmt === "signage")) Object.assign(body, { format: fmt, config: readFormat(form, fmt) });
+        if (canFormat && (fmt !== p.format || fmt === "custom" || isSign(fmt))) Object.assign(body, { format: fmt, config: readFormat(form, fmt) });
         E.p = await api.act(p.id, "update", body); dlg.close(); drawProject(); toast("Saved.");
       } catch (err) { toast(err.message, true); }
     });
