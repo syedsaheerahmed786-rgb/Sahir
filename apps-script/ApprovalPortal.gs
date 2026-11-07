@@ -1,0 +1,617 @@
+/**
+ * Meraki design approval portal – backend.
+ * Keeps customer files, drafts and correction messages in the Google Sheet this script is attached to,
+ * and the uploaded design pages in a Google Drive folder. The page is approval/index.html.
+ * Setup steps are in README.md.
+ */
+
+// Team passcode editors type to sign in. Change it before you deploy, and share it only with Meraki editors.
+const EDITOR_KEY = 'change-this-passcode';
+// Drafts a customer gets for corrections. An editor can grant an extra draft for one customer from the portal.
+const DEFAULT_DRAFTS = 3;
+// Optional: an email address that gets a short note when a customer sends corrections or approves. '' = no email.
+const NOTIFY_EMAIL = '';
+// Drive folder for the uploaded designs. It's created in the owner's Drive on first use.
+const FOLDER_NAME = 'Meraki Design Approvals';
+// Catalogue designs a customer may switch to: images on the Meraki website.
+const CATALOGUE_URL = /^https:\/\/themerakievent\.in\/wp-content\/uploads\/[\w\/.%-]+\.(png|jpe?g|webp)$/i;
+// The website's order sheets. Editors search them by order ID to start a customer file.
+const BOOKING_SHEETS = [
+  { id: '1MCNCnPgRyjigbpYoagGeVD4YNXewcOO5F2CqKUqW_Qk', kind: 'card' },  // "Meraki Wedding Bookings(cards)", ORD- orders
+  { id: '1eE3GAv_x-1nvE-uf8GGq1j8gVBxUxMQ6kaBAVVoKm5k', kind: 'entry' }  // "Meraki Entry Signages", ME- entry board orders
+];
+
+const TABS = {
+  Projects: ['ID', 'Token', 'Customer', 'Phone', 'Format', 'Config', 'Drafts allowed', 'Status', 'Editor', 'Notes',
+    'Created', 'Updated', 'Approved draft', 'Approved at', 'Approved by', 'Folder ID', 'Order', 'Delivery'],
+  Drafts: ['Project ID', 'Draft', 'Editor', 'Created', 'Shared at', 'Pages'],
+  // Type "design": a customer asking for a different design; Ref is a catalogue image URL or drive:<file id>.
+  Messages: ['ID', 'Project ID', 'Draft', 'From', 'Name', 'Page', 'X', 'Y', 'Text', 'Time', 'Done', 'Type', 'Ref']
+};
+
+/* ---------- sheet helpers ---------- */
+
+// Each web-app request runs the script afresh, so this holds sheets and rows for one request only.
+const CACHE_ = { tabs: {}, rows: {} };
+
+function forget_() {
+  CACHE_.rows = {};
+}
+
+function tab_(name) {
+  if (CACHE_.tabs[name]) return CACHE_.tabs[name];
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.appendRow(TABS[name]);
+    sh.setFrozenRows(1);
+    if (name === 'Projects') sh.getRange('D:D').setNumberFormat('@'); // keep phone numbers as text
+  } else if (sh.getLastColumn() < TABS[name].length) {
+    // A column was added in a newer version of this script: name it in the header row.
+    sh.getRange(1, 1, 1, TABS[name].length).setValues([TABS[name]]);
+  }
+  CACHE_.tabs[name] = sh;
+  return sh;
+}
+
+// Rows of a tab as objects. Callers that change a row and save_ it keep the cache in step.
+function rows_(name) {
+  if (!CACHE_.rows[name]) {
+    const values = tab_(name).getDataRange().getValues();
+    values.shift();
+    CACHE_.rows[name] = values.map(function (r, i) {
+      const o = { _row: i + 2 };
+      TABS[name].forEach(function (h, j) { o[h] = r[j]; });
+      return o;
+    });
+  }
+  return CACHE_.rows[name];
+}
+
+function append_(name, o) {
+  tab_(name).appendRow(TABS[name].map(function (h) { return o[h] === undefined ? '' : o[h]; }));
+  delete CACHE_.rows[name];
+}
+
+function save_(name, o) {
+  tab_(name).getRange(o._row, 1, 1, TABS[name].length)
+    .setValues([TABS[name].map(function (h) { return o[h] === undefined ? '' : o[h]; })]);
+}
+
+function json_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function iso_(v) {
+  return v instanceof Date ? v.toISOString() : String(v || '');
+}
+
+function parse_(s, fallback) {
+  try { return JSON.parse(s); } catch (e) { return fallback; }
+}
+
+function uid_(n) {
+  return Utilities.getUuid().replace(/-/g, '').slice(0, n).toUpperCase();
+}
+
+function clean_(s, max) {
+  return String(s == null ? '' : s).trim().slice(0, max);
+}
+
+/* ---------- bookings sheet ---------- */
+
+// Run this once from the Apps Script editor (choose it in the toolbar, press Run) so Google asks for access to the order sheets.
+function authorize() {
+  BOOKING_SHEETS.forEach(function (b) { SpreadsheetApp.openById(b.id).getName(); });
+  DriveApp.getRootFolder();
+}
+
+function day_(v, pattern) {
+  return Object.prototype.toString.call(v) === '[object Date]'
+    ? Utilities.formatDate(v, Session.getScriptTimeZone(), pattern) : String(v == null ? '' : v).trim();
+}
+
+// Every order in one order sheet: the first tab with an "Order ID" header cell. Card and board sheets name
+// their columns differently, so each field accepts the names either sheet uses.
+function bookingsIn_(src) {
+  const sheets = SpreadsheetApp.openById(src.id).getSheets();
+  for (let t = 0; t < sheets.length; t++) {
+    const values = sheets[t].getDataRange().getValues();
+    const h = values.findIndex(function (r) { return r.some(function (c) { return String(c).trim().toLowerCase() === 'order id'; }); });
+    if (h < 0) continue;
+    const head = values[h].map(function (c) { return String(c).trim().toLowerCase(); });
+    const col = function () {
+      for (let i = 0; i < arguments.length; i++) { const j = head.indexOf(arguments[i]); if (j >= 0) return j; }
+      return -1;
+    };
+    const c = {
+      orderId: col('order id'), productId: col('product id'), product: col('product name', 'edition'), events: col('event name'),
+      customer: col('customer name', 'couple name'), phone: col('whatsapp'), quantity: col('quantity', 'package'),
+      weddingDate: col('wedding date', 'event date'), pincode: col('pincode'), coverUrl: col('cover image url'),
+      insideUrl: col('inside card url'), details: col('configuration & notes'), address: col('address'),
+      booked: col('timestamp') >= 0 ? col('timestamp') : 0 // the card sheet's first column is the booking time
+    };
+    return values.slice(h + 1).filter(function (r) { return String(r[c.orderId] || '').trim(); }).map(function (r) {
+      const get = function (k) { return c[k] < 0 ? '' : String(r[c[k]] == null ? '' : r[c[k]]).trim(); };
+      const details = get('details'), address = get('address');
+      const pin = get('pincode') || ((address.match(/PIN:\s*(\d{6})/) || [])[1] || '');
+      const design = get('coverUrl') || ((details.match(/https?:\/\/[^\s)|]+\.(?:png|jpe?g|webp)/i) || [])[0] || '');
+      return {
+        kind: src.kind, orderId: get('orderId'), productId: get('productId'), product: get('product'), events: get('events'),
+        customer: get('customer'), phone: get('phone'), quantity: get('quantity'),
+        weddingDate: c.weddingDate < 0 ? '' : day_(r[c.weddingDate], 'yyyy-MM-dd'), pincode: pin,
+        coverUrl: design, insideUrl: get('insideUrl'), details: details.slice(0, 500),
+        address: address.replace(/\n?PIN:\s*\d{6}\s*$/, '').trim(), booked: day_(r[c.booked], 'dd/MM/yyyy HH:mm')
+      };
+    });
+  }
+  return [];
+}
+
+function bookings_() {
+  return BOOKING_SHEETS.reduce(function (all, src) { return all.concat(bookingsIn_(src)); }, []);
+}
+
+// An exact order ID (ORD-711576, ME-837285, or just the number) wins; otherwise matches on order ID, name or phone, newest first.
+function findOrders_(q) {
+  q = String(q || '').trim();
+  if (q.length < 3) return [];
+  const up = q.toUpperCase(), low = q.toLowerCase(), digits = q.replace(/\D/g, '');
+  const all = bookings_();
+  const exact = all.filter(function (o) {
+    return o.orderId.toUpperCase() === up || (digits.length >= 4 && o.orderId.replace(/\D/g, '') === digits);
+  });
+  const found = exact.length ? exact : all.filter(function (o) {
+    return o.orderId.toLowerCase().indexOf(low) >= 0 || o.customer.toLowerCase().indexOf(low) >= 0 ||
+      (digits.length >= 5 && o.phone.replace(/\D/g, '').indexOf(digits) >= 0);
+  }).reverse().slice(0, 15);
+  const projects = rows_('Projects');
+  return found.map(function (o) {
+    o.files = projects.filter(function (p) { return (parse_(p.Order, {}) || {}).orderId === o.orderId; })
+      .map(function (p) { return { id: p.ID, customer: p.Customer, status: p.Status }; });
+    return o;
+  });
+}
+
+// Keeps only the order fields the portal shows, so a file can't carry anything else.
+function cleanOrder_(o) {
+  if (!o || !o.orderId) return '';
+  const out = {};
+  ['kind', 'orderId', 'productId', 'product', 'events', 'customer', 'phone', 'quantity', 'weddingDate', 'pincode', 'coverUrl', 'insideUrl', 'details', 'address', 'booked']
+    .forEach(function (k) { out[k] = clean_(o[k], 500); });
+  return JSON.stringify(out);
+}
+
+/* ---------- project lookups ---------- */
+
+function findProject_(id, token) {
+  const all = rows_('Projects');
+  for (let i = 0; i < all.length; i++) {
+    const p = all[i];
+    if (id && String(p.ID) === String(id)) return p;
+    if (token && String(p.Token) === String(token)) return p;
+  }
+  return null;
+}
+
+function draftsOf_(id) {
+  return rows_('Drafts').filter(function (d) { return String(d['Project ID']) === String(id); })
+    .sort(function (a, b) { return a.Draft - b.Draft; });
+}
+
+function messagesOf_(id) {
+  return rows_('Messages').filter(function (m) { return String(m['Project ID']) === String(id); });
+}
+
+function sharedCount_(drafts) {
+  return drafts.filter(function (d) { return d['Shared at']; }).length;
+}
+
+// What the page gets. Customers see only shared drafts and no print files.
+function out_(p, editor) {
+  const drafts = draftsOf_(p.ID).filter(function (d) { return editor || d['Shared at']; }).map(function (d) {
+    const pages = parse_(d.Pages, {});
+    if (!editor) Object.keys(pages).forEach(function (k) { delete pages[k].print; });
+    return { n: Number(d.Draft), editor: d.Editor, created: iso_(d.Created), shared: iso_(d['Shared at']), pages: pages };
+  });
+  const messages = messagesOf_(p.ID).map(function (m) {
+    return {
+      id: m.ID, draft: Number(m.Draft), from: m.From, name: m.Name, page: m.Page,
+      x: m.X === '' ? null : Number(m.X), y: m.Y === '' ? null : Number(m.Y),
+      text: m.Text, time: iso_(m.Time), done: m.Done === true || m.Done === 'TRUE', type: m.Type || '', ref: m.Ref || ''
+    };
+  });
+  const o = {
+    id: p.ID, customer: p.Customer, phone: String(p.Phone), format: p.Format, config: parse_(p.Config, {}),
+    draftsAllowed: Number(p['Drafts allowed']) || DEFAULT_DRAFTS, status: p.Status, editor: p.Editor,
+    created: iso_(p.Created), updated: iso_(p.Updated),
+    approvedDraft: p['Approved draft'] === '' ? null : Number(p['Approved draft']),
+    approvedAt: iso_(p['Approved at']), approvedBy: p['Approved by'],
+    drafts: drafts, messages: messages, delivery: parse_(p.Delivery, null)
+  };
+  const order = parse_(p.Order, null);
+  if (editor) { o.token = p.Token; o.notes = p.Notes; o.order = order; }
+  else if (order) {
+    // The customer's own booking, for the tracking page and to fill in the delivery address.
+    o.orderInfo = { kind: order.kind, orderId: order.orderId, product: order.product, events: order.events,
+      quantity: order.quantity, weddingDate: order.weddingDate, coverUrl: order.coverUrl,
+      address: order.address || '', pincode: order.pincode || '' };
+  }
+  return o;
+}
+
+function touch_(p, fields) {
+  Object.keys(fields).forEach(function (k) { p[k] = fields[k]; });
+  p.Updated = new Date();
+  save_('Projects', p);
+}
+
+function notify_(p, subject, body) {
+  if (!NOTIFY_EMAIL) return;
+  try { MailApp.sendEmail(NOTIFY_EMAIL, subject, body); } catch (e) { /* email is optional */ }
+}
+
+/* ---------- GET: read ---------- */
+
+function doGet(e) {
+  const q = (e && e.parameter) || {};
+  const editor = q.k === EDITOR_KEY;
+  try {
+    if (q.action === 'list') {
+      if (!editor) return json_({ status: 'denied' });
+      const drafts = rows_('Drafts'), msgs = rows_('Messages');
+      const list = rows_('Projects').map(function (p) {
+        const mine = drafts.filter(function (d) { return String(d['Project ID']) === String(p.ID); });
+        const shared = sharedCount_(mine);
+        const open = msgs.filter(function (m) {
+          return String(m['Project ID']) === String(p.ID) && m.From === 'customer' && Number(m.Draft) === shared &&
+            !(m.Done === true || m.Done === 'TRUE');
+        }).length;
+        return {
+          id: p.ID, customer: p.Customer, phone: String(p.Phone), format: p.Format, status: p.Status, editor: p.Editor,
+          draftsAllowed: Number(p['Drafts allowed']) || DEFAULT_DRAFTS, shared: shared, drafts: mine.length,
+          openCorrections: open, updated: iso_(p.Updated), created: iso_(p.Created),
+          orderId: (parse_(p.Order, {}) || {}).orderId || '',
+          delivery: (parse_(p.Delivery, {}) || {}).status || ''
+        };
+      });
+      return json_({ status: 'ok', projects: list });
+    }
+
+    if (q.action === 'orders') {
+      if (!editor) return json_({ status: 'denied' });
+      return json_({ status: 'ok', orders: findOrders_(q.q) });
+    }
+
+    if (q.action === 'project') {
+      const p = editor && q.id ? findProject_(q.id) : (q.t ? findProject_(null, q.t) : null);
+      if (!p) return json_({ status: editor || q.t ? 'notfound' : 'denied' });
+      return json_({ status: 'ok', project: out_(p, editor && !!q.id) });
+    }
+
+    if (q.action === 'image') {
+      const p = editor ? findProject_(q.p) : findProject_(null, q.t);
+      if (!p) return json_({ status: 'denied' });
+      // Only hand out files that belong to this customer (and, for customers, only previews of shared drafts).
+      const allowed = draftsOf_(p.ID).some(function (d) {
+        if (!editor && !d['Shared at']) return false;
+        const pages = parse_(d.Pages, {});
+        return Object.keys(pages).some(function (k) {
+          return pages[k].preview === q.f || (editor && pages[k].print === q.f);
+        });
+      });
+      const ownRef = messagesOf_(p.ID).some(function (m) { return m.Ref === 'drive:' + q.f; });
+      if (!allowed && !ownRef) return json_({ status: 'denied' });
+      const blob = DriveApp.getFileById(q.f).getBlob();
+      return json_({ status: 'ok', mime: blob.getContentType(), data: Utilities.base64Encode(blob.getBytes()) });
+    }
+
+    return json_({ status: 'ok', app: 'meraki-approval' });
+  } catch (err) {
+    return json_({ status: 'error', message: String(err) });
+  }
+}
+
+/* ---------- POST: write ---------- */
+
+function doPost(e) {
+  let d, stored = null;
+  try {
+    d = JSON.parse(e.postData.contents);
+    // Saving images to Drive is the slow part of an upload; it needs no lock, so it happens first.
+    if (d.k !== EDITOR_KEY && d.action === 'refupload') return json_(refUpload_(d));
+    if (d.k === EDITOR_KEY && d.action === 'page') {
+      const p0 = findProject_(d.id);
+      if (p0) {
+        const bad = pageCheck_(p0, d);
+        if (bad) return json_(bad);
+        stored = storePage_(p0, d);
+      }
+    }
+  } catch (err) {
+    return json_({ status: 'error', message: String(err) });
+  }
+  const editor = d.k === EDITOR_KEY;
+  const lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  forget_(); // another request may have written while this one waited
+  try {
+    // Customer actions use the private link token.
+    if (!editor) {
+      const p = d.t ? findProject_(null, d.t) : null;
+      if (!p) return json_({ status: 'denied' });
+      if (d.action === 'message') return json_(addMessages_(p, d, 'customer'));
+      if (d.action === 'design') return json_(design_(p, d));
+      if (d.action === 'approve') return json_(approve_(p, d));
+      return json_({ status: 'denied' });
+    }
+
+    if (d.action === 'create') {
+      const customer = clean_(d.customer, 80);
+      const phone = String(d.phone || '').replace(/[^\d+]/g, '').slice(0, 16);
+      if (customer.length < 2) return json_({ status: 'invalid', message: 'Customer name is required.' });
+      const p = {
+        ID: 'MK-' + uid_(5), Token: uid_(20).toLowerCase(), Customer: customer, Phone: phone,
+        Format: clean_(d.format, 30) || 'a4fold', Config: JSON.stringify(d.config || {}),
+        'Drafts allowed': Math.max(1, Math.min(10, Number(d.draftsAllowed) || DEFAULT_DRAFTS)),
+        Status: 'new', Editor: clean_(d.editor, 60), Notes: clean_(d.notes, 2000),
+        Created: new Date(), Updated: new Date(), Order: cleanOrder_(d.order)
+      };
+      append_('Projects', p);
+      return json_({ status: 'ok', project: out_(findProject_(p.ID), true) });
+    }
+
+    const p = findProject_(d.id);
+    if (!p) return json_({ status: 'notfound' });
+    let r;
+    switch (d.action) {
+      case 'update': r = update_(p, d); break;
+      case 'page': r = uploadPage_(p, d, stored); break;
+      case 'share': r = share_(p, d); break;
+      case 'message': r = addMessages_(p, d, 'editor'); break;
+      case 'done': r = setDone_(p, d); break;
+      case 'delivery': r = delivery_(p, d); break;
+      case 'grant': touch_(p, { 'Drafts allowed': (Number(p['Drafts allowed']) || DEFAULT_DRAFTS) + 1 }); break;
+      case 'reopen':
+        touch_(p, { Status: 'corrections', 'Approved draft': '', 'Approved at': '', 'Approved by': '' });
+        break;
+      default: return json_({ status: 'invalid', message: 'Unknown action.' });
+    }
+    if (r && r.status !== 'ok') {
+      if (stored) trash_([stored.preview, stored.print]);
+      return json_(r);
+    }
+    return json_({ status: 'ok', project: out_(findProject_(p.ID), true) });
+  } catch (err) {
+    return json_({ status: 'error', message: String(err) });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function update_(p, d) {
+  const f = {};
+  if (d.customer !== undefined) {
+    if (clean_(d.customer, 80).length < 2) return { status: 'invalid', message: 'Customer name is required.' };
+    f.Customer = clean_(d.customer, 80);
+  }
+  if (d.phone !== undefined) f.Phone = String(d.phone || '').replace(/[^\d+]/g, '').slice(0, 16);
+  if (d.notes !== undefined) f.Notes = clean_(d.notes, 2000);
+  if (d.draftsAllowed !== undefined) f['Drafts allowed'] = Math.max(1, Math.min(10, Number(d.draftsAllowed) || DEFAULT_DRAFTS));
+  if (d.config !== undefined) {
+    if (draftsOf_(p.ID).length) return { status: 'invalid', message: 'The format can only change before the first upload.' };
+    f.Format = clean_(d.format, 30);
+    f.Config = JSON.stringify(d.config);
+  }
+  touch_(p, f);
+  return { status: 'ok' };
+}
+
+// Why a page can't go on draft d.draft right now, or null when it can.
+function pageCheck_(p, d) {
+  const n = Number(d.draft);
+  const shared = sharedCount_(draftsOf_(p.ID));
+  const allowed = Number(p['Drafts allowed']) || DEFAULT_DRAFTS;
+  if (p.Status === 'approved') return { status: 'invalid', message: 'This design is already approved.' };
+  if (n !== shared + 1) return { status: 'invalid', message: 'Draft ' + n + ' is not open for uploads.' };
+  if (n > allowed) return { status: 'invalid', message: 'All ' + allowed + ' drafts are used. Grant an extra draft first.' };
+  const slots = (parse_(p.Config, {}).pages || []).map(function (x) { return x.key; });
+  if (slots.indexOf(clean_(d.slot, 40)) < 0) return { status: 'invalid', message: 'Unknown page.' };
+  return null;
+}
+
+// The customer's Drive folder, found by name so it needs no write to the sheet.
+function pageFolder_(p) {
+  if (p['Folder ID']) {
+    try { return DriveApp.getFolderById(p['Folder ID']); } catch (e) { /* folder was removed: find or make it again */ }
+  }
+  const roots = DriveApp.getFoldersByName(FOLDER_NAME);
+  const root = roots.hasNext() ? roots.next() : DriveApp.createFolder(FOLDER_NAME);
+  const name = p.Customer + ' (' + p.ID + ')';
+  const found = root.getFoldersByName(name);
+  return found.hasNext() ? found.next() : root.createFolder(name);
+}
+
+// Writes the page's preview and print images to Drive and returns their file IDs.
+function storePage_(p, d) {
+  const folder = pageFolder_(p);
+  const name = 'Draft ' + Number(d.draft) + ' - ' + clean_(d.slot, 40);
+  const save = function (b64, suffix) {
+    const bytes = Utilities.base64Decode(String(b64).replace(/^data:[^,]+,/, ''));
+    return folder.createFile(Utilities.newBlob(bytes, 'image/jpeg', name + suffix + '.jpg')).getId();
+  };
+  return { preview: save(d.preview, ' (preview)'), print: save(d.print, ''), folder: folder.getId() };
+}
+
+function trash_(ids) {
+  ids.forEach(function (id) {
+    try { DriveApp.getFileById(id).setTrashed(true); } catch (e) { /* already gone */ }
+  });
+}
+
+// Records one page of the draft that's being prepared (not yet shared). Runs under the lock.
+function uploadPage_(p, d, stored) {
+  const bad = pageCheck_(p, d);
+  if (bad) return bad;
+  if (!stored) return { status: 'invalid', message: 'The page could not be saved. Please try again.' };
+  const n = Number(d.draft);
+  const slot = clean_(d.slot, 40);
+  let draft = draftsOf_(p.ID).filter(function (x) { return Number(x.Draft) === n; })[0];
+  if (!draft) {
+    append_('Drafts', { 'Project ID': p.ID, Draft: n, Editor: clean_(d.editor, 60), Created: new Date(), Pages: '{}' });
+    draft = draftsOf_(p.ID).filter(function (x) { return Number(x.Draft) === n; })[0];
+  }
+  const pages = parse_(draft.Pages, {});
+  if (pages[slot]) trash_([pages[slot].preview, pages[slot].print]);
+  pages[slot] = {
+    preview: stored.preview, print: stored.print,
+    w: Number(d.w) || 0, h: Number(d.h) || 0, qr: clean_(d.qr, 1000)
+  };
+  draft.Pages = JSON.stringify(pages);
+  draft.Editor = clean_(d.editor, 60) || draft.Editor;
+  save_('Drafts', draft);
+  touch_(p, p['Folder ID'] ? {} : { 'Folder ID': stored.folder });
+  return { status: 'ok' };
+}
+
+function share_(p, d) {
+  const n = Number(d.draft);
+  const draft = draftsOf_(p.ID).filter(function (x) { return Number(x.Draft) === n; })[0];
+  if (!draft || draft['Shared at']) return { status: 'invalid', message: 'Nothing to share.' };
+  const pages = parse_(draft.Pages, {});
+  const missing = (parse_(p.Config, {}).pages || []).filter(function (x) { return !pages[x.key]; });
+  if (missing.length) return { status: 'invalid', message: 'Upload every page first: ' + missing.map(function (x) { return x.label; }).join(', ') };
+  draft['Shared at'] = new Date();
+  draft.Editor = clean_(d.editor, 60) || draft.Editor;
+  save_('Drafts', draft);
+  touch_(p, { Status: 'review' });
+  return { status: 'ok' };
+}
+
+function addMessages_(p, d, from) {
+  const items = (Array.isArray(d.items) ? d.items : []).slice(0, 60).filter(function (it) { return clean_(it.text, 2000); });
+  if (!items.length) return { status: 'invalid', message: 'Write a message first.' };
+  const shared = sharedCount_(draftsOf_(p.ID));
+  const n = Number(d.draft) || shared;
+  if (from === 'customer') {
+    if (p.Status === 'approved') return { status: 'invalid', message: 'This design is already approved.' };
+    if (!shared || n !== shared) return { status: 'invalid', message: 'Corrections go on the latest draft.' };
+  }
+  const name = clean_(d.name, 60) || (from === 'customer' ? p.Customer : 'Meraki');
+  const now = new Date();
+  items.forEach(function (it) {
+    const pos = function (v) { return v === null || v === undefined || v === '' ? '' : Math.max(0, Math.min(100, Number(v) || 0)); };
+    append_('Messages', {
+      ID: 'M' + uid_(8), 'Project ID': p.ID, Draft: n, From: from, Name: name, Page: clean_(it.page, 40),
+      X: pos(it.x), Y: pos(it.y), Text: clean_(it.text, 2000), Time: now, Done: false
+    });
+  });
+  if (from === 'customer') {
+    touch_(p, { Status: 'corrections' });
+    notify_(p, 'Corrections from ' + p.Customer + ' (draft ' + n + ')',
+      items.map(function (it, i) { return (i + 1) + '. ' + (it.page ? '[' + it.page + '] ' : '') + it.text; }).join('\n'));
+    return { status: 'ok', project: out_(findProject_(p.ID), false) };
+  }
+  touch_(p, {});
+  return { status: 'ok' };
+}
+
+function setDone_(p, d) {
+  const m = rows_('Messages').filter(function (x) { return x.ID === d.msg && String(x['Project ID']) === String(p.ID); })[0];
+  if (!m) return { status: 'notfound' };
+  m.Done = !!d.done;
+  save_('Messages', m);
+  return { status: 'ok' };
+}
+
+// A delivery address from the page, checked; or an error message.
+function address_(a) {
+  a = a || {};
+  const out = { name: clean_(a.name, 80), phone: String(a.phone || '').replace(/[^\d+]/g, '').slice(0, 16),
+    address: clean_(a.address, 400), pincode: String(a.pincode || '').replace(/\D/g, '').slice(0, 6) };
+  if (out.name.length < 2) return 'Please enter the name of the person receiving the delivery.';
+  if (out.phone.replace(/\D/g, '').length < 10) return 'Please enter a 10-digit phone number for the delivery.';
+  if (out.address.length < 10) return 'Please enter the full delivery address.';
+  if (!/^\d{6}$/.test(out.pincode)) return 'Please enter the 6-digit PIN code.';
+  return out;
+}
+
+function approve_(p, d) {
+  const shared = sharedCount_(draftsOf_(p.ID));
+  if (p.Status === 'approved') return { status: 'ok', project: out_(p, false) };
+  if (!shared || Number(d.draft) !== shared) return { status: 'invalid', message: 'Please approve the latest draft.' };
+  const a = address_(d.delivery);
+  if (typeof a === 'string') return { status: 'invalid', message: a };
+  a.status = 'confirmed'; a.confirmedAt = new Date().toISOString();
+  touch_(p, { Status: 'approved', 'Approved draft': shared, 'Approved at': new Date(), 'Approved by': clean_(d.name, 60) || p.Customer,
+    Delivery: JSON.stringify(a) });
+  notify_(p, p.Customer + ' approved draft ' + shared, 'The design is approved and ready for print.');
+  return { status: 'ok', project: out_(findProject_(p.ID), false) };
+}
+
+/* ---------- design changes and delivery ---------- */
+
+// Saves a design picture the customer uploads (before sending it as a design change) and returns its file ID.
+function refUpload_(d) {
+  const p = d.t ? findProject_(null, d.t) : null;
+  if (!p) return { status: 'denied' };
+  if (p.Status === 'approved') return { status: 'invalid', message: 'This design is already approved.' };
+  const b64 = String(d.data || '').replace(/^data:image\/jpeg;base64,/, '');
+  if (!b64 || b64.length > 4500000) return { status: 'invalid', message: 'Please choose a smaller picture.' };
+  const name = 'Customer design ' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HHmmss') + '.jpg';
+  const file = pageFolder_(p).createFile(Utilities.newBlob(Utilities.base64Decode(b64), 'image/jpeg', name));
+  return { status: 'ok', file: file.getId() };
+}
+
+// A customer asks for a different design: one from the website catalogue, or a picture they uploaded.
+function design_(p, d) {
+  if (p.Status === 'approved') return { status: 'invalid', message: 'This design is already approved.' };
+  let ref;
+  if (d.url) {
+    if (!CATALOGUE_URL.test(String(d.url))) return { status: 'invalid', message: 'Please pick a design from the catalogue.' };
+    ref = String(d.url);
+  } else if (d.file) {
+    // Only a picture saved by refUpload_ into this customer's folder.
+    let inFolder = false;
+    try {
+      const folder = pageFolder_(p).getId(), parents = DriveApp.getFileById(String(d.file)).getParents();
+      while (parents.hasNext()) if (parents.next().getId() === folder) inFolder = true;
+    } catch (e) { inFolder = false; }
+    if (!inFolder) return { status: 'invalid', message: 'Please upload the picture again.' };
+    ref = 'drive:' + String(d.file);
+  } else return { status: 'invalid', message: 'Pick a design or upload a picture.' };
+  const slots = (parse_(p.Config, {}).pages || []).map(function (x) { return x.key; });
+  const page = slots.indexOf(clean_(d.page, 40)) >= 0 ? clean_(d.page, 40) : '';
+  const shared = sharedCount_(draftsOf_(p.ID));
+  const text = clean_(d.text, 1000) || (d.url ? 'Please use this design from the catalogue.' : 'Please use my own design.');
+  append_('Messages', {
+    ID: 'M' + uid_(8), 'Project ID': p.ID, Draft: shared, From: 'customer', Name: clean_(d.name, 60) || p.Customer,
+    Page: page, X: '', Y: '', Text: text, Time: new Date(), Done: false, Type: 'design', Ref: ref
+  });
+  touch_(p, shared ? { Status: 'corrections' } : {});
+  notify_(p, p.Customer + ' asked for a different design', text + '\n' + (d.url || 'Their own picture, in the portal.'));
+  return { status: 'ok', project: out_(findProject_(p.ID), false) };
+}
+
+// Editors update the delivery: the address, and dispatched / delivered with courier and tracking.
+function delivery_(p, d) {
+  const cur = parse_(p.Delivery, {}) || {};
+  if (d.address) {
+    const a = address_(d.address);
+    if (typeof a === 'string') return { status: 'invalid', message: a };
+    ['name', 'phone', 'address', 'pincode'].forEach(function (k) { cur[k] = a[k]; });
+  }
+  if (d.status !== undefined) {
+    const st = String(d.status);
+    if (['confirmed', 'dispatched', 'delivered'].indexOf(st) < 0) return { status: 'invalid', message: 'Unknown delivery status.' };
+    if (st !== 'confirmed' && p.Status !== 'approved') return { status: 'invalid', message: 'The design must be approved first.' };
+    cur.status = st;
+    if (st === 'dispatched') cur.dispatchedAt = new Date().toISOString();
+    if (st === 'delivered') cur.deliveredAt = new Date().toISOString();
+  }
+  if (d.courier !== undefined) cur.courier = clean_(d.courier, 80);
+  if (d.tracking !== undefined) cur.tracking = clean_(d.tracking, 300);
+  touch_(p, { Delivery: JSON.stringify(cur) });
+  return { status: 'ok' };
+}

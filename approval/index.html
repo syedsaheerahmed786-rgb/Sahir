@@ -1,0 +1,1988 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meraki Design Approval</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#FDFCFC">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap">
+<style>
+:root {
+  --bg: #FDFCFC; --panel: #FFFFFF; --sunk: #F2EFEB; --ink: #1A0510; --muted: #5C4D54; --line: #ECE5E1;
+  --accent: #B31237; --accent-ink: #FFFFFF; --accent-soft: #FBE9ED; --gold: #9A5B12; --gold-soft: #FBF1E4;
+  --ok: #1E7B46; --ok-soft: #EAF6EF; --warn: #8F5A00; --warn-soft: #FDF4E3; --bad: #C5221F; --bad-soft: #FDECEA;
+  --pin: #E5322D;
+  --grad: linear-gradient(135deg, #B31237 0%, #6D1C38 50%, #C77D2B 100%);
+  --shadow: 0 15px 35px -5px rgba(109, 28, 56, .08);
+  --stage: #F2EFEB; --paper-shadow: 0 1px 2px rgba(26,5,16,.08), 0 8px 22px rgba(26,5,16,.10);
+  --f-display: "Playfair Display", Georgia, serif;
+  --f-body: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --r: 20px;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 20px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: 0; margin: 0; text-wrap: balance; }
+h1 { font-weight: 700; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.08rem; }
+p { margin: 0; }
+a { color: var(--accent); text-underline-offset: 2px; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.eyebrow { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* header */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+.brand img { height: 68px; width: auto; display: block; }
+.brand span { font-size: .74rem; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; border-left: 1px solid var(--line); padding-left: 12px; line-height: 1.3; }
+@media (max-width: 420px) { .brand img { height: 56px; } .brand span { display: none; } }
+.top-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .88rem; color: var(--muted); }
+
+/* panels and controls */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 20px; align-items: start; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+  border-radius: 100px; padding: 10px 18px; font-weight: 700; font-size: .9rem; letter-spacing: .01em; text-decoration: none; line-height: 1.2; min-height: 42px; transition: all .25s ease; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--grad); border-color: transparent; color: var(--accent-ink); box-shadow: 0 4px 15px rgba(179, 18, 55, .25); }
+.btn.primary:hover { filter: brightness(1.07); box-shadow: 0 6px 20px rgba(179, 18, 55, .32); }
+.btn.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--accent); padding-inline: 8px; text-decoration: underline; text-underline-offset: 3px; }
+.btn.big { padding: 13px 22px; font-size: 1rem; min-height: 48px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+label.field { display: flex; flex-direction: column; gap: 5px; font-size: .88rem; font-weight: 600; }
+label.field .hint { font-weight: 400; color: var(--muted); font-size: .8rem; }
+input[type=text], input[type=tel], input[type=password], input[type=number], input[type=search], select, textarea {
+  width: 100%; padding: 11px 14px; border: 1px solid var(--line); border-radius: 12px; background: #FFFFFF; font-weight: 500; font-size: 16px; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+textarea { min-height: 90px; resize: vertical; }
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: .75rem; font-weight: 600; border-radius: 999px; padding: 3px 10px; background: var(--sunk); color: var(--muted); white-space: nowrap; }
+.chip.accent { background: var(--bad-soft); color: var(--bad); }
+.chip.gold { background: var(--gold-soft); color: var(--gold); }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.note { border-radius: 12px; padding: 10px 14px; font-size: .9rem; background: var(--sunk); }
+.note.gold { background: var(--gold-soft); }
+.note.ok { background: var(--ok-soft); }
+.note.warn { background: var(--warn-soft); }
+.note.accent { background: var(--bad-soft); }
+.empty { text-align: center; padding: 36px 16px; color: var(--muted); }
+.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line); }
+.tabs button { border: none; background: none; padding: 9px 12px; font-weight: 600; font-size: .9rem; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; margin-bottom: -1px; }
+.tabs button[aria-selected=true] { color: var(--accent); border-bottom-color: var(--accent); }
+.seg { display: inline-flex; background: var(--sunk); border-radius: 100px; padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { border: none; background: none; padding: 7px 14px; border-radius: 100px; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed=true] { background: var(--panel); color: var(--accent); box-shadow: 0 2px 8px rgba(109,28,56,.12); }
+
+/* dashboard */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.toolbar input[type=search] { max-width: 280px; }
+.plist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.pcard { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; }
+.pcard:hover { border-color: var(--accent); }
+.pcard b { font-size: 1.02rem; }
+.pcard .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .82rem; color: var(--muted); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.kpi { background: var(--panel); padding: 12px 16px; border: none; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.kpi .val { font-family: var(--f-display); font-weight: 700; color: var(--accent); font-size: 1.6rem; line-height: 1.1; }
+.kpi[aria-pressed=true] { background: var(--accent-soft); }
+
+/* bookings */
+.olist { display: flex; flex-direction: column; gap: 10px; }
+.ocard { display: flex; gap: 14px; align-items: flex-start; border: 1px solid var(--line); border-radius: var(--r); padding: 12px; background: var(--panel); }
+.othumbs { display: flex; gap: 6px; flex: none; }
+.othumbs img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; background: var(--sunk); display: block; }
+.obody { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.obody .meta { font-size: .84rem; color: var(--muted); overflow-wrap: anywhere; }
+@media (max-width: 480px) { .ocard { flex-direction: column; } }
+
+/* format picker */
+.formats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 10px; }
+.fmt { text-align: left; border: 1.5px solid var(--line); background: var(--panel); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.fmt[aria-pressed=true] { border-color: var(--accent); background: var(--panel); box-shadow: inset 0 0 0 1px var(--accent); }
+.fmt .mini { display: flex; gap: 6px; align-items: flex-end; height: 46px; }
+.fmt .mini i { display: block; width: 24px; height: 34px; border: 1.5px solid var(--muted); border-radius: 2px; background: var(--panel); font-style: normal; font-size: 8px; color: var(--muted); text-align: center; line-height: 31px; }
+.fmt .mini i.wide { width: 48px; background: linear-gradient(90deg, var(--panel) 49%, var(--muted) 49% 51%, var(--panel) 51%); }
+.fmt .mini i.gate { width: 44px; height: 40px; border-width: 2px; border-radius: 22px 22px 0 0; border-bottom: none; }
+.fmt .mini i.board { width: 30px; height: 40px; border-width: 2px; border-radius: 1px; box-shadow: 0 4px 0 -2px var(--muted); }
+.fmt .mini i.qr { background: repeating-conic-gradient(var(--muted) 0 25%, var(--panel) 0 50%) 50% 50% / 6px 6px; }
+
+/* viewer */
+.viewer { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--panel); }
+.viewer .tabs { padding-inline: 8px; }
+.stage { background: var(--stage); padding: 22px 14px 16px; display: flex; flex-direction: column; align-items: center; gap: 14px; min-height: 280px; }
+.spread { display: flex; justify-content: center; align-items: flex-start; width: 100%; }
+.spread.two .pgwrap { width: min(48%, 420px); }
+.spread.one .pgwrap { width: min(86%, 440px); }
+.spread.all { flex-wrap: wrap; gap: 18px; }
+.spread.all .pgwrap { width: min(44%, 230px); }
+.pgwrap { display: flex; flex-direction: column; gap: 6px; align-items: center; min-width: 0; }
+.pg { position: relative; width: 100%; aspect-ratio: 148 / 210; background: #fff; box-shadow: var(--paper-shadow); overflow: hidden; touch-action: manipulation; }
+.pg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; user-select: none; -webkit-user-drag: none; }
+.pg.blank { display: flex; align-items: center; justify-content: center; color: #9a8a8e; font-size: .85rem; }
+.pg.tappable { cursor: crosshair; }
+.spread.two .pgwrap:first-child .pg::after, .spread.two .pgwrap:last-child .pg::after { content: ""; position: absolute; top: 0; bottom: 0; width: 9%; pointer-events: none; }
+.spread.two .pgwrap:first-child .pg::after { right: 0; background: linear-gradient(90deg, transparent, rgba(0,0,0,.10)); }
+.spread.two .pgwrap:last-child .pg::after { left: 0; background: linear-gradient(270deg, transparent, rgba(0,0,0,.12)); }
+.pglabel { font-size: .78rem; color: var(--muted); text-align: center; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; align-items: center; }
+.zoom-btn { position: absolute; top: 6px; right: 6px; z-index: 3; width: 32px; height: 32px; border-radius: 8px; border: none; background: rgba(255,255,255,.92); color: #111; box-shadow: 0 1px 3px rgba(0,0,0,.2); display: flex; align-items: center; justify-content: center; }
+.pin { position: absolute; z-index: 2; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50% 50% 50% 4px; border: 2px solid #fff; background: var(--pin); color: #fff; font-size: .75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,.35); padding: 0; }
+.pin.sent { background: #B07A12; }
+.pin.done { background: #2E7D4F; }
+.pin.flash { animation: flash 1s ease 2; }
+@keyframes flash { 50% { transform: scale(1.5); } }
+.stage-hint { font-size: .85rem; color: var(--muted); text-align: center; }
+.qr-chip { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; background: var(--ok-soft); color: var(--ok); border-radius: 999px; padding: 3px 10px; max-width: 100%; }
+.qr-chip a { color: inherit; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+
+/* upload */
+.drop { border: 1.5px dashed #D4D4D4; border-radius: var(--r); padding: 20px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; background: var(--bg); }
+.drop.over { border-color: var(--accent); background: var(--sunk); }
+.slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(46%, 170px), 1fr)); gap: 14px; }
+.slot { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.slot .pg { cursor: pointer; }
+.slot .pg.blank { background: var(--sunk); box-shadow: none; border: 1.5px dashed #D4D4D4; color: var(--muted); flex-direction: column; gap: 4px; text-align: center; padding: 8px; }
+.slot.over .pg { outline: 3px solid var(--accent); }
+.slot .busy { position: absolute; inset: 0; background: rgba(255,255,255,.8); display: flex; align-items: center; justify-content: center; color: #111; font-size: .85rem; font-weight: 600; z-index: 2; }
+.slot-title { font-weight: 600; font-size: .9rem; }
+.warns { display: flex; flex-direction: column; gap: 4px; }
+
+/* corrections and thread */
+.clist { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.citem { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.citem .num { width: 26px; height: 26px; border-radius: 50%; background: var(--pin); color: #fff; font-size: .75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.citem.sent .num { background: #B07A12; }
+.citem.done .num { background: #2E7D4F; }
+.citem.done .txt { text-decoration: line-through; color: var(--muted); }
+.citem .txt { white-space: pre-wrap; word-break: break-word; }
+.citem .where { font-size: .78rem; color: var(--muted); }
+.citem.flash { animation: bg 1.4s ease; }
+@keyframes bg { 0%, 60% { background: var(--gold-soft); } }
+.thread { display: flex; flex-direction: column; gap: 10px; }
+.bubble { max-width: 88%; padding: 9px 12px; border-radius: 12px; background: var(--sunk); white-space: pre-wrap; word-break: break-word; }
+.bubble.me { align-self: flex-end; background: #EEF3FB; }
+.bubble .by { display: block; font-size: .74rem; color: var(--muted); margin-bottom: 2px; }
+.steps { display: flex; gap: 6px; flex-wrap: wrap; }
+.steps span { font-size: .78rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--sunk); color: var(--muted); }
+.steps span.done { background: var(--ok-soft); color: var(--ok); }
+.steps span.now { background: var(--grad); color: var(--accent-ink); }
+.steps span.final { background: var(--gold-soft); color: var(--gold); }
+
+/* order tracker */
+.track { list-style: none; margin: 4px 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.track li { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 0 4px; font-size: .8rem; color: var(--muted); }
+.track li::before { content: ""; position: absolute; top: 15px; left: -50%; right: 50%; height: 2px; background: var(--line); }
+.track li:first-child::before { display: none; }
+.track li.done::before, .track li.now::before { background: var(--accent); }
+.track .dot { position: relative; width: 32px; height: 32px; border-radius: 50%; background: var(--sunk); color: var(--muted); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .8rem; border: 3px solid var(--panel); }
+.track li.done .dot { background: var(--grad); color: #fff; }
+.track li.now .dot { background: #fff; color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.track li b { color: var(--ink); font-size: .82rem; }
+.track li.now b { color: var(--accent); }
+.track small { font-size: .74rem; line-height: 1.3; }
+@media (max-width: 640px) {
+  .track { grid-template-columns: 1fr; gap: 12px; }
+  .track li { display: grid; grid-template-columns: 32px 1fr; column-gap: 10px; text-align: left; align-items: center; padding: 0; }
+  .track li::before { left: 15px; right: auto; width: 2px; top: -12px; height: 12px; }
+  .track small { grid-column: 2; margin-top: -4px; }
+}
+
+/* board designs */
+.dpick { display: flex; gap: 14px; align-items: center; }
+.dthumb { flex: none; width: 92px; aspect-ratio: 2 / 3; border-radius: 12px; overflow: hidden; background: var(--sunk); box-shadow: var(--paper-shadow); }
+.dthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dthumb.sm { width: 56px; box-shadow: none; }
+.cgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(30%, 120px), 1fr)); gap: 10px; max-height: 52vh; overflow: auto; padding: 3px; }
+.cimg { border: 2px solid transparent; padding: 0; border-radius: 14px; overflow: hidden; background: var(--sunk); aspect-ratio: 2 / 3; }
+.cimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cimg[aria-pressed=true] { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.citem.dreq { grid-template-columns: 56px 1fr auto; }
+dialog.wide { width: min(860px, calc(100vw - 24px)); }
+
+/* dialog and toast */
+dialog { border: none; border-radius: 20px; padding: 0; width: min(520px, calc(100vw - 24px)); background: var(--panel); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+dialog::backdrop { background: rgba(0,0,0,.45); }
+dialog form, dialog .dbody { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+dialog.full { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; margin: 0; background: #111; }
+.zoomer { display: flex; flex-direction: column; height: 100%; }
+.zoomer .bar { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 10px max(12px, env(safe-area-inset-left)); color: #fff; }
+.zoomer .bar .btn { background: rgba(255,255,255,.12); color: #fff; border-color: transparent; }
+.zoomer .scroll { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; text-align: center; }
+.zoomer .scroll img { width: 100%; max-width: none; background: #fff; display: inline-block; }
+#toast { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: .9rem; z-index: 99; max-width: calc(100vw - 32px); opacity: 0; transition: opacity .2s; pointer-events: none; }
+#toast.show { opacity: 1; }
+#toast.bad { background: var(--bad); color: #fff; }
+.spinner { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 560px) {
+  .stage { padding: 16px 8px 12px; }
+  .spread.two .pgwrap { width: 49%; }
+  .spread.one .pgwrap { width: 92%; }
+  .citem { grid-template-columns: 26px 1fr; }
+  .citem > :last-child { grid-column: 2; }
+}
+</style>
+</head>
+<body>
+<div id="app" class="wrap"><div class="empty"><span class="spinner"></span></div></div>
+<dialog id="dlg"></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ======================= settings ======================= */
+const CONFIG = {
+  // Web-app URL of apps-script/ApprovalPortal.gs (it ends in /exec). See README.md.
+  // Leave it empty to try the portal in demo mode: everything is then saved only in this browser.
+  endpoint: "https://script.google.com/macros/s/AKfycby6E58Fw_MIL4u48I3vUe5ZKLlOOhOTwR4MRc0_ijSI2gRmA1PIF9m57EMAwKjTbFUT/exec",
+  countryCode: "91",   // added to 10-digit numbers for WhatsApp links
+  studio: "Meraki"
+};
+
+const LIB = {
+  jspdf: "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+  pdf: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+  pdfWorker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+  jsqr: "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"
+};
+const SOURCE_EDGE = 3508;   // longest side an upload is read at (A4 at 300 dpi), so A4 spreads split into sharp A5 halves
+const PRINT_EDGE = 2480;    // longest side of a stored print page: A5 at 300 dpi
+const PREVIEW_EDGE = 1200;  // longest side of the image customers see
+const PAPER = { A4: [210, 297], A5: [148, 210] };
+
+/* Card formats. Each one says which designs the editor uploads (pages), how the customer sees them (views),
+   how an A4 spread upload splits into pages (spreads) and which print PDFs the editor can download (print).
+   To add a standard format, copy one of these blocks. One-off layouts can be made with "Custom" in the portal. */
+const S = (...slots) => ({ slots });
+const FORMATS = {
+  a4fold: {
+    name: "A4 folded card", tag: "4 designs · A5 pages",
+    desc: "One A4 sheet folded in the middle: front cover, English inside left, Assamese inside right, QR on the back.",
+    mini: ["Front", "wide", "qr"],
+    config: {
+      size: "A5",
+      pages: [
+        { key: "front", label: "Front cover", hint: "Bride & groom names or caricatures" },
+        { key: "inLeft", label: "Inside left", hint: "English" },
+        { key: "inRight", label: "Inside right", hint: "Assamese" },
+        { key: "back", label: "Back cover", hint: "QR code", qr: true }
+      ],
+      views: [
+        { label: "Front", pages: ["front"] },
+        { label: "Opened", pages: ["inLeft", "inRight"] },
+        { label: "Back", pages: ["back"] }
+      ],
+      spreads: [["back", "front"], ["inLeft", "inRight"]],
+      print: [
+        { id: "a4", label: "A4 print sheets", sheet: "A4", note: "2 A4 sheets: outside (back + front) and inside (English + Assamese). Print double-sided, flip on the short edge, then fold in the middle.",
+          sheets: [{ slots: ["back", "front"], fold: true }, S("inLeft", "inRight")] },
+        { id: "a5", label: "A5 pages", sheet: "A5", note: "4 separate A5 pages in reading order.",
+          sheets: [S("front"), S("inLeft"), S("inRight"), S("back")] }
+      ]
+    }
+  },
+  a5single: {
+    name: "A5 card, front & back", tag: "2 designs",
+    desc: "One A5 card printed on both sides.",
+    mini: ["Front", "Back"],
+    config: {
+      size: "A5",
+      pages: [
+        { key: "front", label: "Front", hint: "Main design" },
+        { key: "back", label: "Back", hint: "Details or QR code" }
+      ],
+      views: [{ label: "Front", pages: ["front"] }, { label: "Back", pages: ["back"] }],
+      spreads: [["front", "back"]],
+      print: [
+        { id: "a5", label: "A5 pages", sheet: "A5", note: "Front and back. Print double-sided.", sheets: [S("front"), S("back")] },
+        { id: "a4", label: "2 cards per A4 sheet", sheet: "A4", note: "Two copies side by side. Print double-sided, then cut in half.", sheets: [S("front", "front"), S("back", "back")] }
+      ]
+    }
+  },
+  a5pair: {
+    name: "Two A5 cards, shared back", tag: "3 designs",
+    desc: "Two separate A5 cards, each with its own front, and one common back.",
+    mini: ["1", "2", "Back"],
+    config: {
+      size: "A5",
+      pages: [
+        { key: "front1", label: "Card 1 front", hint: "First card" },
+        { key: "front2", label: "Card 2 front", hint: "Second card" },
+        { key: "back", label: "Common back", hint: "Same back for both cards" }
+      ],
+      views: [{ label: "Card 1", pages: ["front1"] }, { label: "Card 2", pages: ["front2"] }, { label: "Back", pages: ["back"] }],
+      print: [
+        { id: "a5", label: "A5 pages", sheet: "A5", note: "Card 1 front, back, card 2 front, back. Print double-sided.", sheets: [S("front1"), S("back"), S("front2"), S("back")] },
+        { id: "a4", label: "Both cards on one A4 sheet", sheet: "A4", note: "Card 1 and card 2 side by side, common back on the reverse. Print double-sided, then cut in half.", sheets: [S("front1", "front2"), S("back", "back")] }
+      ]
+    }
+  },
+  signage: { name: "Signage", tag: "Boards & standees", desc: "Welcome boards, menus, seating charts. Pick the board size; the print PDF comes out at actual size.", mini: ["board", "board"] },
+  entry: { name: "Entry signage", tag: "Gates, arches & standees", desc: "Entrance gate and arch banners, entry boards, roll-up and welcome standees. Sizes in feet; the print PDF comes out at actual size.", mini: ["gate", "board"] },
+  custom: { name: "Custom", tag: "Your own layout", desc: "Any number of designs, A5 or A4, folded or separate.", mini: ["?", "?", "?"] }
+};
+const DEFAULT_FORMAT = "a4fold";
+
+// Board sizes for signage, portrait, in mm.
+const SIGN_SIZES = {
+  "18x24in": { label: "18 × 24 in", w: 457, h: 610 },
+  "24x36in": { label: "24 × 36 in (2 × 3 ft)", w: 610, h: 914 },
+  "36x48in": { label: "36 × 48 in (3 × 4 ft)", w: 914, h: 1219 },
+  A3: { label: "A3 (297 × 420 mm)", w: 297, h: 420 },
+  A2: { label: "A2 (420 × 594 mm)", w: 420, h: 594 },
+  A1: { label: "A1 (594 × 841 mm)", w: 594, h: 841 }
+};
+// Entrance pieces, portrait, in mm. Gate and arch banners are usually printed on flex.
+const ENTRY_SIZES = {
+  "2x3ft": { label: "Entry board 2 × 3 ft (sunboard)", w: 610, h: 914 },
+  rollup: { label: "Roll-up standee 33 × 80 in", w: 838, h: 2032 },
+  "3x6ft": { label: "Standee 3 × 6 ft", w: 914, h: 1829 },
+  "4x6ft": { label: "Entry board 4 × 6 ft", w: 1219, h: 1829 },
+  "6x8ft": { label: "Entry board 6 × 8 ft", w: 1829, h: 2438 },
+  "8x10ft": { label: "Gate / arch banner 8 × 10 ft", w: 2438, h: 3048 },
+  "10x12ft": { label: "Gate / arch banner 10 × 12 ft", w: 3048, h: 3658 }
+};
+// Boards are big, so their uploads keep more pixels than card pages: about 120 dpi on a 24 × 36 in board,
+// which prints sharp at viewing distance. Entry pieces keep more again: they are seen from further away,
+// and flex printing needs fewer dots per inch. scaled() keeps every image under the largest canvas phones handle.
+const SIGN_EDGE = 4200, ENTRY_EDGE = 6000;
+const MAX_PIXELS = 16e6;
+
+// Entry board designs from the website catalogue (themerakievent.in/order-my-board), by edition.
+const CATALOGUE = {
+ "Standard": [
+  "https://themerakievent.in/wp-content/uploads/2026/05/juroon-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/juroon-with-default-caricatures-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/gamusha-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/assamese-bless-standard-en-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/royal-indian-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/floral-bless-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/rajdeep-standard-simple-classic-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/pink-bless-with-default-caricatures-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/assamese-bless-english-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/assamese-theme-horai-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/classic-assamese-assamese-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/classic-assamese-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/default-islamic-caricatures-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/engagement-beige-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/engagement-green-emerald-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/floral-pink-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/blue-bless-standard-royal-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/bless-landscape-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/bg-floral-pink-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/babys-are-getting-married-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/assamese-theme-with-default-caricatures-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/apurva-engagement-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/green-pink-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/islamic-rahul-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/islamic-text-standard_-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/river-south-indian-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/muktadir-standard-green-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/mehendi-default-couple-standard-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/mehendi-default-caricatures-couple-standard-scaled.png"
+ ],
+ "Caricature": [
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-2-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-3-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-4-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-5-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-6-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-8-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-9-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-10-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/caricatures-haldi-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/mehendi-caricatures-2-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/red-caricatures-royal-assamese-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/red-lehenga-caricatures-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/single-bride-haldi-caricatures-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1bv-1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1cccc-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1cvvg-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1gfds-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1jjijihg-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-1jjjui-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-mjnnnjnii1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-mnkknkn1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-nnbhjuij1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitled-yggu1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/Untitlnked-1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/05/vvvhyijn-scaled.png"
+ ],
+ "Photo": [
+  "https://themerakievent.in/wp-content/uploads/2026/06/26-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/27-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/28-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/29-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/30-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/31-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/32-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/7-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/8-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/9-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/10-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/11-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/12-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/13-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/14-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/15-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/16-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/17-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/18-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/19-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/20-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/21-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/Untitled-6-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/Untitled-5-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/Untitled-4-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/Untitled-3-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/Untitled-2-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/Untitled-1-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/25-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/24-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/23-scaled.png",
+  "https://themerakievent.in/wp-content/uploads/2026/06/22-scaled.png"
+ ]
+};
+// WordPress keeps a small copy of each image next to it; the full image is the fallback.
+const thumbOf = u => u.replace(/\.(png|jpe?g|webp)$/i, "-212x300.$1");
+const catImg = u => `<img src="${esc(thumbOf(u))}" data-full="${esc(u)}" alt="" loading="lazy" onerror="if(this.src!==this.dataset.full)this.src=this.dataset.full">`;
+const refImg = ref => /^drive:/.test(ref || "") ? `<img data-file="${esc(ref.slice(6))}" alt="Customer's design">` : ref ? catImg(ref) : "";
+// An entry board job: the board order (ME-) or the Entry signage format.
+const boardJob = p => p.format === "entry" || ((p.orderInfo || p.order || {}).kind === "entry");
+
+// Builds the config for signage chosen in the New customer form.
+function signageConfig({ size, cw, ch, unit, orient, count, labels, qrLast, entry }) {
+  let w, h, label;
+  if (size === "custom") {
+    const mm = { in: 25.4, ft: 304.8, cm: 10 }[unit] || 25.4;
+    w = Math.round(cw * mm); h = Math.round(ch * mm);
+    if (!(w > 0 && h > 0)) throw new Error("Enter the board's width and height.");
+    label = `${cw} × ${ch} ${unit}`;
+  } else ({ w, h, label } = SIGN_SIZES[size] || ENTRY_SIZES[size] || (entry ? ENTRY_SIZES["2x3ft"] : SIGN_SIZES["24x36in"]));
+  if ((orient === "landscape") !== (w > h)) [w, h] = [h, w];
+  if (orient === "landscape") label += ", landscape";
+  count = Math.max(1, Math.min(10, count | 0));
+  const noun = entry ? "Entry sign" : "Board";
+  const pages = Array.from({ length: count }, (_, i) => ({ key: "b" + (i + 1), label: (labels[i] || "").trim() || (count === 1 ? noun : noun + " " + (i + 1)), hint: label }));
+  if (qrLast) { pages[count - 1].qr = true; pages[count - 1].hint += " · QR code"; }
+  const keys = pages.map(x => x.key);
+  return {
+    kind: "signage", entry: !!entry, size: label, mm: [w, h], ratio: Math.max(w, h) / Math.min(w, h), printEdge: entry ? ENTRY_EDGE : SIGN_EDGE,
+    pages, views: pages.map(x => ({ label: x.label, pages: [x.key] })),
+    print: [
+      { id: "full", label: "Actual size", sheet: "custom", mm: [w, h], note: `${count === 1 ? "The " + noun.toLowerCase() : count + " " + noun.toLowerCase() + "s, one per page,"} at ${label}, ready for the printer.`, sheets: keys.map(k => S(k)) },
+      { id: "proof", label: "A4 proof", sheet: "A4", note: "Scaled down to fit A4, to check on an office printer.", sheets: keys.map(k => S(k)) }
+    ]
+  };
+}
+
+// Builds the config for a custom layout chosen in the New customer form.
+function customConfig({ count, size, layout, labels, qrLast }) {
+  count = Math.max(1, Math.min(12, count | 0));
+  const pages = Array.from({ length: count }, (_, i) => ({ key: "p" + (i + 1), label: (labels[i] || "").trim() || "Page " + (i + 1), hint: "" }));
+  if (qrLast) { pages[count - 1].qr = true; pages[count - 1].hint = "QR code"; }
+  const keys = pages.map(p => p.key);
+  let views = keys.map((k, i) => ({ label: pages[i].label, pages: [k] }));
+  if (layout === "folded" && count >= 3) {
+    views = [{ label: pages[0].label, pages: [keys[0]] }];
+    for (let i = 1; i < count - 1; i += 2) views.push(i + 1 < count - 1 ? { label: "Inside " + (views.length), pages: [keys[i], keys[i + 1]] } : { label: pages[i].label, pages: [keys[i]] });
+    views.push({ label: pages[count - 1].label, pages: [keys[count - 1]] });
+  }
+  const print = [{ id: "pages", label: size + " pages", sheet: size, note: count + " " + size + " pages in order.", sheets: keys.map(k => S(k)) }];
+  if (size === "A5" && layout === "folded" && count === 4) {
+    print.unshift({ id: "a4", label: "A4 print sheets", sheet: "A4", note: "Outside (back + front) and inside spread. Print double-sided, flip on the short edge, fold in the middle.",
+      sheets: [{ slots: [keys[3], keys[0]], fold: true }, S(keys[1], keys[2])] });
+  } else if (size === "A5" && count > 1) {
+    const sheets = [];
+    for (let i = 0; i < count; i += 2) sheets.push(S(keys[i], keys[i + 1] || keys[i]));
+    print.push({ id: "a4", label: "2 per A4 sheet", sheet: "A4", note: "Pages paired side by side on A4, ready to cut.", sheets });
+  }
+  const spreads = layout === "folded" && count === 4 ? [[keys[3], keys[0]], [keys[1], keys[2]]] : undefined;
+  return { size, layout, pages, views, print, spreads };
+}
+
+/* ======================= helpers ======================= */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const app = $("#app");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtDate = iso => iso ? new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "";
+const fmtDay = iso => iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+// Last loaded data per screen, shown at once on the next visit while fresh data loads.
+const cacheKey = k => DEMO ? null : "meraki-approval-cache-" + k;
+const cached = k => cacheKey(k) ? store.get(cacheKey(k), null) : null;
+const remember = (k, v) => { if (cacheKey(k)) store.set(cacheKey(k), v); };
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* private mode */ } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { /* private mode */ } }
+};
+let toastTimer;
+function toast(msg, bad) {
+  const t = $("#toast");
+  t.textContent = msg; t.className = "show" + (bad ? " bad" : "");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = "", bad ? 5000 : 2800);
+}
+const libs = {};
+function loadScript(src) {
+  return libs[src] ||= new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = res; s.onerror = () => { delete libs[src]; rej(new Error("Couldn't load a helper library. Check the internet connection.")); };
+    document.head.appendChild(s);
+  });
+}
+function waLink(phone, text) {
+  let d = String(phone || "").replace(/\D/g, "");
+  if (d.length === 10) d = CONFIG.countryCode + d;
+  return "https://wa.me/" + d + "?text=" + encodeURIComponent(text);
+}
+const customerLink = p => location.origin + location.pathname + "?c=" + p.token;
+// The same checks as the script's address_(): returns the cleaned address, or an error message.
+function checkAddress(a = {}) {
+  const out = { name: String(a.name || "").trim(), phone: String(a.phone || "").replace(/[^\d+]/g, ""), address: String(a.address || "").trim(), pincode: String(a.pincode || "").replace(/\D/g, "") };
+  if (out.name.length < 2) return "Please enter the name of the person receiving the delivery.";
+  if (out.phone.replace(/\D/g, "").length < 10) return "Please enter a 10-digit phone number for the delivery.";
+  if (out.address.length < 10) return "Please enter the full delivery address.";
+  if (!/^\d{6}$/.test(out.pincode)) return "Please enter the 6-digit PIN code.";
+  return out;
+}
+const DELIVERY = { confirmed: ["Address confirmed", ""], dispatched: ["Dispatched", "gold"], delivered: ["Delivered", "ok"] };
+const STATUS = {
+  new: ["Preparing draft", ""], review: ["With customer", "gold"],
+  corrections: ["Corrections received", "accent"], approved: ["Approved", "ok"]
+};
+const statusChip = s => `<span class="chip ${(STATUS[s] || STATUS.new)[1]}">${esc((STATUS[s] || STATUS.new)[0])}</span>`;
+const isSign = f => f === "signage" || f === "entry";
+const formatName = p => isSign(p.format) && p.config.size ? (FORMATS[p.format] || FORMATS.signage).name + " · " + p.config.size : (FORMATS[p.format] || FORMATS.custom).name;
+const slotDef = (cfg, key) => cfg.pages.find(x => x.key === key) || { key, label: key };
+const slotLabel = (cfg, key) => slotDef(cfg, key).label;
+const shared = p => p.drafts.filter(d => d.shared);
+const latest = p => shared(p).at(-1) || null;
+const openDraft = p => p.drafts.find(d => !d.shared) || null;
+const uploadDraftNo = p => p.status === "approved" ? 0
+  : openDraft(p) ? openDraft(p).n : (shared(p).length < p.draftsAllowed ? shared(p).length + 1 : 0);
+function shortUrl(u) {
+  try { const x = new URL(u); return x.hostname.replace(/^www\./, "") + (x.pathname.length > 1 ? x.pathname.slice(0, 18) + (x.pathname.length > 18 ? "…" : "") : ""); }
+  catch (e) { return u.length > 40 ? u.slice(0, 40) + "…" : u; }
+}
+const isUrl = s => /^https?:\/\//i.test(s || "");
+function qrChip(qr) {
+  if (!qr) return "";
+  return isUrl(qr)
+    ? `<span class="qr-chip" title="${esc(qr)}">QR opens <a href="${esc(qr)}" target="_blank" rel="noopener">${esc(shortUrl(qr))}</a></span>`
+    : `<span class="qr-chip" title="${esc(qr)}">QR reads: ${esc(qr.slice(0, 40))}</span>`;
+}
+function pageWarnings(cfg, key, page) {
+  const w = [];
+  const def = slotDef(cfg, key);
+  if (!page) return w;
+  const r = Math.max(page.w, page.h) / Math.max(1, Math.min(page.w, page.h)), want = cfg.ratio || Math.SQRT2;
+  const sign = cfg.kind === "signage";
+  if (page.w && Math.abs(r - want) / want > 0.04) w.push(["warn", `Not ${cfg.size || "A5"} shape. It will be centred with white edges when printed.`]);
+  else if (page.w && cfg.mm && (page.w > page.h) !== (cfg.mm[0] > cfg.mm[1])) w.push(["warn", `This design is ${page.w > page.h ? "landscape" : "portrait"} but the board is ${cfg.mm[0] > cfg.mm[1] ? "landscape" : "portrait"}.`]);
+  if (page.w && Math.max(page.w, page.h) < (sign ? 3000 : 1600)) w.push(["warn", `Low resolution (${page.w}×${page.h}px). ${sign ? "Export at least 3000 px on the long side for a sharp board." : "Export at 300 dpi for sharp print."}`]);
+  if (def.qr && !page.qr) w.push(["bad", "No QR code found on this page."]);
+  return w;
+}
+
+/* ======================= data: Google Sheet backend ======================= */
+let auth = store.get("meraki-approval-editor", null);
+const imgCache = new Map();
+function check(r) {
+  if (r && r.status === "ok") return r;
+  const msg = (r && r.message) || { denied: "Access denied.", notfound: "Not found." }[r && r.status] || "Something went wrong. Please try again.";
+  const e = new Error(msg); e.code = r && r.status; throw e;
+}
+const Remote = {
+  async get(q) { return check(await (await fetch(CONFIG.endpoint + "?" + new URLSearchParams(q))).json()); },
+  async post(body) {
+    // text/plain keeps this a simple request, so Apps Script accepts it without a CORS preflight.
+    const r = await fetch(CONFIG.endpoint, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(body) });
+    return check(await r.json());
+  },
+  list: () => Remote.get({ action: "list", k: auth.key }).then(r => r.projects),
+  project: id => Remote.get({ action: "project", id, k: auth.key }).then(r => r.project),
+  customer: t => Remote.get({ action: "project", t }).then(r => r.project),
+  orders: q => Remote.get({ action: "orders", q, k: auth.key }).then(r => r.orders),
+  create: d => Remote.post({ action: "create", k: auth.key, editor: auth.name, ...d }).then(r => r.project),
+  act: (id, action, d = {}) => Remote.post({ action, id, k: auth.key, editor: auth.name, ...d }).then(r => r.project),
+  customerAct: (t, action, d = {}) => Remote.post({ action, t, ...d }).then(r => r.project),
+  customerUpload: (t, data) => Remote.post({ action: "refupload", t, data }).then(r => r.file),
+  async image(p, f) {
+    const q = p.token && !TOKEN ? { action: "image", p: p.id, f, k: auth.key } : { action: "image", t: TOKEN, f };
+    const r = await Remote.get(q);
+    return "data:" + r.mime + ";base64," + r.data;
+  }
+};
+
+/* ======================= data: demo mode (this browser only) ======================= */
+const idb = {
+  db: null,
+  open() {
+    return this.db ||= new Promise((res, rej) => {
+      const r = indexedDB.open("meraki-approval", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("files");
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+  },
+  async run(mode, fn) {
+    const db = await this.open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction("files", mode); const req = fn(tx.objectStore("files"));
+      tx.oncomplete = () => res(req && req.result); tx.onerror = () => rej(tx.error);
+    });
+  },
+  put(k, v) { return this.run("readwrite", s => s.put(v, k)); },
+  get(k) { return this.run("readonly", s => s.get(k)); },
+  del(k) { return this.run("readwrite", s => s.delete(k)); }
+};
+const rid = n => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => "abcdefghijkmnpqrstuvwxyz23456789"[b % 32]).join("");
+const Local = {
+  KEY: "meraki-approval-demo",
+  db() { return store.get(this.KEY, { projects: [] }); },
+  async tx(fn) { const db = this.db(); const r = await fn(db); store.set(this.KEY, db); return r; },
+  out(p, editor) {
+    const o = JSON.parse(JSON.stringify(p));
+    if (!editor) {
+      if (o.order) {
+        const r = o.order;
+        o.orderInfo = { kind: r.kind, orderId: r.orderId, product: r.product, events: r.events, quantity: r.quantity,
+          weddingDate: r.weddingDate, coverUrl: r.coverUrl, address: r.address || "", pincode: r.pincode || "" };
+      }
+      delete o.token; delete o.notes; delete o.order;
+      o.drafts = o.drafts.filter(d => d.shared);
+      o.drafts.forEach(d => Object.values(d.pages).forEach(pg => delete pg.print));
+    }
+    return o;
+  },
+  find(db, id) { const p = db.projects.find(x => x.id === id); if (!p) check({ status: "notfound" }); return p; },
+  touch(p) { p.updated = new Date().toISOString(); },
+  async list() {
+    return this.db().projects.map(p => {
+      const sh = shared(p).length;
+      return { id: p.id, customer: p.customer, phone: p.phone, format: p.format, status: p.status, editor: p.editor,
+        draftsAllowed: p.draftsAllowed, shared: sh, drafts: p.drafts.length, updated: p.updated, created: p.created,
+        openCorrections: p.messages.filter(m => m.from === "customer" && m.draft === sh && !m.done).length, orderId: (p.order || {}).orderId || "",
+        delivery: (p.delivery || {}).status || "" };
+    });
+  },
+  async project(id) { return this.out(this.find(this.db(), id), true); },
+  async orders() { throw new Error("Order search needs the Google Sheet connection. Use Custom create in demo mode."); },
+  async customer(t) { const p = this.db().projects.find(x => x.token === t); if (!p) check({ status: "notfound" }); return this.out(p, false); },
+  create(d) {
+    return this.tx(db => {
+      if (String(d.customer || "").trim().length < 2) check({ status: "invalid", message: "Customer name is required." });
+      const now = new Date().toISOString();
+      const p = { id: "MK-" + rid(5).toUpperCase(), token: rid(20), customer: d.customer.trim(), phone: String(d.phone || "").replace(/[^\d+]/g, ""),
+        format: d.format, config: d.config, draftsAllowed: Math.max(1, Math.min(10, +d.draftsAllowed || 3)), status: "new",
+        editor: auth.name, notes: d.notes || "", order: d.order || null, created: now, updated: now, approvedDraft: null, approvedAt: "", approvedBy: "",
+        drafts: [], messages: [] };
+      db.projects.push(p);
+      return this.out(p, true);
+    });
+  },
+  act(id, action, d = {}) {
+    return this.tx(async db => {
+      const p = this.find(db, id);
+      const sh = shared(p).length;
+      if (action === "update") {
+        if (d.customer !== undefined) { if (d.customer.trim().length < 2) check({ status: "invalid", message: "Customer name is required." }); p.customer = d.customer.trim(); }
+        if (d.phone !== undefined) p.phone = String(d.phone).replace(/[^\d+]/g, "");
+        if (d.notes !== undefined) p.notes = d.notes;
+        if (d.draftsAllowed !== undefined) p.draftsAllowed = Math.max(1, Math.min(10, +d.draftsAllowed || 3));
+        if (d.config !== undefined) {
+          if (p.drafts.length) check({ status: "invalid", message: "The format can only change before the first upload." });
+          p.format = d.format; p.config = d.config;
+        }
+      } else if (action === "page") {
+        if (p.status === "approved") check({ status: "invalid", message: "This design is already approved." });
+        if (d.draft !== sh + 1 || d.draft > p.draftsAllowed) check({ status: "invalid", message: "Draft " + d.draft + " is not open for uploads." });
+        let dr = p.drafts.find(x => x.n === d.draft);
+        if (!dr) { dr = { n: d.draft, editor: auth.name, created: new Date().toISOString(), shared: "", pages: {} }; p.drafts.push(dr); }
+        const old = dr.pages[d.slot];
+        if (old) { await idb.del(old.preview); await idb.del(old.print); }
+        const pv = "f" + rid(12), pr = "f" + rid(12);
+        await idb.put(pv, d.preview); await idb.put(pr, d.print);
+        dr.pages[d.slot] = { preview: pv, print: pr, w: d.w, h: d.h, qr: d.qr || "" };
+        dr.editor = auth.name;
+      } else if (action === "share") {
+        const dr = p.drafts.find(x => x.n === d.draft);
+        if (!dr || dr.shared) check({ status: "invalid", message: "Nothing to share." });
+        const missing = p.config.pages.filter(x => !dr.pages[x.key]);
+        if (missing.length) check({ status: "invalid", message: "Upload every page first: " + missing.map(x => x.label).join(", ") });
+        dr.shared = new Date().toISOString(); dr.editor = auth.name; p.status = "review";
+      } else if (action === "message") {
+        this.addMessages(p, d, "editor");
+      } else if (action === "done") {
+        const m = p.messages.find(x => x.id === d.msg); if (m) m.done = !!d.done;
+      } else if (action === "delivery") {
+        const cur = p.delivery || {};
+        if (d.address) { const a = checkAddress(d.address); if (typeof a === "string") check({ status: "invalid", message: a }); Object.assign(cur, a); }
+        if (d.status !== undefined) {
+          if (d.status !== "confirmed" && p.status !== "approved") check({ status: "invalid", message: "The design must be approved first." });
+          cur.status = d.status;
+          if (d.status === "dispatched") cur.dispatchedAt = new Date().toISOString();
+          if (d.status === "delivered") cur.deliveredAt = new Date().toISOString();
+        }
+        if (d.courier !== undefined) cur.courier = String(d.courier).trim();
+        if (d.tracking !== undefined) cur.tracking = String(d.tracking).trim();
+        p.delivery = cur;
+      } else if (action === "grant") {
+        p.draftsAllowed += 1;
+      } else if (action === "reopen") {
+        p.status = "corrections"; p.approvedDraft = null; p.approvedAt = ""; p.approvedBy = "";
+      }
+      this.touch(p);
+      return this.out(p, true);
+    });
+  },
+  addMessages(p, d, from) {
+    const items = (d.items || []).filter(it => String(it.text || "").trim());
+    if (!items.length) check({ status: "invalid", message: "Write a message first." });
+    const sh = shared(p).length, n = d.draft || sh;
+    if (from === "customer") {
+      if (p.status === "approved") check({ status: "invalid", message: "This design is already approved." });
+      if (!sh || n !== sh) check({ status: "invalid", message: "Corrections go on the latest draft." });
+      p.status = "corrections";
+    }
+    const time = new Date().toISOString();
+    items.forEach(it => p.messages.push({ id: "M" + rid(8), draft: n, from, name: (d.name || "").trim() || (from === "customer" ? p.customer : CONFIG.studio),
+      page: it.page || "", x: it.x ?? null, y: it.y ?? null, text: String(it.text).trim(), time, done: false }));
+  },
+  customerAct(t, action, d = {}) {
+    return this.tx(db => {
+      const p = db.projects.find(x => x.token === t);
+      if (!p) check({ status: "denied" });
+      if (action === "message") this.addMessages(p, d, "customer");
+      if (action === "design") {
+        if (p.status === "approved") check({ status: "invalid", message: "This design is already approved." });
+        if (!d.url && !d.file) check({ status: "invalid", message: "Pick a design or upload a picture." });
+        const sh = shared(p).length;
+        p.messages.push({ id: "M" + rid(8), draft: sh, from: "customer", name: (d.name || "").trim() || p.customer, page: d.page || "", x: null, y: null,
+          text: (d.text || "").trim() || (d.url ? "Please use this design from the catalogue." : "Please use my own design."),
+          time: new Date().toISOString(), done: false, type: "design", ref: d.url || "drive:" + d.file });
+        if (sh) p.status = "corrections";
+      }
+      if (action === "approve" && p.status !== "approved") {
+        if (d.draft !== shared(p).length) check({ status: "invalid", message: "Please approve the latest draft." });
+        const a = checkAddress(d.delivery);
+        if (typeof a === "string") check({ status: "invalid", message: a });
+        p.delivery = { ...a, status: "confirmed", confirmedAt: new Date().toISOString() };
+        p.status = "approved"; p.approvedDraft = d.draft; p.approvedAt = new Date().toISOString(); p.approvedBy = (d.name || "").trim() || p.customer;
+      }
+      this.touch(p);
+      return this.out(p, false);
+    });
+  },
+  async customerUpload(t, data) { const id = "u" + rid(12); await idb.put(id, data); return id; },
+  async image(p, f) { const v = await idb.get(f); if (!v) throw new Error("Image not found in this browser."); return v; }
+};
+
+const TOKEN = new URLSearchParams(location.search).get("c");
+const DEMO = !CONFIG.endpoint;
+const api = DEMO ? Local : Remote;
+// A file's image as a data URL. Previews are kept in this browser after the first load: a file ID never
+// changes content (a new upload gets a new ID), so a kept copy is never out of date.
+function imageSrc(p, f, keep = true) {
+  if (!imgCache.has(f)) {
+    const k = "cache:" + f;
+    const load = async () => {
+      if (!DEMO && keep) { try { const v = await idb.get(k); if (v) return v; } catch (e) { /* storage blocked: load from the script */ } }
+      const v = await api.image(p, f);
+      if (!DEMO && keep) idb.put(k, v).catch(() => {});
+      return v;
+    };
+    imgCache.set(f, load().catch(e => { imgCache.delete(f); throw e; }));
+  }
+  return imgCache.get(f);
+}
+function loadImg(src) {
+  return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error("Couldn't read that image.")); i.src = src; });
+}
+// Fills every <img data-file> inside el once its preview has loaded.
+function hydrate(el, p) {
+  $$("img[data-file]", el).forEach(img => {
+    imageSrc(p, img.dataset.file).then(src => { img.src = src; }).catch(() => { img.alt = "Couldn't load this page"; });
+  });
+}
+// Starts loading a preview before it is shown, so switching views is instant.
+function warm(p, f) { imageSrc(p, f).catch(() => {}); }
+
+/* ======================= dialogs ======================= */
+const dlg = $("#dlg");
+function openDialog(html, bind, full) {
+  dlg.className = full === true ? "full" : full || "";
+  dlg.innerHTML = html;
+  dlg.showModal();
+  $$("[data-close]", dlg).forEach(b => b.addEventListener("click", e => { e.preventDefault(); dlg.close(); }));
+  bind && bind(dlg);
+}
+dlg.addEventListener("click", e => { if (e.target === dlg && !dlg.classList.contains("full")) dlg.close(); });
+function confirmDialog(title, body, okLabel, okClass = "primary") {
+  return new Promise(res => {
+    openDialog(`<form method="dialog"><h2>${esc(title)}</h2><div>${body}</div>
+      <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn ${okClass}" value="ok" id="dOk">${esc(okLabel)}</button></div></form>`,
+      d => {
+        $("#dOk", d).addEventListener("click", e => {
+          const req = $("[data-required]", d);
+          if (req && !req.checked) { e.preventDefault(); toast(req.dataset.required, true); return; }
+          e.preventDefault(); dlg.close(); res(true);
+        });
+        dlg.addEventListener("close", () => res(false), { once: true });
+      });
+  });
+}
+function zoomPage(p, fileId, label) {
+  openDialog(`<div class="zoomer"><div class="bar"><b>${esc(label)}</b><div class="row">
+      <button class="btn" data-z="-1" aria-label="Zoom out">−</button><button class="btn" data-z="1" aria-label="Zoom in">+</button>
+      <button class="btn" data-close>Close</button></div></div>
+      <div class="scroll"><img data-file="${esc(fileId)}" alt="${esc(label)}"></div></div>`, d => {
+    const img = $("img", d);
+    let z = Math.round(Math.min(100, 900 / Math.max(1, innerWidth) * 100));
+    img.style.width = z + "%";
+    $$("[data-z]", d).forEach(b => b.addEventListener("click", () => { z = Math.max(50, Math.min(400, z + (+b.dataset.z) * 50)); img.style.width = z + "%"; }));
+    hydrate(d, p);
+  }, true);
+}
+
+/* ======================= card viewer ======================= */
+// Numbers every customer correction on a draft; pins are the ones placed on a page.
+function corrections(p, n, pending = []) {
+  let i = 0;
+  const list = p.messages.filter(m => m.draft === n && m.from === "customer" && m.type !== "design").map(m => ({ ...m, num: ++i, kind: m.done ? "done" : "sent" }));
+  pending.forEach((m, j) => list.push({ ...m, num: ++i, kind: "pending", pi: j }));
+  return list;
+}
+
+function mountViewer(el, o) {
+  // o: { project, draft, getPins(), onTap(slot, x, y), onPin(item), tapHint }
+  const cfg = o.project.config;
+  const views = [...cfg.views, { label: "All pages", pages: cfg.pages.map(x => x.key), all: true }];
+  let vi = Math.min(o.view || 0, views.length - 1);
+  el.innerHTML = `<div class="viewer"><div class="tabs" role="tablist">${views.map((v, i) =>
+    `<button role="tab" data-v="${i}" aria-selected="${i === vi}">${esc(v.label)}</button>`).join("")}</div><div class="stage"></div></div>`;
+  const stage = $(".stage", el);
+  $$("[data-v]", el).forEach(b => b.addEventListener("click", () => { vi = +b.dataset.v; draw(); }));
+  function draw() {
+    $$("[data-v]", el).forEach(b => b.setAttribute("aria-selected", +b.dataset.v === vi));
+    const v = views[vi];
+    const pins = o.getPins ? o.getPins() : [];
+    stage.innerHTML = `<div class="spread ${v.all ? "all" : v.pages.length > 1 ? "two" : "one"}">${v.pages.map(k => {
+      const pg = o.draft.pages[k];
+      const ratio = pg && pg.w ? `${pg.w} / ${pg.h}` : "148 / 210";
+      const mine = pins.filter(m => m.page === k && m.x !== null && m.x !== undefined);
+      return `<div class="pgwrap"><div class="pg ${pg ? "" : "blank"} ${o.onTap && pg ? "tappable" : ""}" data-slot="${esc(k)}" style="aspect-ratio:${ratio}">
+          ${pg ? `<img data-file="${esc(pg.preview)}" alt="${esc(slotLabel(cfg, k))}" draggable="false">
+          <button class="zoom-btn" data-zoom="${esc(k)}" aria-label="Zoom ${esc(slotLabel(cfg, k))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg></button>` : "Not uploaded"}
+          ${mine.map(m => `<button class="pin ${m.kind}" style="left:${m.x}%;top:${m.y}%" data-pin="${m.num}" title="${esc(m.text)}">${m.num}</button>`).join("")}
+        </div><div class="pglabel">${esc(slotLabel(cfg, k))}${pg && pg.qr ? " " + qrChip(pg.qr) : ""}</div></div>`;
+    }).join("")}</div>${o.tapHint && !v.all ? `<p class="stage-hint">${o.tapHint}</p>` : ""}`;
+    hydrate(stage, o.project);
+    $$(".pg.tappable", stage).forEach(pgEl => pgEl.addEventListener("click", e => {
+      if (e.target.closest("button")) return;
+      const r = pgEl.getBoundingClientRect();
+      const x = Math.round((e.clientX - r.left) / r.width * 1000) / 10, y = Math.round((e.clientY - r.top) / r.height * 1000) / 10;
+      o.onTap(pgEl.dataset.slot, x, y);
+    }));
+    $$("[data-zoom]", stage).forEach(b => b.addEventListener("click", () => zoomPage(o.project, o.draft.pages[b.dataset.zoom].preview, slotLabel(cfg, b.dataset.zoom))));
+    $$("[data-pin]", stage).forEach(b => b.addEventListener("click", () => {
+      const it = pins.find(m => m.num === +b.dataset.pin); if (it && o.onPin) o.onPin(it);
+    }));
+  }
+  draw();
+  Object.values(o.draft.pages).forEach(pg => warm(o.project, pg.preview));
+  return {
+    redraw: draw,
+    // Switches to a view that shows the page and makes the pin pulse.
+    show(slot, num) {
+      if (!views[vi].pages.includes(slot)) { vi = views.findIndex(v => v.pages.includes(slot)); draw(); }
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      const pin = $(`[data-pin="${num}"]`, stage);
+      if (pin) { pin.classList.remove("flash"); void pin.offsetWidth; pin.classList.add("flash"); }
+    }
+  };
+}
+
+function correctionItem(cfg, m, opts = {}) {
+  const where = m.page ? slotLabel(cfg, m.page) + (m.x !== null && m.x !== undefined ? " · pin " + m.num : "") : "General";
+  return `<li class="citem ${m.kind}" data-num="${m.num}" ${m.page ? `data-page="${esc(m.page)}"` : ""}>
+    <span class="num">${m.num}</span>
+    <div><div class="txt">${esc(m.text)}</div><div class="where">${esc(where)}${m.kind === "done" ? " · fixed" : ""}${opts.showTime && m.time ? " · " + esc(fmtDate(m.time)) : ""}</div></div>
+    <div class="row">${opts.actions ? opts.actions(m) : ""}</div></li>`;
+}
+
+// Corrections and replies of one draft, oldest first. compact: a batch of corrections shown elsewhere becomes one line.
+function threadHTML(p, n, me, compact) {
+  const cfg = p.config;
+  const list = corrections(p, n);
+  const msgs = p.messages.filter(m => m.draft === n && m.type !== "design").sort((a, b) => a.time < b.time ? -1 : a.time > b.time ? 1 : 0);
+  if (!msgs.length) return `<p class="muted small">No messages on this draft.</p>`;
+  // Group a customer's batch (same time) into one block of numbered items.
+  const out = []; let batch = null;
+  msgs.forEach(m => {
+    if (m.from === "customer") {
+      const it = list.find(x => x.id === m.id);
+      if (!batch || batch.time !== m.time) { batch = { time: m.time, name: m.name, items: [] }; out.push(batch); }
+      batch.items.push(it);
+    } else { batch = null; out.push(m); }
+  });
+  return `<div class="thread">${out.map(b => b.items
+    ? `<div><span class="by small muted">${esc(b.name)} sent ${b.items.length} correction${b.items.length > 1 ? "s" : ""} · ${esc(fmtDate(b.time))}</span>${compact ? ""
+        : `<ul class="clist" style="margin-top:6px">${b.items.map(it => correctionItem(cfg, it)).join("")}</ul>`}</div>`
+    : `<div class="bubble ${me === "editor" ? "me" : ""}"><span class="by">${esc(b.name)} · ${esc(fmtDate(b.time))}</span>${esc(b.text)}</div>`).join("")}</div>`;
+}
+
+/* ======================= order tracker, board designs, delivery ======================= */
+// Booking confirmed -> draft coming soon -> drafts -> approved -> out for delivery -> delivered.
+function trackerHTML(p) {
+  const last = latest(p), approved = p.status === "approved", d = p.delivery || {};
+  const sent = d.status === "dispatched" || d.status === "delivered";
+  const steps = [
+    ["Booking confirmed", fmtDay(p.created), true],
+    ["Draft coming soon", last ? "Draft 1 shared " + fmtDay(shared(p)[0].shared) : "Our designers are on it", !!last],
+    [last && !approved ? `Draft ${last.n} of ${p.draftsAllowed}` : "Drafts",
+      approved ? `Draft ${p.approvedDraft} approved` : last ? (p.status === "corrections" ? "Corrections received" : "Ready for your check") : `Up to ${p.draftsAllowed} drafts`, approved],
+    ["Approved for print", approved ? fmtDay(p.approvedAt) : "After your final OK", approved],
+    ["Out for delivery", sent ? [d.courier, fmtDay(d.dispatchedAt)].filter(Boolean).join(" · ") : approved ? "Printing now" : "", sent],
+    ["Delivered", d.status === "delivered" ? fmtDay(d.deliveredAt) : "", d.status === "delivered"]
+  ];
+  const now = steps.findIndex(x => !x[2]);
+  return `<ol class="track" aria-label="Order progress">${steps.map(([t, sub, done], i) =>
+    `<li class="${done ? "done" : i === now ? "now" : ""}"><span class="dot">${done ? "✓" : i + 1}</span><b>${esc(t)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</li>`).join("")}</ol>`;
+}
+const designRequests = p => p.messages.filter(m => m.type === "design").sort((a, b) => a.time < b.time ? 1 : -1);
+// The customer's board design, with buttons to switch to a catalogue design or their own.
+function designPanelHTML(p) {
+  const reqs = designRequests(p);
+  const current = reqs.length ? reqs[0].ref : (p.orderInfo || {}).coverUrl;
+  return `<section class="panel" id="designPanel">
+    <div class="panel-head"><h2>Your board design</h2>${reqs.length ? `<span class="chip gold">Change sent</span>` : ""}</div>
+    <div class="dpick">${current ? `<div class="dthumb">${refImg(current)}</div>` : ""}
+      <p class="small muted">${reqs.length ? "We've received your design change. Our designers will use it in your next draft." : "This is the design you booked."}
+      Want a different one? Pick another from our catalogue or upload your own design.</p></div>
+    <div class="row"><button class="btn primary" id="pickCat">Choose from catalogue</button><button class="btn" id="pickOwn">Upload your own</button></div>
+    ${reqs.length > 1 ? `<details><summary class="small">Earlier design changes (${reqs.length - 1})</summary><ul class="clist" style="margin-top:8px">${reqs.slice(1).map(m =>
+      `<li class="citem dreq sent"><div class="dthumb sm">${refImg(m.ref)}</div><div><div class="txt">${esc(m.text)}</div><div class="where">${esc(fmtDate(m.time))}</div></div><span></span></li>`).join("")}</ul></details>` : ""}
+  </section>`;
+}
+function bindDesignPanel() {
+  const panel = $("#designPanel");
+  if (!panel) return;
+  hydrate(panel, C.p);
+  $("#pickCat").addEventListener("click", () => chooseDesign("cat"));
+  $("#pickOwn").addEventListener("click", () => chooseDesign("own"));
+}
+function chooseDesign(mode) {
+  const p = C.p, boards = p.config.pages;
+  const booked = String((p.orderInfo || {}).product || "").split(",").map(x => x.trim());
+  let ed = booked.find(x => CATALOGUE[x]) || "Standard", pick = "", own = "";
+  const name = $("#cName") ? $("#cName").value.trim() : "";
+  openDialog(`<form id="dForm"><h2>${mode === "cat" ? "Choose a design" : "Upload your own design"}</h2>
+    ${mode === "cat" ? `<div class="seg" role="group" aria-label="Edition">${Object.keys(CATALOGUE).map(k => `<button type="button" data-ed="${k}" aria-pressed="${k === ed}">${k}</button>`).join("")}</div>
+      <div class="cgrid" id="cgrid"></div>`
+      : `<p class="small muted">A photo or screenshot of the design you'd like. Our designers will recreate it with your details.</p>
+      <label class="btn" style="align-self:flex-start">Choose a picture<input type="file" accept="image/*" id="ownFile" hidden></label>
+      <div class="dthumb" id="ownPrev" hidden><img alt="Your design"></div>`}
+    ${boards.length > 1 ? `<label class="field">For which board?<select name="page"><option value="">All boards</option>${boards.map(b => `<option value="${esc(b.key)}">${esc(b.label)}</option>`).join("")}</select></label>` : ""}
+    <label class="field">Anything to add? <span class="hint">Optional</span><textarea name="text" rows="2" maxlength="1000" placeholder="e.g. This design, with our caricatures"></textarea></label>
+    <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary" id="dSend" disabled>Send to ${esc(CONFIG.studio)}</button></div></form>`, d => {
+    const form = $("#dForm", d), send = $("#dSend", d);
+    const grid = () => {
+      $("#cgrid", d).innerHTML = CATALOGUE[ed].map(u => `<button type="button" class="cimg" data-u="${esc(u)}" aria-pressed="${u === pick}" aria-label="Design">${catImg(u)}</button>`).join("");
+      $$(".cimg", d).forEach(b => b.addEventListener("click", () => {
+        pick = b.dataset.u; send.disabled = false;
+        $$(".cimg", d).forEach(x => x.setAttribute("aria-pressed", x === b));
+      }));
+    };
+    if (mode === "cat") {
+      grid();
+      $$("[data-ed]", d).forEach(b => b.addEventListener("click", () => { ed = b.dataset.ed; $$("[data-ed]", d).forEach(x => x.setAttribute("aria-pressed", x === b)); grid(); }));
+    } else {
+      $("#ownFile", d).addEventListener("change", async e => {
+        const f = e.target.files[0]; if (!f) return;
+        try {
+          const [it] = await readFile(f, 1600);
+          own = scaled(it.canvas, 1600).toDataURL("image/jpeg", 0.85);
+          const pv = $("#ownPrev", d); pv.hidden = false; $("img", pv).src = own; send.disabled = false;
+        } catch (err) { toast(err.message, true); }
+      });
+    }
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      send.disabled = true; send.textContent = "Sending…";
+      const body = { page: form.page ? form.page.value : "", text: form.text.value.trim(), name };
+      try {
+        if (mode === "cat") body.url = pick; else body.file = await api.customerUpload(TOKEN, own);
+        C.p = await api.customerAct(TOKEN, "design", body);
+        dlg.close(); drawCustomer();
+        toast("Design change sent. Our designers will use it in your next draft.");
+      } catch (err) { toast(err.message, true); send.disabled = false; send.textContent = "Send to " + CONFIG.studio; }
+    });
+  }, mode === "cat" ? "wide" : "");
+}
+// What the customer sees once they approve: the address and the courier's tracking.
+function deliveryCardHTML(p) {
+  const d = p.delivery || {};
+  const sent = d.status === "dispatched" || d.status === "delivered";
+  const st = d.status === "delivered" ? ["Delivered", "ok"] : d.status === "dispatched" ? ["On the way", "gold"] : ["Printing", "gold"];
+  return `<section class="panel"><div class="panel-head"><h2>Delivery</h2><span class="chip ${st[1]}">${st[0]}</span></div>
+    ${d.address ? `<p><b>${esc(d.name)}</b> · ${esc(d.phone)}<br><span class="muted">${esc(d.address)} – ${esc(d.pincode)}</span></p>` : ""}
+    ${sent ? `<p class="small">${d.courier ? "Courier: <b>" + esc(d.courier) + "</b>" : ""}${d.courier && d.tracking ? " · " : ""}${d.tracking
+        ? (isUrl(d.tracking) ? `<a href="${esc(d.tracking)}" target="_blank" rel="noopener">Track your parcel ↗</a>` : "Tracking number: <b>" + esc(d.tracking) + "</b>") : ""}</p>`
+      : `<p class="small muted">We'll share the courier and tracking details here when your order is dispatched.</p>`}
+  </section>`;
+}
+// The editor's delivery controls on an approved file.
+function deliveryAdminHTML(p) {
+  const d = p.delivery || {};
+  return `<div class="panel" id="delivery" style="padding:16px;gap:10px;background:var(--bg);box-shadow:none">
+    <div class="panel-head"><h3>Delivery</h3>${d.status ? `<span class="chip ${DELIVERY[d.status][1]}">${DELIVERY[d.status][0]}</span>` : ""}</div>
+    ${d.address ? `<div class="small"><b>${esc(d.name)}</b> · ${esc(d.phone)}<br>${esc(d.address)} – ${esc(d.pincode)}</div>` : `<p class="small muted">No delivery address yet.</p>`}
+    <div class="grid-2" style="gap:10px">
+      <label class="field">Courier<input type="text" id="dCourier" maxlength="80" value="${esc(d.courier || "")}" placeholder="e.g. DTDC"></label>
+      <label class="field">Tracking number or link<input type="text" id="dTracking" maxlength="300" value="${esc(d.tracking || "")}"></label></div>
+    <div class="row">
+      <button class="btn primary" data-deliv="dispatched">${d.status === "dispatched" ? "Update tracking" : "Mark as dispatched"}</button>
+      <button class="btn" data-deliv="delivered">Mark as delivered</button>
+      <button class="btn ghost" id="editAddr">${d.address ? "Edit address" : "Add address"}</button>
+      ${p.phone && d.status === "dispatched" ? `<a class="btn" target="_blank" rel="noopener" href="${esc(waLink(p.phone, `Hello ${p.customer}! Your ${CONFIG.studio} order is on the way${d.courier ? " with " + d.courier : ""}.${d.tracking ? " Tracking: " + d.tracking : ""}\n\nTrack it here: ${customerLink(p)}`))}">Send tracking on WhatsApp</a>` : ""}
+    </div></div>`;
+}
+function addressFields(a = {}) {
+  return `<div class="grid-2" style="gap:10px">
+      <label class="field">Receiver's name<input type="text" name="dName" maxlength="80" value="${esc(a.name || "")}" required></label>
+      <label class="field">Phone<input type="tel" name="dPhone" maxlength="16" value="${esc(a.phone || "")}" required></label></div>
+    <label class="field">Full address<textarea name="dAddr" rows="3" maxlength="400" required placeholder="House, street, area, city">${esc(a.address || "")}</textarea></label>
+    <label class="field">PIN code<input type="text" name="dPin" inputmode="numeric" maxlength="6" value="${esc(a.pincode || "")}" required></label>`;
+}
+const readAddress = form => ({ name: form.dName.value, phone: form.dPhone.value, address: form.dAddr.value, pincode: form.dPin.value });
+// Editor: design change requests from the customer.
+function designRequestsHTML(p) {
+  const reqs = designRequests(p);
+  if (!reqs.length) return "";
+  return `<section class="panel" id="dreqs"><div class="panel-head"><h2>Design change requests</h2><span class="small muted">${reqs.filter(m => !m.done).length} open</span></div>
+    <ul class="clist">${reqs.map(m => `<li class="citem dreq ${m.done ? "done" : "sent"}"><div class="dthumb sm">${refImg(m.ref)}</div>
+      <div><div class="txt">${esc(m.text)}</div><div class="where">${esc(m.page ? slotLabel(p.config, m.page) : "All boards")} · ${esc(fmtDate(m.time))} ·
+        ${/^drive:/.test(m.ref) ? "Customer's own design" : `<a href="${esc(m.ref)}" target="_blank" rel="noopener">Catalogue design ↗</a>`}</div></div>
+      <label class="small row" style="gap:4px;cursor:pointer"><input type="checkbox" data-done="${esc(m.id)}" ${m.done ? "checked" : ""}> Done</label></li>`).join("")}</ul></section>`;
+}
+
+/* ======================= upload: reading, splitting, QR detection ======================= */
+function makeCanvas(w, h) { const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+function scaled(src, maxEdge, sx = 0, sy = 0, sw = src.width, sh = src.height) {
+  const s = Math.min(1, maxEdge / Math.max(sw, sh), Math.sqrt(MAX_PIXELS / (sw * sh)));
+  const c = makeCanvas(sw * s, sh * s), g = c.getContext("2d");
+  g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+  g.imageSmoothingQuality = "high";
+  g.drawImage(src, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  return c;
+}
+async function readFile(file, edge = SOURCE_EDGE) {
+  if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
+    await loadScript(LIB.pdf);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = LIB.pdfWorker;
+    const doc = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const out = [];
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      const v1 = page.getViewport({ scale: 1 });
+      const v = page.getViewport({ scale: Math.min(8, edge / Math.max(v1.width, v1.height)) });
+      const c = makeCanvas(v.width, v.height), g = c.getContext("2d");
+      g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+      await page.render({ canvasContext: g, viewport: v }).promise;
+      out.push({ canvas: c, name: file.name + " p" + i });
+    }
+    return out;
+  }
+  if (!/^image\//.test(file.type) && !/\.(jpe?g|png|webp)$/i.test(file.name)) throw new Error(file.name + " is not an image or PDF.");
+  const url = URL.createObjectURL(file);
+  try { return [{ canvas: scaled(await loadImg(url), edge), name: file.name }]; }
+  finally { URL.revokeObjectURL(url); }
+}
+function halves(c) {
+  return c.width >= c.height
+    ? [scaled(c, SOURCE_EDGE, 0, 0, c.width / 2, c.height), scaled(c, SOURCE_EDGE, c.width / 2, 0, c.width / 2, c.height)]
+    : [scaled(c, SOURCE_EDGE, 0, 0, c.width, c.height / 2), scaled(c, SOURCE_EDGE, 0, c.height / 2, c.width, c.height / 2)];
+}
+// Looks for a QR code on the page: whole page first, then each quarter (for small codes in a corner).
+async function detectQR(c) {
+  if ("BarcodeDetector" in window) {
+    try {
+      const found = await new BarcodeDetector({ formats: ["qr_code"] }).detect(c);
+      if (found.length) return found[0].rawValue;
+    } catch (e) { /* fall back to jsQR */ }
+  }
+  await loadScript(LIB.jsqr);
+  const W = c.width, H = c.height;
+  const tries = [[0, 0, W, H, 1000], [0, 0, W, H, 1800]];
+  for (const [fx, fy] of [[0, 0], [.5, 0], [0, .5], [.5, .5]]) tries.push([W * fx, H * fy, W / 2, H / 2, 1100]);
+  tries.push([0, H / 3, W, H * 2 / 3, 1400]);
+  for (const [x, y, w, h, edge] of tries) {
+    const s = scaled(c, edge, x, y, w, h);
+    const data = s.getContext("2d").getImageData(0, 0, s.width, s.height);
+    const code = jsQR(data.data, s.width, s.height, { inversionAttempts: "attemptBoth" });
+    if (code && code.data) return code.data;
+  }
+  return "";
+}
+// Decides which uploaded picture goes on which page of the card.
+async function arrange(cfg, items, mode, filled, target) {
+  const notes = [];
+  const keys = cfg.pages.map(x => x.key);
+  const qrKey = (cfg.pages.find(x => x.qr) || {}).key;
+  if (target) {
+    const it = items[0];
+    return { assign: [{ key: target, canvas: it.canvas, qr: await detectQR(it.canvas) }], notes: items.length > 1 ? ["Only the first page was used for " + slotLabel(cfg, target) + "."] : [] };
+  }
+  const landscape = items.every(i => i.canvas.width > i.canvas.height * 1.2);
+  const spreads = cfg.spreads && (mode === "spreads" || (mode === "auto" && landscape && items.length === cfg.spreads.length));
+  if (spreads) {
+    const parts = [];
+    for (const it of items.slice(0, cfg.spreads.length)) {
+      const hs = halves(it.canvas);
+      parts.push(await Promise.all(hs.map(async c => ({ canvas: c, qr: await detectQR(c) }))));
+    }
+    // The spread with the QR code is the outside of the card; its QR half is the back.
+    const qrSpread = qrKey ? cfg.spreads.findIndex(s => s.includes(qrKey)) : -1;
+    const found = parts.findIndex(hs => hs.some(h => h.qr));
+    if (qrSpread >= 0 && found >= 0 && found !== qrSpread && parts.length === cfg.spreads.length) {
+      [parts[found], parts[qrSpread]] = [parts[qrSpread], parts[found]];
+      notes.push("The spread with the QR code was used as the outside of the card.");
+    }
+    const assign = [];
+    parts.forEach((hs, i) => {
+      let slotsHere = cfg.spreads[i].slice();
+      const qi = slotsHere.indexOf(qrKey);
+      if (qi >= 0 && hs.length === 2 && !hs[qi].qr && hs[1 - qi].qr) { slotsHere.reverse(); notes.push("The QR code half was placed on the " + slotLabel(cfg, qrKey) + "."); }
+      hs.forEach((h, j) => slotsHere[j] && assign.push({ key: slotsHere[j], ...h }));
+    });
+    notes.unshift(`Split ${parts.length} A4 spread${parts.length > 1 ? "s" : ""} into ${assign.length} pages.`);
+    return { assign, notes };
+  }
+  const pages = await Promise.all(items.map(async it => ({ canvas: it.canvas, qr: await detectQR(it.canvas) })));
+  let order;
+  if (pages.length >= keys.length) {
+    if (pages.length > keys.length) notes.push(`${pages.length} pages uploaded; the first ${keys.length} were used.`);
+    order = pages.slice(0, keys.length);
+    const qi = keys.indexOf(qrKey), withQr = order.findIndex(x => x.qr);
+    if (qi >= 0 && withQr >= 0 && withQr !== qi && !order[qi].qr) {
+      const [pg] = order.splice(withQr, 1); order.splice(qi, 0, pg);
+      notes.push(`QR code found on uploaded page ${withQr + 1}, so it was placed on the ${slotLabel(cfg, qrKey)}.`);
+    }
+    return { assign: order.map((pg, i) => ({ key: keys[i], ...pg })), notes };
+  }
+  // Fewer pictures than pages: fill the empty pages in order, QR page onto the QR slot.
+  const free = keys.filter(k => !filled.includes(k));
+  const pool = free.length ? free : keys;
+  const assign = [];
+  pages.forEach(pg => {
+    let k = pg.qr && qrKey && pool.includes(qrKey) ? qrKey : pool.find(x => x !== qrKey || !pages.some(o => o.qr)) || pool[0];
+    if (!k) return;
+    pool.splice(pool.indexOf(k), 1);
+    assign.push({ key: k, ...pg });
+  });
+  return { assign, notes };
+}
+
+/* ======================= print PDF ======================= */
+async function buildPdf(p, opt) {
+  await loadScript(LIB.jspdf);
+  const { jsPDF } = window.jspdf;
+  const draft = p.drafts.find(d => d.n === p.approvedDraft);
+  const srcs = {}, imgs = {};
+  for (const k of new Set(opt.sheets.flatMap(s => s.slots))) {
+    srcs[k] = await imageSrc(p, draft.pages[k].print, false);
+    imgs[k] = await loadImg(srcs[k]);
+  }
+  let doc = null;
+  for (const sh of opt.sheets) {
+    const first = imgs[sh.slots[0]];
+    const land = first.naturalWidth > first.naturalHeight;
+    let pw, ph, cells;
+    if (sh.slots.length === 1 && opt.mm) {
+      [pw, ph] = opt.mm; // a board prints at its own size and orientation
+      cells = [{ x: 0, y: 0, w: pw, h: ph }];
+    } else if (sh.slots.length === 1) {
+      const [a, b] = PAPER[opt.sheet] || PAPER.A5;
+      [pw, ph] = land ? [b, a] : [a, b];
+      cells = [{ x: 0, y: 0, w: pw, h: ph }];
+    } else {
+      const [a, b] = PAPER.A4;
+      if (!land) { pw = b; ph = a; cells = [{ x: 0, y: 0, w: pw / 2, h: ph }, { x: pw / 2, y: 0, w: pw / 2, h: ph }]; }
+      else { pw = a; ph = b; cells = [{ x: 0, y: 0, w: pw, h: ph / 2 }, { x: 0, y: ph / 2, w: pw, h: ph / 2 }]; }
+    }
+    const orientation = pw > ph ? "landscape" : "portrait";
+    if (!doc) doc = new jsPDF({ unit: "mm", format: [pw, ph], orientation, compress: true });
+    else doc.addPage([pw, ph], orientation);
+    sh.slots.forEach((k, i) => {
+      const img = imgs[k], cell = cells[i];
+      let data = srcs[k], alias = k;
+      // Top-fold card (landscape pages stacked on A4): the back prints upside down so it reads correctly after folding.
+      if (sh.fold && land && i === 0) {
+        const c = makeCanvas(img.naturalWidth, img.naturalHeight), g = c.getContext("2d");
+        g.translate(c.width, c.height); g.rotate(Math.PI); g.drawImage(img, 0, 0);
+        data = c.toDataURL("image/jpeg", 0.95); alias = k + "-rot";
+      }
+      const s = Math.min(cell.w / img.naturalWidth, cell.h / img.naturalHeight);
+      const w = img.naturalWidth * s, h = img.naturalHeight * s;
+      doc.addImage(data, "JPEG", cell.x + (cell.w - w) / 2, cell.y + (cell.h - h) / 2, w, h, alias, "NONE");
+    });
+  }
+  doc.setProperties({ title: `${p.customer} – ${opt.label}`, creator: CONFIG.studio + " design approval" });
+  doc.save(`${CONFIG.studio} - ${p.customer.replace(/&/g, "and").replace(/[^\w\- ]+/g, "").replace(/\s+/g, " ").trim()} - ${opt.label}.pdf`);
+}
+
+/* ======================= shared page chrome ======================= */
+function header(right = "") {
+  return `<header class="top"><a class="brand" href="${TOKEN ? "#" : "#/"}"><img src="meraki-logo.png" alt="The Meraki Event">
+    <span>Design approval</span></a><div class="top-right">${right}</div></header>
+    ${DEMO ? `<div class="note warn small"><b>Demo mode.</b> Everything is saved only in this browser, so customer links work only here. Connect the Google Sheet (see README) to share links with customers.</div>` : ""}`;
+}
+function fail(e) {
+  app.innerHTML = header() + `<div class="panel empty"><h2>${esc(e.code === "notfound" || e.code === "denied" ? "This link isn't valid" : "Couldn't load")}</h2>
+    <p>${esc(e.code === "notfound" || e.code === "denied" ? "Please check the link you were sent, or ask " + CONFIG.studio + " for a new one." : e.message)}</p>
+    <p><button class="btn" onclick="location.reload()">Try again</button></p></div>`;
+}
+
+/* ======================= editor: sign in ======================= */
+function renderLogin() {
+  app.innerHTML = header() + `<form class="panel" id="login" style="max-width:420px;margin:24px auto;width:100%">
+    <h2>Editor sign in</h2>
+    <label class="field">Your name<input type="text" name="name" required autocomplete="name" value="${esc((auth && auth.name) || "")}"></label>
+    ${DEMO ? "" : `<label class="field">Team passcode<input type="password" name="key" required autocomplete="current-password"></label>`}
+    <button class="btn primary big">Sign in</button><p class="small muted" id="loginMsg"></p></form>`;
+  $("#login").addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const a = { name: String(f.get("name")).trim(), key: String(f.get("key") || "") };
+    if (!a.name) return;
+    auth = a;
+    if (!DEMO) {
+      $("#loginMsg").textContent = "Checking…";
+      try { await Remote.list(); }
+      catch (err) { auth = null; $("#loginMsg").textContent = err.code === "denied" ? "Wrong passcode." : err.message; return; }
+    }
+    store.set("meraki-approval-editor", auth);
+    route();
+  });
+}
+const editorHeader = () => header(`<span>${esc(auth.name)}</span><button class="btn ghost" id="signout">Sign out</button>`);
+function bindHeader() {
+  const b = $("#signout");
+  b && b.addEventListener("click", () => { store.del("meraki-approval-editor"); auth = null; location.hash = "#/"; route(); });
+}
+
+/* ======================= editor: dashboard ======================= */
+let dashFilter = "all", dashQuery = "", dashType = "all";
+const TYPES = { all: ["All", () => true], cards: ["Cards", x => !isSign(x.format)], signage: ["Signage", x => isSign(x.format)] };
+async function renderDashboard() {
+  const rid = routeId, old = cached("list");
+  let draw = null;
+  if (old) draw = showDashboard(old);
+  else { app.innerHTML = editorHeader() + `<div class="empty"><span class="spinner"></span></div>`; bindHeader(); }
+  let list;
+  try { list = await api.list(); }
+  catch (e) {
+    if (rid !== routeId) return;
+    if (e.code === "denied") { auth = null; store.del("meraki-approval-editor"); return route(); }
+    return old ? toast("Couldn't refresh: " + e.message, true) : fail(e);
+  }
+  if (rid !== routeId) return;
+  remember("list", list);
+  if (!draw) showDashboard(list);
+  else if (!same(list, old)) draw(list);
+}
+// Shows the customer list; returns a function that redraws it with newer data.
+function showDashboard(list) {
+  list = list.slice().sort((a, b) => (b.updated || "").localeCompare(a.updated || ""));
+  const needs = x => x.status === "corrections" || (x.status === "new");
+  const groups = {
+    all: ["All customers", () => true], todo: ["Needs editor", needs],
+    waiting: ["With customer", x => x.status === "review"], approved: ["Approved", x => x.status === "approved"]
+  };
+  function draw() {
+    const q = dashQuery.toLowerCase();
+    const base = list.filter(TYPES[dashType][1]);
+    $$("[data-f]").forEach(b => { $(".val", b).textContent = base.filter(groups[b.dataset.f][1]).length; });
+    $$("[data-type]").forEach(b => b.setAttribute("aria-pressed", b.dataset.type === dashType));
+    const shown = base.filter(groups[dashFilter][1]).filter(x => !q || [x.customer, x.phone, x.id, x.orderId].join(" ").toLowerCase().includes(q));
+    $("#plist").innerHTML = shown.length ? shown.map(x => `<a class="pcard" href="#/p/${encodeURIComponent(x.id)}">
+        <div class="row" style="justify-content:space-between"><b>${esc(x.customer)}</b><span class="row" style="gap:4px">${statusChip(x.status)}${x.status === "approved" && DELIVERY[x.delivery] && x.delivery !== "confirmed" ? `<span class="chip ${DELIVERY[x.delivery][1]}">${DELIVERY[x.delivery][0]}</span>` : ""}</span></div>
+        <div class="meta"><span>${esc(x.phone || "No phone")}</span><span>·</span><span>${esc((FORMATS[x.format] || FORMATS.custom).name)}</span></div>
+        <div class="meta"><span class="chip">Draft ${x.shared}/${x.draftsAllowed}</span>
+          ${x.openCorrections ? `<span class="chip accent">${x.openCorrections} open correction${x.openCorrections > 1 ? "s" : ""}</span>` : ""}
+          <span>${esc(x.orderId || x.id)}</span><span>· ${esc(fmtDate(x.updated))}</span></div></a>`).join("")
+      : `<div class="panel empty" style="grid-column:1/-1">${list.length ? "No customers match." : "No customers yet. Start with <b>New customer</b>."}</div>`;
+    $$("[data-f]").forEach(b => b.setAttribute("aria-pressed", b.dataset.f === dashFilter));
+  }
+  app.innerHTML = editorHeader() + `
+    <div class="toolbar"><h1 style="font-size:1.7rem">Customer files</h1><a class="btn primary" href="#/new">+ New customer</a></div>
+    <div class="seg" role="group" aria-label="Show">${Object.entries(TYPES).map(([k, [l]]) => `<button type="button" data-type="${k}" aria-pressed="${k === dashType}">${l}</button>`).join("")}</div>
+    <div class="kpis">${Object.entries(groups).map(([k, [label, fn]]) =>
+      `<button class="kpi" data-f="${k}" aria-pressed="false"><span class="eyebrow">${esc(label)}</span><span class="val">${list.filter(fn).length}</span></button>`).join("")}</div>
+    <input type="search" id="q" placeholder="Search name, phone or order ID" value="${esc(dashQuery)}" aria-label="Search customers">
+    <div class="plist" id="plist"></div>`;
+  bindHeader();
+  $$("[data-f]").forEach(b => b.addEventListener("click", () => { dashFilter = b.dataset.f; draw(); }));
+  $$("[data-type]").forEach(b => b.addEventListener("click", () => { dashType = b.dataset.type; draw(); }));
+  $("#q").addEventListener("input", e => { dashQuery = e.target.value; draw(); });
+  draw();
+  return fresh => {
+    list = fresh.slice().sort((a, b) => (b.updated || "").localeCompare(a.updated || ""));
+    draw();
+  };
+}
+
+/* ======================= editor: new customer ======================= */
+function formatPicker(selected) {
+  return `<div class="formats">${Object.entries(FORMATS).map(([k, f]) => `<button type="button" class="fmt" data-fmt="${k}" aria-pressed="${k === selected}">
+      <div class="mini">${f.mini.map(m => ["wide", "qr", "board", "gate"].includes(m) ? `<i class="${m}"></i>` : `<i>${esc(m)}</i>`).join("")}</div>
+      <b>${esc(f.name)}${k === DEFAULT_FORMAT ? ` <span class="chip gold">Default</span>` : ""}</b>
+      <span class="small muted">${esc(f.tag)}. ${esc(f.desc)}</span></button>`).join("")}</div>
+    <div id="customBox" class="panel" style="background:var(--bg)" ${selected === "custom" ? "" : "hidden"}>
+      <div class="grid-2" style="gap:12px">
+        <label class="field">Number of designs<input type="number" name="cCount" min="1" max="12" value="4"></label>
+        <label class="field">Page size<select name="cSize"><option>A5</option><option>A4</option></select></label>
+        <label class="field">Customer sees<select name="cLayout"><option value="separate">Each page on its own</option><option value="folded">A folded card (cover, inside spreads, back)</option></select></label>
+        <label class="field" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" name="cQr"> Last page has a QR code</label>
+      </div>
+      <label class="field">Page names <span class="hint">One per line, in order. Leave empty for Page 1, Page 2…</span><textarea name="cLabels" rows="4" placeholder="Front&#10;Inside&#10;Back"></textarea></label>
+    </div>
+    <div id="signBox" class="panel" style="background:var(--bg)" ${isSign(selected) ? "" : "hidden"}>
+      <div class="grid-2" style="gap:12px">
+        <label class="field">Size<select name="sSize">
+          <optgroup label="Boards">${Object.entries(SIGN_SIZES).map(([k, v]) => `<option value="${k}" ${k === "24x36in" && selected !== "entry" ? "selected" : ""}>${esc(v.label)}</option>`).join("")}</optgroup>
+          <optgroup label="Entry signage">${Object.entries(ENTRY_SIZES).map(([k, v]) => `<option value="${k}" ${k === "2x3ft" && selected === "entry" ? "selected" : ""}>${esc(v.label)}</option>`).join("")}</optgroup>
+          <option value="custom">Custom size…</option></select></label>
+        <label class="field">Orientation<select name="sOrient"><option value="portrait">Portrait (tall)</option><option value="landscape">Landscape (wide)</option></select></label>
+        <div class="field" id="sCustom" hidden><span>Custom size</span><div class="row" style="flex-wrap:nowrap">
+          <input type="number" name="sW" min="1" step="0.1" placeholder="Width" aria-label="Width"><span>×</span>
+          <input type="number" name="sH" min="1" step="0.1" placeholder="Height" aria-label="Height">
+          <select name="sUnit" style="width:auto" aria-label="Unit"><option value="in">in</option><option value="ft">ft</option><option value="cm">cm</option></select></div></div>
+        <label class="field">How many<input type="number" name="sCount" min="1" max="10" value="1"></label>
+        <label class="field" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" name="sQr"> The last one has a QR code</label>
+      </div>
+      <label class="field">Names <span class="hint">One per line, in order. Leave empty to number them.</span><textarea name="sLabels" rows="3" placeholder="${selected === "entry" ? "Entry gate&#10;Welcome standee&#10;Directions" : "Welcome board&#10;Menu&#10;Seating chart"}"></textarea></label>
+    </div>`;
+}
+function readFormat(form, fmt) {
+  const f = new FormData(form);
+  if (isSign(fmt)) {
+    return signageConfig({ size: f.get("sSize"), cw: +f.get("sW"), ch: +f.get("sH"), unit: f.get("sUnit"), orient: f.get("sOrient"),
+      count: +f.get("sCount"), labels: String(f.get("sLabels") || "").split("\n"), qrLast: !!f.get("sQr"), entry: fmt === "entry" });
+  }
+  if (fmt !== "custom") return JSON.parse(JSON.stringify(FORMATS[fmt].config));
+  return customConfig({ count: +f.get("cCount"), size: f.get("cSize"), layout: f.get("cLayout"), labels: String(f.get("cLabels") || "").split("\n"), qrLast: !!f.get("cQr") });
+}
+function bindFormatPicker(root, onChange) {
+  $$("[data-fmt]", root).forEach(b => b.addEventListener("click", () => {
+    $$("[data-fmt]", root).forEach(x => x.setAttribute("aria-pressed", x === b));
+    $("#customBox", root).hidden = b.dataset.fmt !== "custom";
+    $("#signBox", root).hidden = !isSign(b.dataset.fmt);
+    if (isSign(b.dataset.fmt)) {
+      const entry = b.dataset.fmt === "entry", size = $("[name=sSize]", root);
+      // Switching between Signage and Entry signage picks a size from that group, unless a custom size is set.
+      if (size.value !== "custom" && entry !== (size.value in ENTRY_SIZES)) size.value = entry ? "2x3ft" : "24x36in";
+      if (entry && !$("[name=sUnit]", root).dataset.touched) $("[name=sUnit]", root).value = "ft";
+      $("[name=sLabels]", root).placeholder = entry ? "Entry gate\nWelcome standee\nDirections" : "Welcome board\nMenu\nSeating chart";
+    }
+    onChange(b.dataset.fmt);
+  }));
+  $("[name=sUnit]", root).addEventListener("change", e => { e.target.dataset.touched = "1"; });
+  const size = $("[name=sSize]", root);
+  size.addEventListener("change", () => { $("#sCustom", root).hidden = size.value !== "custom"; });
+}
+// One booking from the website's bookings sheet, as a card.
+function orderCard(o, actions = "") {
+  const pics = [["Cover", o.coverUrl], ["Inside", o.insideUrl]].filter(([, u]) => isUrl(u));
+  return `<div class="ocard">
+    ${pics.length ? `<div class="othumbs">${pics.map(([l, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener" title="${l} design"><img src="${esc(u)}" alt="${l} design" loading="lazy"></a>`).join("")}</div>` : ""}
+    <div class="obody">
+      <div class="row" style="justify-content:space-between"><b>${esc(o.customer || "No name")}</b><span class="chip">${esc(o.orderId)}</span></div>
+      <div class="meta">${o.kind === "entry" ? "Entry board · " : ""}${esc(o.product || "No product")}${o.events ? ` (${esc(o.events)})` : ""}${o.quantity ? ` · ${esc(o.quantity)} ${o.kind === "entry" ? (+o.quantity === 1 ? "board" : "boards") : "cards"}` : ""}${o.weddingDate ? ` · ${o.kind === "entry" ? "Event" : "Wedding"} ${esc(fmtDay(o.weddingDate) || o.weddingDate)}` : ""}${o.pincode ? ` · PIN ${esc(o.pincode)}` : ""}</div>
+      <div class="meta">${esc(o.phone || "No phone")}${o.booked ? ` · booked ${esc(o.booked)}` : ""}${o.insideUrl && !isUrl(o.insideUrl) ? ` · Inside card: ${esc(o.insideUrl)}` : ""}</div>
+      ${actions ? `<div class="row" style="margin-top:4px">${actions}</div>` : ""}
+    </div></div>`;
+}
+let newMode = DEMO ? "custom" : "order";
+function renderNew() {
+  let fmt = DEFAULT_FORMAT, order = null, found = [];
+  app.innerHTML = editorHeader() + `<a href="#/" class="small">← Customer files</a>
+    <section class="panel">
+      <h1 style="font-size:1.6rem">New customer file</h1>
+      <div class="seg" role="group" aria-label="How to start the file">
+        <button type="button" data-mode="order">Find by order ID</button>
+        <button type="button" data-mode="custom">Custom create</button>
+      </div>
+      <div id="orderBox" style="display:flex;flex-direction:column;gap:12px">
+        <form id="orderSearch" class="row" style="align-items:stretch">
+          <input type="search" name="q" placeholder="Order ID, e.g. ORD-711576 or ME-837285 (or name or phone)" style="flex:1;min-width:200px" autocomplete="off" aria-label="Order ID, name or phone">
+          <button class="btn primary">Search</button>
+        </form>
+        <div id="orderResults" class="olist"></div>
+      </div>
+    </section>
+    <form class="panel" id="newForm">
+      <div id="orderPicked"></div>
+      <div class="grid-2" style="gap:14px">
+        <label class="field">Customer name<input type="text" name="customer" required maxlength="80" placeholder="e.g. Priyanka & Rahul"></label>
+        <label class="field">Phone (WhatsApp)<input type="tel" name="phone" inputmode="tel" maxlength="16" placeholder="10-digit mobile"></label>
+      </div>
+      <div class="field" style="gap:8px"><span style="font-weight:600;font-size:.88rem">Format</span>${formatPicker(fmt)}</div>
+      <div class="grid-2" style="gap:14px">
+        <label class="field">Drafts for corrections<input type="number" name="drafts" min="1" max="10" value="3"></label>
+        <label class="field">Notes for editors <span class="hint">Side (bride/groom), special requests… Customers don't see this.</span><textarea name="notes" rows="2"></textarea></label>
+      </div>
+      <div class="row"><button class="btn primary big" id="createBtn">Create file</button><a class="btn" href="#/">Cancel</a></div></form>`;
+  bindHeader();
+  const form = $("#newForm");
+  bindFormatPicker(form, f => fmt = f);
+
+  function setMode(m) {
+    newMode = m;
+    $$("[data-mode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === m));
+    $("#orderBox").hidden = m !== "order";
+    if (m === "custom") pick(null);
+    form.hidden = m === "order" && !order;
+    if (m === "order") setTimeout(() => $("#orderSearch input").focus(), 30);
+  }
+  function pick(o) {
+    order = o;
+    $("#orderPicked").innerHTML = o ? `<div class="field" style="gap:8px"><span style="font-weight:600;font-size:.88rem">Order</span>
+      ${orderCard(o, `<button type="button" class="btn ghost" id="unpick">Choose another order</button>`)}</div>` : "";
+    if (o) {
+      form.customer.value = o.customer; form.phone.value = o.phone;
+      if (o.kind === "entry") {
+        $("[data-fmt=entry]", form).click();
+        form.sSize.value = "2x3ft"; form.sOrient.value = "portrait"; $("#sCustom", form).hidden = true;
+        const n = Math.max(1, Math.min(10, parseInt(o.quantity, 10) || 1));
+        form.sCount.value = n;
+        const events = String(o.events || "").split(",").map(x => x.trim()).filter(Boolean);
+        form.sLabels.value = events.length === n ? events.map(x => x + " board").join("\n") : "";
+        if (o.details && !form.notes.value.trim()) form.notes.value = o.details;
+      } else if (isSign(fmt)) $(`[data-fmt=${DEFAULT_FORMAT}]`, form).click();
+      form.hidden = false;
+      $("#unpick").addEventListener("click", () => { pick(null); form.hidden = true; $("#orderSearch input").focus(); });
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+  $$("[data-mode]").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode)));
+  $("#orderSearch").addEventListener("submit", async e => {
+    e.preventDefault();
+    const q = e.target.q.value.trim(), box = $("#orderResults");
+    if (q.length < 3) { box.innerHTML = `<p class="small muted">Type at least 3 characters.</p>`; return; }
+    box.innerHTML = `<div class="row small muted"><span class="spinner" style="width:16px;height:16px;border-width:2px"></span> Searching bookings…</div>`;
+    try { found = await api.orders(q); }
+    catch (err) { box.innerHTML = `<p class="note warn small">${esc(err.message)}</p>`; return; }
+    box.innerHTML = found.length ? found.map((o, i) => orderCard(o, (o.files || []).length
+        ? o.files.map(f => `<a class="btn primary" href="#/p/${encodeURIComponent(f.id)}">${o.files.length > 1 ? "Open " + esc(f.id) : "Open existing file"}</a>`).join("") + `<button type="button" class="btn ghost" data-pick="${i}">Create another file</button>`
+        : `<button type="button" class="btn primary" data-pick="${i}">Use this order</button>`)
+      + ((o.files || []).length ? `<p class="small muted" style="margin:-4px 0 0">${o.files.length > 1 ? o.files.length + " customer files already exist" : "A customer file already exists"} for this order.</p>` : "")).join("")
+      : `<p class="small muted">No booking matches “${esc(q)}”. Check the order ID, or use <b>Custom create</b>.</p>`;
+    $$("[data-pick]", box).forEach(b => b.addEventListener("click", () => pick(found[+b.dataset.pick])));
+  });
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = new FormData(form);
+    const btn = $("#createBtn"); btn.disabled = true; btn.textContent = "Creating…";
+    try {
+      const p = await api.create({ customer: String(f.get("customer")).trim(), phone: String(f.get("phone")).trim(), format: fmt,
+        config: readFormat(form, fmt), draftsAllowed: +f.get("drafts") || 3, notes: String(f.get("notes")).trim(), order });
+      location.hash = "#/p/" + encodeURIComponent(p.id);
+    } catch (err) { toast(err.message, true); btn.disabled = false; btn.textContent = "Create file"; }
+  });
+  setMode(newMode);
+}
+
+/* ======================= editor: customer file ======================= */
+const E = { p: null, tab: null, busy: {}, notes: [] };
+async function renderProject(id) {
+  const rid = routeId, old = cached("p-" + id);
+  E.tab = null; E.busy = {}; E.notes = [];
+  if (old) { E.p = old; drawProject(); }
+  else { app.innerHTML = editorHeader() + `<div class="empty"><span class="spinner"></span></div>`; bindHeader(); }
+  let fresh;
+  try { fresh = await api.project(id); }
+  catch (e) {
+    if (rid !== routeId) return;
+    if (e.code === "denied") { auth = null; store.del("meraki-approval-editor"); return route(); }
+    return old ? toast("Couldn't refresh: " + e.message, true) : fail(e);
+  }
+  if (rid !== routeId) return;
+  // Redraw only if something changed, and not in the middle of an upload or an open dialog.
+  if (!old) { E.p = fresh; drawProject(); }
+  else if (!same(fresh, old) && !Object.keys(E.busy).length && !dlg.open) {
+    const reply = $("#reply textarea"), text = reply ? reply.value : "";
+    E.p = fresh; drawProject();
+    if (text && $("#reply textarea")) $("#reply textarea").value = text;
+  }
+}
+function defaultTab(p) {
+  const up = uploadDraftNo(p), last = latest(p);
+  if (p.status === "approved") return p.approvedDraft;
+  if (p.status === "corrections" && last) return last.n;
+  if (up && (!last || openDraft(p))) return "up";
+  return last ? last.n : "up";
+}
+function shareText(p) {
+  const last = latest(p), link = customerLink(p);
+  if (!last) return `Hello ${p.customer}! Your ${CONFIG.studio} booking is confirmed.\n\nTrack your order here. You'll see each draft as soon as it's ready, send corrections and approve${boardJob(p) ? ", and you can change your board design from our catalogue or upload your own" : ""}:\n${link}`;
+  const final = last.n >= p.draftsAllowed;
+  return `Hello ${p.customer}! Draft ${last.n} of your ${CONFIG.studio} ${p.config.kind === "signage" ? "signage" : "card"} design is ready.\n\nPlease open the link, check every page carefully, and tap on the design to mark any correction. When everything is correct, press Approve.\n\n${final
+    ? "This is your final draft, so please send all remaining corrections now."
+    : `You get ${p.draftsAllowed} drafts in total; this is draft ${last.n}. Please send all corrections together.`}\n\n${link}`;
+}
+function drawProject() {
+  const p = E.p, cfg = p.config;
+  remember("p-" + p.id, p);
+  if (E.tab === null) E.tab = defaultTab(p);
+  const up = uploadDraftNo(p);
+  const sh = shared(p);
+  const tabs = sh.map(d => [d.n, "Draft " + d.n + (p.approvedDraft === d.n ? " ✓" : "")]);
+  if (up) tabs.push(["up", openDraft(p) ? `Draft ${up} (preparing)` : `+ Upload draft ${up}`]);
+  if (!tabs.some(t => t[0] === E.tab)) E.tab = tabs.length ? tabs[tabs.length - 1][0] : "up";
+  const last = latest(p);
+  app.innerHTML = editorHeader() + `<a href="#/" class="small">← Customer files</a>
+    <section class="panel">
+      <div class="panel-head"><div><span class="eyebrow">${esc(p.id)} · ${esc(formatName(p))}</span><h1 style="font-size:1.7rem">${esc(p.customer)}</h1></div>
+        <div class="row">${statusChip(p.status)}<span class="chip">Draft ${sh.length}/${p.draftsAllowed}</span><button class="btn" id="edit">Edit</button></div></div>
+      <div class="row small">${p.phone ? `<a href="tel:${esc(p.phone)}">${esc(p.phone)}</a> · ` : ""}<span class="muted">Created ${esc(fmtDay(p.created))} by ${esc(p.editor || "—")}</span></div>
+      ${p.order ? orderCard(p.order) : ""}
+      ${p.notes ? `<div class="note small" style="white-space:pre-wrap">${esc(p.notes)}</div>` : ""}
+      <div class="row">
+        <button class="btn" id="copyLink">Copy customer link</button>
+        ${p.phone ? `<a class="btn ${p.status === "review" ? "primary" : ""}" id="wa" target="_blank" rel="noopener" href="${esc(waLink(p.phone, shareText(p)))}">Send on WhatsApp</a>` : ""}
+        <a class="btn ghost" href="${esc(customerLink(p))}" target="_blank" rel="noopener">Open customer view ↗</a>
+      </div>
+    </section>
+    ${p.status === "approved" ? approvedPanel(p) : ""}
+    ${designRequestsHTML(p)}
+    ${!up && p.status !== "approved" && last ? `<div class="note warn row" style="justify-content:space-between">
+        <span>All ${p.draftsAllowed} drafts have been shared. The customer can approve, or you can give one more draft.</span>
+        <button class="btn" id="grant">Give an extra draft</button></div>` : ""}
+    <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" data-tab="${k}" aria-selected="${k === E.tab}">${esc(l)}</button>`).join("")}</div>
+    <div id="tabBody"></div>`;
+  bindHeader();
+  $("#edit").addEventListener("click", editProject);
+  $("#copyLink").addEventListener("click", () => copy(customerLink(p)));
+  $("#grant") && $("#grant").addEventListener("click", async () => { try { E.p = await api.act(p.id, "grant"); E.tab = "up"; drawProject(); toast("Extra draft added."); } catch (e) { toast(e.message, true); } });
+  $$("[data-tab]").forEach(b => b.addEventListener("click", () => { E.tab = b.dataset.tab === "up" ? "up" : +b.dataset.tab; drawProject(); }));
+  $$("[data-print]").forEach(b => b.addEventListener("click", async () => {
+    const opt = cfg.print.find(o => o.id === b.dataset.print);
+    const label = b.innerHTML; b.disabled = true; b.innerHTML = `<span class="spinner" style="width:16px;height:16px;border-width:2px"></span> Making PDF…`;
+    try { await buildPdf(p, opt); } catch (e) { toast(e.message, true); }
+    b.disabled = false; b.innerHTML = label;
+  }));
+  $("#reopen") && $("#reopen").addEventListener("click", async () => {
+    if (!await confirmDialog("Undo approval?", "<p>The customer will be able to send corrections again.</p>", "Undo approval")) return;
+    try { E.p = await api.act(p.id, "reopen"); E.tab = null; drawProject(); } catch (e) { toast(e.message, true); }
+  });
+  if ($("#dreqs")) {
+    hydrate($("#dreqs"), p);
+    $$("#dreqs [data-done]").forEach(cb => cb.addEventListener("change", async () => {
+      try { E.p = await api.act(p.id, "done", { msg: cb.dataset.done, done: cb.checked }); drawProject(); }
+      catch (e) { toast(e.message, true); cb.checked = !cb.checked; }
+    }));
+  }
+  $$("[data-deliv]").forEach(b => b.addEventListener("click", async () => {
+    b.disabled = true;
+    try {
+      E.p = await api.act(p.id, "delivery", { status: b.dataset.deliv, courier: $("#dCourier").value.trim(), tracking: $("#dTracking").value.trim() });
+      drawProject(); toast(b.dataset.deliv === "delivered" ? "Marked as delivered." : "Dispatch saved. The customer sees it on their link.");
+    } catch (e) { toast(e.message, true); b.disabled = false; }
+  }));
+  $("#editAddr") && $("#editAddr").addEventListener("click", () => {
+    openDialog(`<form id="adForm"><h2>Delivery address</h2>${addressFields(p.delivery || { name: p.customer, phone: p.phone, address: (p.order || {}).address, pincode: (p.order || {}).pincode })}
+      <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary">Save</button></div></form>`, d => {
+      $("#adForm", d).addEventListener("submit", async e => {
+        e.preventDefault();
+        try { E.p = await api.act(p.id, "delivery", { address: readAddress(e.target) }); dlg.close(); drawProject(); toast("Address saved."); }
+        catch (err) { toast(err.message, true); }
+      });
+    });
+  });
+  if (E.tab === "up") drawUpload(); else drawSharedDraft(E.tab);
+}
+function approvedPanel(p) {
+  return `<section class="panel" style="border-color:var(--ok)">
+    <div class="panel-head"><div><span class="eyebrow" style="color:var(--ok)">Approved</span>
+      <h2>Draft ${p.approvedDraft} approved by ${esc(p.approvedBy)} on ${esc(fmtDay(p.approvedAt))}</h2></div>
+      <button class="btn ghost" id="reopen">Undo approval</button></div>
+    <p class="muted small">Download the print-ready PDF:</p>
+    <div class="grid-2" style="gap:10px">${p.config.print.map((o, i) => `<div class="panel" style="padding:14px;gap:8px;background:var(--bg)">
+      <b>${esc(o.label)}</b><span class="small muted">${esc(o.note)}</span>
+      <button class="btn ${i === 0 ? "ok" : ""}" data-print="${esc(o.id)}">Download PDF</button></div>`).join("")}</div>
+    ${deliveryAdminHTML(p)}</section>`;
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); toast("Link copied."); }
+  catch (e) { openDialog(`<div class="dbody"><h2>Customer link</h2><input type="text" readonly value="${esc(text)}" onfocus="this.select()"><button class="btn" data-close>Close</button></div>`); }
+}
+function editProject() {
+  const p = E.p;
+  const canFormat = !p.drafts.length;
+  let fmt = p.format;
+  openDialog(`<form id="editForm"><h2>Edit customer file</h2>
+    <label class="field">Customer name<input type="text" name="customer" required maxlength="80" value="${esc(p.customer)}"></label>
+    <label class="field">Phone<input type="tel" name="phone" maxlength="16" value="${esc(p.phone)}"></label>
+    <label class="field">Drafts for corrections<input type="number" name="drafts" min="1" max="10" value="${p.draftsAllowed}"></label>
+    <label class="field">Notes for editors<textarea name="notes" rows="3">${esc(p.notes || "")}</textarea></label>
+    ${canFormat ? `<div class="field" style="gap:8px"><span>Format</span>${formatPicker(fmt)}</div>` : `<p class="small muted">Format: ${esc(formatName(p))}. It can't change after the first upload.</p>`}
+    <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary">Save</button></div></form>`, d => {
+    const form = $("#editForm", d);
+    if (canFormat) bindFormatPicker(form, f => fmt = f);
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const f = new FormData(form);
+      const body = { customer: String(f.get("customer")).trim(), phone: String(f.get("phone")).trim(), notes: String(f.get("notes")), draftsAllowed: +f.get("drafts") };
+      try {
+        if (canFormat && (fmt !== p.format || fmt === "custom" || isSign(fmt))) Object.assign(body, { format: fmt, config: readFormat(form, fmt) });
+        E.p = await api.act(p.id, "update", body); dlg.close(); drawProject(); toast("Saved.");
+      } catch (err) { toast(err.message, true); }
+    });
+  });
+}
+
+function drawUpload() {
+  const p = E.p, cfg = p.config, n = uploadDraftNo(p);
+  const dr = p.drafts.find(d => d.n === n) || { pages: {} };
+  const keys = cfg.pages.map(x => x.key);
+  const filled = keys.filter(k => dr.pages[k]);
+  const lastShared = latest(p);
+  const open = lastShared ? corrections(p, lastShared.n).filter(m => m.kind === "sent") : [];
+  const body = $("#tabBody");
+  body.innerHTML = `<section class="panel">
+    <div class="panel-head"><h2>Draft ${n} of ${p.draftsAllowed}</h2><span class="small muted">${filled.length} of ${keys.length} pages uploaded</span></div>
+    ${open.length ? `<div class="note accent small">${open.length} correction${open.length > 1 ? "s" : ""} from draft ${lastShared.n} still open. <a href="#" id="seeCorr">See them</a></div>` : ""}
+    <div class="drop" id="drop">
+      <b>Drop the designs here</b>
+      <span class="small muted">${keys.length} pages, a ${keys.length}-page PDF${cfg.spreads ? ", or A4 spreads" : ""}. Pages are placed automatically and QR codes are detected.</span>
+      <div class="row" style="justify-content:center">
+        <label class="btn primary">Choose files<input type="file" id="files" accept="image/*,application/pdf" multiple hidden></label>
+        ${cfg.spreads ? `<select id="upMode" style="width:auto" aria-label="How the files are laid out">
+          <option value="auto">Detect layout</option><option value="pages">One page per file</option><option value="spreads">A4 spreads (2 pages per sheet)</option></select>` : ""}
+      </div>
+    </div>
+    ${E.notes.length ? `<div class="note gold small">${E.notes.map(esc).join("<br>")}</div>` : ""}
+    <div class="slots">${cfg.pages.map(def => {
+      const pg = dr.pages[def.key], busy = E.busy[def.key];
+      return `<div class="slot" data-slot="${esc(def.key)}">
+        <div class="pg ${pg ? "" : "blank"}" style="${pg && pg.w ? `aspect-ratio:${pg.w}/${pg.h}` : ""}" role="button" tabindex="0" aria-label="Upload ${esc(def.label)}">
+          ${pg ? `<img data-file="${esc(pg.preview)}" alt="${esc(def.label)}">` : `<span style="font-size:1.6rem;line-height:1">+</span><span>${esc(def.label)}</span>`}
+          ${busy ? `<div class="busy">${esc(busy)}</div>` : ""}</div>
+        <div><div class="slot-title">${esc(def.label)}</div><div class="small muted">${esc(def.hint || "")}</div></div>
+        <div class="warns">${pg && pg.qr ? qrChip(pg.qr) : ""}${pageWarnings(cfg, def.key, pg).map(([c, t]) => `<span class="chip ${c}" style="white-space:normal">${esc(t)}</span>`).join("")}</div>
+        <input type="file" accept="image/*,application/pdf" hidden></div>`;
+    }).join("")}</div>
+    <div class="row" style="justify-content:space-between">
+      <span class="small muted">The customer sees nothing until you share.</span>
+      <button class="btn primary big" id="share" ${filled.length === keys.length && !Object.keys(E.busy).length ? "" : "disabled"}>Share draft ${n} with customer</button></div>
+  </section>`;
+  hydrate(body, p);
+  $("#seeCorr") && $("#seeCorr").addEventListener("click", e => { e.preventDefault(); E.tab = lastShared.n; drawProject(); });
+  const drop = $("#drop");
+  $("#files").addEventListener("change", e => { handleFiles([...e.target.files]); e.target.value = ""; });
+  ["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => handleFiles([...e.dataTransfer.files]));
+  $$(".slot").forEach(s => {
+    const input = $("input[type=file]", s), key = s.dataset.slot, pgEl = $(".pg", s);
+    pgEl.addEventListener("click", () => input.click());
+    pgEl.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+    input.addEventListener("change", () => { input.files.length && handleFiles([...input.files], key); input.value = ""; });
+    ["dragenter", "dragover"].forEach(t => s.addEventListener(t, e => { e.preventDefault(); e.stopPropagation(); s.classList.add("over"); }));
+    ["dragleave", "drop"].forEach(t => s.addEventListener(t, e => { e.preventDefault(); e.stopPropagation(); s.classList.remove("over"); }));
+    s.addEventListener("drop", e => handleFiles([...e.dataTransfer.files], key));
+  });
+  $("#share").addEventListener("click", async () => {
+    const warn = cfg.pages.flatMap(def => pageWarnings(cfg, def.key, dr.pages[def.key]).map(w => def.label + ": " + w[1]));
+    const ok = await confirmDialog(`Share draft ${n}?`, `<p>${esc(p.customer)} will see this draft and can send corrections${n >= p.draftsAllowed ? " or approve. <b>This is the final draft.</b>" : " or approve."}</p>
+      ${warn.length ? `<div class="note warn small" style="margin-top:10px">${warn.map(esc).join("<br>")}</div>` : ""}`, "Share draft " + n);
+    if (!ok) return;
+    try {
+      E.p = await api.act(p.id, "share", { draft: n });
+      E.tab = n; E.notes = []; drawProject();
+      toast("Shared. Now send the link on WhatsApp.");
+    } catch (e) { toast(e.message, true); }
+  });
+}
+
+async function handleFiles(files, target) {
+  const p = E.p, cfg = p.config, n = uploadDraftNo(p);
+  if (!files.length || !n) return;
+  const dr = p.drafts.find(d => d.n === n) || { pages: {} };
+  const filled = cfg.pages.map(x => x.key).filter(k => dr.pages[k]);
+  const busyKeys = target ? [target] : cfg.pages.map(x => x.key);
+  busyKeys.forEach(k => E.busy[k] = "Reading…"); drawUpload();
+  let plan;
+  try {
+    const items = [];
+    for (const f of files) items.push(...await readFile(f, Math.max(SOURCE_EDGE, cfg.printEdge || 0)));
+    busyKeys.forEach(k => E.busy[k] = "Checking QR…"); drawUpload();
+    plan = await arrange(cfg, items, ($("#upMode") || {}).value || "auto", filled, target);
+  } catch (e) {
+    E.busy = {}; drawUpload(); toast(e.message, true); return;
+  }
+  E.busy = {}; plan.assign.forEach(a => E.busy[a.key] = "Waiting…");
+  E.notes = plan.notes; drawUpload();
+  const pagesIn = q => Object.keys((q.drafts.find(d => d.n === n) || { pages: {} }).pages).length;
+  const one = async a => {
+    E.busy[a.key] = "Uploading…"; if (E.tab === "up") drawUpload();
+    try {
+      const print = scaled(a.canvas, cfg.printEdge || PRINT_EDGE), preview = scaled(a.canvas, PREVIEW_EDGE);
+      const q = await api.act(p.id, "page", { draft: n, slot: a.key, w: print.width, h: print.height, qr: a.qr || "",
+        print: print.toDataURL("image/jpeg", 0.92), preview: preview.toDataURL("image/jpeg", 0.8) });
+      // Uploads finish in any order: keep whichever answer has the most pages.
+      if (pagesIn(q) >= pagesIn(E.p)) E.p = q;
+    } catch (e) { toast(slotLabel(cfg, a.key) + ": " + e.message, true); }
+    delete E.busy[a.key];
+    if (E.tab === "up") drawUpload();
+  };
+  const queue = plan.assign.slice();
+  if (queue.length) await one(queue.shift());
+  // Demo mode saves to this browser one write at a time, so it uploads in turn.
+  const lanes = DEMO ? 1 : 3;
+  await Promise.all(Array.from({ length: Math.min(lanes, queue.length) }, async () => { while (queue.length) await one(queue.shift()); }));
+  if (plan.assign.length > 1) { try { E.p = await api.project(p.id); } catch (e) { /* keep what the uploads returned */ } }
+  if (E.tab === "up") drawProject();
+}
+
+function drawSharedDraft(n) {
+  const p = E.p, cfg = p.config, d = p.drafts.find(x => x.n === n);
+  const isLast = latest(p) && latest(p).n === n;
+  const list = corrections(p, n);
+  const body = $("#tabBody");
+  body.innerHTML = `<div class="grid-2">
+    <div id="viewer"></div>
+    <section class="panel">
+      <div class="panel-head"><h2>Corrections on draft ${n}</h2><span class="small muted">Shared ${esc(fmtDate(d.shared))}${d.editor ? " by " + esc(d.editor) : ""}</span></div>
+      ${list.length ? `<ul class="clist">${list.map(m => correctionItem(cfg, m, { showTime: true,
+        actions: m => `<label class="small row" style="gap:4px;cursor:pointer"><input type="checkbox" data-done="${esc(m.id)}" ${m.done ? "checked" : ""}> Fixed</label>` })).join("")}</ul>`
+        : `<p class="muted">${isLast && p.status === "review" ? "Waiting for the customer to check this draft." : "No corrections on this draft."}</p>`}
+      <h3>Messages</h3>
+      <div id="thread">${threadHTML(p, n, "editor", true)}</div>
+      <form id="reply" class="field" style="gap:8px"><textarea name="text" rows="2" placeholder="Reply to ${esc(p.customer)}…" required></textarea>
+        <div class="row" style="justify-content:flex-end"><button class="btn">Send reply</button></div></form>
+    </section></div>`;
+  const viewer = mountViewer($("#viewer"), { project: p, draft: d, getPins: () => list, onPin: m => flashItem(m.num) });
+  $$(".clist .citem[data-page]", body).forEach(li => li.addEventListener("click", e => {
+    if (e.target.closest("label")) return;
+    viewer.show(li.dataset.page, +li.dataset.num);
+  }));
+  $$("[data-done]", body).forEach(cb => cb.addEventListener("change", async () => {
+    try { E.p = await api.act(p.id, "done", { msg: cb.dataset.done, done: cb.checked }); drawSharedDraft(n); }
+    catch (e) { toast(e.message, true); cb.checked = !cb.checked; }
+  }));
+  $("#reply").addEventListener("submit", async e => {
+    e.preventDefault();
+    const text = String(new FormData(e.target).get("text")).trim();
+    if (!text) return;
+    try { E.p = await api.act(p.id, "message", { draft: n, name: auth.name, items: [{ text }] }); drawSharedDraft(n); toast("Reply saved. The customer sees it on their link."); }
+    catch (err) { toast(err.message, true); }
+  });
+}
+function flashItem(num) {
+  const li = $(`.citem[data-num="${num}"]`);
+  if (!li) return;
+  li.scrollIntoView({ behavior: "smooth", block: "center" });
+  li.classList.remove("flash"); void li.offsetWidth; li.classList.add("flash");
+}
+
+/* ======================= customer view ======================= */
+const C = { p: null, view: null, viewer: null, viewIndex: 0 };
+const pendingKey = n => `meraki-approval-pending-${TOKEN}-${n}`;
+async function renderCustomer() {
+  const old = cached("c-" + TOKEN);
+  if (old) { C.p = old; C.view = latest(old) ? latest(old).n : null; drawCustomer(); }
+  let fresh;
+  try { fresh = await api.customer(TOKEN); }
+  catch (e) { return old && e.code !== "notfound" && e.code !== "denied" ? toast("Couldn't refresh: " + e.message, true) : fail(e); }
+  if (old && (same(fresh, old) || dlg.open)) return;
+  const wasLatest = !old || !latest(old) || C.view === latest(old).n;
+  C.p = fresh;
+  if (wasLatest || !fresh.drafts.some(d => d.n === C.view)) C.view = latest(fresh) ? latest(fresh).n : null;
+  const name = $("#cName") ? $("#cName").value : null;
+  drawCustomer();
+  if (name !== null && $("#cName")) $("#cName").value = name;
+}
+function drawCustomer() {
+  const p = C.p, cfg = p.config, last = latest(p);
+  remember("c-" + TOKEN, p);
+  const right = `<span>${esc(p.customer)}</span>`;
+  const board = boardJob(p) && p.status !== "approved";
+  const intro = (extra, note) => `<section class="panel">
+      <div class="panel-head"><div><span class="eyebrow">${esc(formatName(p))}${p.orderInfo && p.orderInfo.orderId ? " · Order " + esc(p.orderInfo.orderId) : ""}</span>
+        <h1 style="font-size:1.75rem">Hello ${esc(p.customer)}</h1></div>${extra}</div>
+      ${trackerHTML(p)}
+      ${note}
+    </section>`;
+  if (!last) {
+    app.innerHTML = header(right) + intro("", `<div class="note gold"><b>Your booking is confirmed.</b> Our designers are preparing draft 1. ${esc(CONFIG.studio)} will message you on WhatsApp as soon as it's ready to check on this page.</div>`)
+      + (board ? designPanelHTML(p) : "");
+    bindDesignPanel();
+    return;
+  }
+  const n = C.view, d = p.drafts.find(x => x.n === n);
+  const viewingLatest = n === last.n;
+  const approved = p.status === "approved";
+  const canEdit = viewingLatest && !approved;
+  const final = last.n >= p.draftsAllowed;
+  const pending = canEdit ? store.get(pendingKey(n), []) : [];
+  const list = corrections(p, n, pending);
+  const sentHere = list.filter(m => m.kind !== "pending");
+  const steps = Array.from({ length: p.draftsAllowed }, (_, i) => i + 1).map(i =>
+    `<span class="${i < last.n || (approved && i === last.n) ? "done" : i === last.n ? "now" : i === p.draftsAllowed ? "final" : ""}">Draft ${i}${i === p.draftsAllowed ? " (final)" : ""}</span>`).join("")
+    + `<span class="${approved ? "now" : ""}">Approved</span>`;
+
+  app.innerHTML = header(right) + intro(shared(p).length > 1 ? `<label class="small row" style="gap:6px">Viewing <select id="draftSel" style="width:auto">${shared(p).map(x => `<option value="${x.n}" ${x.n === n ? "selected" : ""}>Draft ${x.n}${x.n === last.n ? " (latest)" : ""}</option>`).join("")}</select></label>` : "",
+      `<div class="steps">${steps}</div>
+      ${approved ? `<div class="note ok"><b>You approved draft ${p.approvedDraft} on ${esc(fmtDay(p.approvedAt))}.</b> Thank you! Your design now goes to print.</div>`
+        : !viewingLatest ? `<div class="note">This is an older draft. <a href="#" id="toLatest">Go to the latest draft ${last.n}</a> to send corrections or approve.</div>`
+        : p.status === "corrections" ? `<div class="note gold">We've received your corrections on draft ${n}. ${final ? CONFIG.studio + " will get in touch about them." : `We're preparing draft ${n + 1}.`} You can still add more corrections below.</div>`
+        : `<div class="note ${final ? "warn" : "gold"}">${final
+          ? `<b>This is your final draft (${n} of ${p.draftsAllowed}).</b> Please check everything carefully and approve. If something is still wrong, mark it below.`
+          : `<b>Draft ${n} of ${p.draftsAllowed}.</b> Check every page: names, dates, times, venue, phone numbers and the QR code. Mark all corrections at once, because you get ${p.draftsAllowed} drafts in total.`}</div>`}`)
+    + (approved ? deliveryCardHTML(p) : "") + `
+    <div class="grid-2">
+      <div id="viewer"></div>
+      <div style="display:flex;flex-direction:column;gap:20px">
+        ${board ? designPanelHTML(p) : ""}
+        ${canEdit ? `<section class="panel" id="corrPanel">
+          <div class="panel-head"><h2>Your corrections</h2><span class="small muted">${pending.length} not sent yet</span></div>
+          <p class="small muted">Tap on the design where something needs to change, then write what to change. You can also add a general note.</p>
+          ${list.length ? `<ul class="clist">${list.map(m => correctionItem(cfg, m, { actions: m => m.kind === "pending"
+            ? `<button class="btn ghost small" data-edit="${m.pi}">Edit</button><button class="btn ghost small" data-del="${m.pi}" aria-label="Delete correction ${m.num}">✕</button>` : `<span class="chip ${m.kind === "done" ? "ok" : "gold"}">${m.kind === "done" ? "Fixed" : "Sent"}</span>` })).join("")}</ul>` : ""}
+          <button class="btn" id="addGeneral">+ Add a general correction</button>
+          <label class="field">Your name <span class="hint">So we know who sent the corrections</span><input type="text" id="cName" maxlength="60" value="${esc(store.get("meraki-approval-name", "") || p.customer)}"></label>
+          <button class="btn primary big" id="sendCorr" ${pending.length ? "" : "disabled"}>Send ${pending.length || ""} correction${pending.length === 1 ? "" : "s"} to ${esc(CONFIG.studio)}</button>
+        </section>
+        <section class="panel" style="border-color:var(--ok)">
+          <h2>Everything correct?</h2>
+          <p class="small muted">Approve draft ${n} when every page is right. After approval the design goes to print and can't be changed.</p>
+          <button class="btn ok big" id="approve" ${pending.length ? "disabled title='Send or delete your unsent corrections first'" : ""}>Approve draft ${n} for printing</button>
+          ${pending.length ? `<span class="small muted">Send or delete your unsent corrections first.</span>` : ""}
+        </section>` : sentHere.length ? `<section class="panel"><h2>Corrections on draft ${n}</h2><ul class="clist">${sentHere.map(m => correctionItem(cfg, m)).join("")}</ul></section>` : ""}
+        <section class="panel"><h2>Messages</h2>${shared(p).slice().reverse().map(x => `<div style="display:flex;flex-direction:column;gap:6px"><span class="eyebrow">Draft ${x.n}</span>${threadHTML(p, x.n, "customer", x.n === n)}</div>`).join("")}</section>
+      </div>
+    </div>`;
+
+  C.viewer = mountViewer($("#viewer"), {
+    project: p, draft: d, view: C.viewIndex, getPins: () => list,
+    tapHint: canEdit ? "Tap on the design to mark a correction. Use 🔍 to zoom in." : "Use 🔍 to zoom in.",
+    onTap: canEdit ? (slot, x, y) => composeCorrection({ page: slot, x, y }) : null,
+    onPin: m => m.kind === "pending" ? composeCorrection(pending[m.pi], m.pi) : flashItem(m.num)
+  });
+  $$("[data-v]", $("#viewer")).forEach(b => b.addEventListener("click", () => C.viewIndex = +b.dataset.v));
+  $("#draftSel") && $("#draftSel").addEventListener("change", e => { C.view = +e.target.value; drawCustomer(); });
+  $("#toLatest") && $("#toLatest").addEventListener("click", e => { e.preventDefault(); C.view = last.n; drawCustomer(); });
+  $$(".clist .citem[data-page]").forEach(li => li.addEventListener("click", e => {
+    if (e.target.closest("button")) return;
+    C.viewer.show(li.dataset.page, +li.dataset.num);
+  }));
+  bindDesignPanel();
+  if (!canEdit) return;
+  $("#cName").addEventListener("change", e => store.set("meraki-approval-name", e.target.value.trim()));
+  $("#addGeneral").addEventListener("click", () => composeCorrection({ page: "", x: null, y: null }));
+  $$("[data-edit]").forEach(b => b.addEventListener("click", () => composeCorrection(pending[+b.dataset.edit], +b.dataset.edit)));
+  $$("[data-del]").forEach(b => b.addEventListener("click", () => {
+    const list = store.get(pendingKey(n), []); list.splice(+b.dataset.del, 1); store.set(pendingKey(n), list); drawCustomer();
+  }));
+  $("#sendCorr").addEventListener("click", async e => {
+    const items = store.get(pendingKey(n), []);
+    if (!items.length) return;
+    const name = $("#cName").value.trim();
+    e.target.disabled = true; e.target.textContent = "Sending…";
+    try {
+      C.p = await api.customerAct(TOKEN, "message", { draft: n, name, items });
+      store.del(pendingKey(n));
+      drawCustomer();
+      toast("Corrections sent. Thank you!");
+    } catch (err) { toast(err.message, true); e.target.disabled = false; e.target.textContent = "Send corrections"; }
+  });
+  $("#approve").addEventListener("click", () => {
+    // Approving also confirms where to deliver: filled in from the booking, and editable.
+    const name = $("#cName").value.trim(), o = p.orderInfo || {};
+    const a = p.delivery || { name: p.customer, phone: p.phone, address: o.address, pincode: o.pincode };
+    openDialog(`<form id="aForm"><h2>Approve draft ${n} for printing</h2>
+      <p class="small muted">The design goes to print exactly as it is now. It can't be changed after approval.</p>
+      <label class="row" style="gap:8px;align-items:flex-start"><input type="checkbox" name="ok" data-required style="margin-top:4px">
+      <span>I have checked all names, dates, times, the venue, phone numbers and the QR code.</span></label>
+      <h3>Where should we deliver?</h3>${addressFields(a)}
+      <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn ok" id="dOk">Approve & confirm delivery</button></div></form>`, d => {
+      const form = $("#aForm", d), btn = $("#dOk", d);
+      form.addEventListener("submit", async e => {
+        e.preventDefault();
+        if (!form.ok.checked) { toast("Please tick the box to confirm.", true); return; }
+        const delivery = checkAddress(readAddress(form));
+        if (typeof delivery === "string") { toast(delivery, true); return; }
+        btn.disabled = true; btn.textContent = "Approving…";
+        try { C.p = await api.customerAct(TOKEN, "approve", { draft: n, name, delivery }); dlg.close(); drawCustomer(); toast("Approved. Thank you!"); }
+        catch (err) { toast(err.message, true); btn.disabled = false; btn.textContent = "Approve & confirm delivery"; }
+      });
+    });
+  });
+}
+function composeCorrection(item, index) {
+  const p = C.p, n = C.view;
+  const editing = index !== undefined;
+  const where = item.page ? slotLabel(p.config, item.page) : "General correction";
+  openDialog(`<form id="cForm"><h2>${editing ? "Edit correction" : "What should change?"}</h2>
+    <p class="small muted">${esc(where)}${item.page && item.x !== null ? " · at the pin you placed" : ""}</p>
+    <textarea name="text" rows="4" required maxlength="2000" placeholder="e.g. The groom's father's name should be spelled …">${esc(item.text || "")}</textarea>
+    <div class="row" style="justify-content:flex-end">${editing ? `<button class="btn ghost" id="cDel" style="margin-right:auto;color:var(--bad)">Delete</button>` : ""}
+      <button class="btn" data-close>Cancel</button><button class="btn primary">${editing ? "Save" : "Add correction"}</button></div></form>`, d => {
+    const form = $("#cForm", d), ta = $("textarea", d);
+    setTimeout(() => ta.focus(), 50);
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const text = ta.value.trim(); if (!text) return;
+      const list = store.get(pendingKey(n), []);
+      const it = { page: item.page || "", x: item.x ?? null, y: item.y ?? null, text };
+      if (editing) list[index] = it; else list.push(it);
+      store.set(pendingKey(n), list);
+      dlg.close(); drawCustomer();
+      if (!editing) toast("Added. Send all corrections together when you're done.");
+    });
+    $("#cDel", d) && $("#cDel", d).addEventListener("click", e => {
+      e.preventDefault();
+      const list = store.get(pendingKey(n), []); list.splice(index, 1); store.set(pendingKey(n), list);
+      dlg.close(); drawCustomer();
+    });
+  });
+}
+
+/* ======================= routing ======================= */
+let routeId = 0;
+function route() {
+  routeId++;
+  if (TOKEN) return renderCustomer();
+  if (!auth) return renderLogin();
+  const h = location.hash;
+  if (h.startsWith("#/p/")) return renderProject(decodeURIComponent(h.slice(4)));
+  if (h === "#/new") return renderNew();
+  renderDashboard();
+}
+window.addEventListener("hashchange", route);
+route();
+</script>
+</body>
+</html>

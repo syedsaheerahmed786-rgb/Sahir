@@ -34,6 +34,61 @@ Each registration becomes a row in the **Registrations** tab: ID, name, mobile, 
 
 **Option B: the GRR website.** Upload `index.html` as a page, for example `yoursite.com/register`. You can also add a "Register" button that links to the GitHub Pages address. If you use the GRR website, make a new QR code for that address.
 
+---
+
+# Meraki design approval portal
+
+Editors upload card drafts, customers mark corrections on the design, and once approved the editor downloads a print-ready PDF.
+
+| File | What it is |
+|---|---|
+| `approval/index.html` | The portal. One page for editors (sign in) and customers (private link). No build step. |
+| `apps-script/ApprovalPortal.gs` | The backend. Customer files, drafts and messages go in a Google Sheet, design pages in a Google Drive folder. |
+
+Address: `https://syedsaheerahmed786-rgb.github.io/Sahir/approval/`. It is connected to the "Meraki Design Approvals" Google Sheet. With `endpoint` left empty, the portal runs in **demo mode** instead, where everything is saved only in that browser.
+
+## How it works
+
+1. **Editor creates a customer file.** *+ New customer* has two options:
+   - **Find by order ID:** search the website's order sheets by order ID, name or phone: card orders (`ORD-711576`, from "Meraki Wedding Bookings(cards)") and entry board orders (`ME-837285`, from "Meraki Entry Signages"). Just the number works too. Picking an entry board order sets up Entry signage, 2 × 3 ft, with one board per event. Picking the order fills in the name and phone and links the order (product, quantity, wedding date, pincode, design images) to the file. If a file already exists for that order, the portal offers to open it.
+   - **Custom create:** type the name and phone yourself.
+
+   The default card format is the **A4 folded card**.
+2. **Editor uploads the drafts.** Drop single pages, a multi-page PDF exported from Canva, or A4 spreads. The portal places the pages itself:
+   - It finds the QR code and puts that page on the back. If an A4 spread has the QR, that spread becomes the outside of the card and the QR half becomes the back.
+   - It warns about a missing QR on the back, a page that isn't A5 shape, or low resolution.
+3. **Share:** press *Share draft*, then *Send on WhatsApp*. The customer gets a private link.
+4. **Customer checks the design** in card form (front, opened, back, or all pages) and taps on the design to pin each correction, or adds a general note. Then they send all corrections together. Corrections and replies stay on the site.
+5. **3 drafts:** the customer gets 3 drafts in total (you can change this per customer). When all are used, the editor can *Give an extra draft*.
+6. **Approve and confirm delivery:** the customer presses *Approve* and confirms the delivery address (filled in from the booking). The editor then downloads the PDF.
+7. **Tracking:** the customer's link is also their order tracker: Booking confirmed → Draft coming soon → Drafts → Approved for print → Out for delivery → Delivered. Editors add the courier and tracking number or link, mark it dispatched and then delivered, and can send the tracking on WhatsApp.
+
+For entry boards, customers can also **change their board design** at any time before approving: pick another design from the website catalogue (Standard, Caricature or Photo) or upload their own picture. Editors see these under *Design change requests*.
+
+## Formats
+
+| Format | Designs | Customer sees | Print PDFs |
+|---|---|---|---|
+| A4 folded card (default) | Front cover (names or caricatures), inside left (English), inside right (Assamese), back (QR) | Front · Opened · Back | **A4 sheets:** outside (back + front) and inside (English + Assamese). Print double-sided, flip on the short edge, fold. Also **A5 pages**. |
+| A5 card, front & back | Front, back | Front · Back | **A5** front and back, or **2 per A4 sheet** |
+| Two A5 cards, shared back | Card 1 front, card 2 front, common back | Card 1 · Card 2 · Back | **A5** (card 1 front, back, card 2 front, back), or **both cards on one A4 sheet** |
+| Signage | 1 to 10 boards (welcome board, menu, seating chart…), 18 × 24 in, 24 × 36 in, 36 × 48 in, A3, A2, A1 or a custom size, portrait or landscape, optional QR on the last board | A tab per board | **Actual size** (one page per board, at the board's real dimensions) and an **A4 proof** |
+| Entry signage | 1 to 10 entrance pieces: Entry board 2 × 3 ft (sunboard, the default), roll-up standee 33 × 80 in, standee 3 × 6 ft, entry boards 4 × 6 and 6 × 8 ft, gate / arch banners 8 × 10 and 10 × 12 ft, or a custom size in feet | A tab per sign | **Actual size** and an **A4 proof** |
+| Custom | 1 to 12 designs, A5 or A4, folded or separate, your own page names, optional QR on the last page | As chosen | Pages at the chosen size, plus 2 per A4 sheet for A5 |
+
+To add another standard format, copy a block in `FORMATS` near the top of the script in `approval/index.html`.
+
+## Connect the backend (about 5 minutes)
+
+1. Create a Google Sheet, for example "Meraki Approvals".
+2. Click **Extensions → Apps Script**, paste in `apps-script/ApprovalPortal.gs`, and change `EDITOR_KEY` to your team passcode. To get an email when a customer sends corrections or approves, set `NOTIFY_EMAIL`.
+3. Click **Deploy → New deployment → Web app**. Set *Execute as* to **Me** and *Who has access* to **Anyone**, then approve the permissions (Sheets, Drive and email).
+4. Copy the **Web app URL** (it ends in `/exec`) into `endpoint` in the `CONFIG` block of `approval/index.html`.
+5. Editors open the portal and sign in with their name and the team passcode.
+
+The order sheets are listed in `BOOKING_SHEETS` at the top of the script. The account that deploys the script must be able to open them. After updating the script, choose **authorize** in the toolbar and press **Run** once so Google asks for access to them.
+
+The script makes three tabs, **Projects**, **Drafts** and **Messages**, plus a Drive folder called **Meraki Design Approvals** with one folder per customer. Customers can see only their own shared drafts, through the private link. After editing the script, use **Deploy → Manage deployments → Edit → New version** so the URL stays the same.
 
 ---
 
