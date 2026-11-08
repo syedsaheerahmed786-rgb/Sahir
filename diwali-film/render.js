@@ -2,12 +2,14 @@ const {chromium}=require('playwright');
 const {spawn}=require('child_process');
 const path=require('path');
 const DIR=__dirname, FPS=30;
+const REEL=process.argv.includes('--reel');
+const OUTW=REEL?1080:1920, OUTH=REEL?1920:1080;
 (async()=>{
   const b=await chromium.launch({args:['--no-sandbox','--force-color-profile=srgb','--disable-lcd-text','--disable-gpu-vsync']});
-  const pg=await b.newPage({viewport:{width:1920,height:1080},deviceScaleFactor:1});
+  const pg=await b.newPage({viewport:{width:OUTW,height:OUTH},deviceScaleFactor:1});
   const errs=[];
   pg.on('pageerror',e=>errs.push('PAGEERROR: '+e.message));
-  await pg.goto('file://'+path.join(DIR,'scene.html'));
+  await pg.goto('file://'+path.join(DIR,'scene.html')+(REEL?'?reel=1':''));
   await pg.waitForFunction('window.__ready===true',{timeout:60000});
   const DUR=await pg.evaluate('window.DURATION');
   const total=Math.round(DUR*FPS);
@@ -19,7 +21,7 @@ const DIR=__dirname, FPS=30;
     '-profile:v','high','-level','4.2','-g','60',
     '-c:a','aac','-b:a','192k','-ar','48000',
     '-movflags','+faststart','-shortest',
-    path.join(DIR,'diwali.mp4')]);
+    path.join(DIR,REEL?'diwali-reel.mp4':'diwali.mp4')]);
   ff.stderr.on('data',d=>process.stderr.write(d));
   const done=new Promise(res=>ff.on('close',res));
   const t0=Date.now();
