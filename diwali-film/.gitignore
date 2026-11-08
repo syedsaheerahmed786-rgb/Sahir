@@ -1,0 +1,4 @@
+# build artefacts
+score.f32
+probe/
+render.log
