@@ -1,0 +1,15 @@
+# Large media — keep out of git (folder skeleton kept via .gitkeep)
+video-editing/**/*.mp4
+video-editing/**/*.mov
+video-editing/**/*.mkv
+video-editing/**/*.webm
+video-editing/**/*.avi
+video-editing/**/*.wav
+video-editing/**/*.mp3
+video-editing/**/*.m4a
+video-editing/**/*.aac
+video-editing/**/*.flac
+video-editing/**/*.part
+video-editing/tmp/*
+!video-editing/tmp/.gitkeep
+node_modules/
