@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" width="320" height="320"><title>DR monogram</title><rect width="320" height="320" fill="#FFFFFF"/><g transform="translate(10 10)" fill="none" stroke-linejoin="miter" stroke-linecap="butt">
+<path stroke="#0F2547" stroke-width="22" d="M60 30 H150 A120 120 0 0 1 150 270 H60 Z"/>
+<path stroke="#0F2547" stroke-width="17" d="M110 206 V74 H156 A32 32 0 0 1 156 138 H110"/>
+<path stroke="#0F2547" stroke-width="17" d="M148 138 L190 206"/>
+<path stroke="#FFFFFF" stroke-width="26" d="M22 236 C70 214 110 258 155 236 S235 214 282 236"/>
+<path stroke="#C59B43" stroke-width="9" stroke-linecap="round" d="M22 236 C70 214 110 258 155 236 S235 214 282 236"/>
+</g></svg>
