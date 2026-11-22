@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <circle cx="60" cy="60" r="56" fill="#12294d"/>
+  <circle cx="60" cy="60" r="56" fill="none" stroke="#c49a2c" stroke-width="3"/>
+  <circle cx="60" cy="60" r="49" fill="none" stroke="#c49a2c" stroke-width="0.8"/>
+  <!-- crown -->
+  <path d="M40 40 L45 27 L53 36 L60 23 L67 36 L75 27 L80 40 Z" fill="#c49a2c"/>
+  <rect x="40" y="41.5" width="40" height="3.5" fill="#c49a2c"/>
+  <!-- DR monogram -->
+  <text x="60" y="78" text-anchor="middle" font-family="Georgia,'Liberation Serif','Times New Roman',serif" font-size="30" font-weight="700" fill="#fff" letter-spacing="1">DR</text>
+  <!-- river waves -->
+  <path d="M30 88 q7.5 -7 15 0 t15 0 t15 0 t15 0" fill="none" stroke="#c49a2c" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M36 96 q6 -5 12 0 t12 0 t12 0 t12 0" fill="none" stroke="#c49a2c" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>
+</svg>
