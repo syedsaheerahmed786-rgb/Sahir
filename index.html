@@ -149,7 +149,7 @@ textarea { min-height: 90px; resize: vertical; }
 .pin.done { background: #2E7D4F; }
 .pin.flash { animation: flash 1s ease 2; }
 @keyframes flash { 50% { transform: scale(1.5); } }
-.stage-hint { font-size: .85rem; color: var(--muted); text-align: center; }
+.stage-hint { font-size: .85rem; color: var(--muted); text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .qr-chip { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; background: var(--ok-soft); color: var(--ok); border-radius: 999px; padding: 3px 10px; max-width: 100%; }
 .qr-chip a { color: inherit; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
 
@@ -198,11 +198,14 @@ textarea { min-height: 90px; resize: vertical; }
 .track li b { color: var(--ink); font-size: .82rem; }
 .track li.now b { color: var(--accent); }
 .track small { font-size: .74rem; line-height: 1.3; }
+.track-now { display: none; margin: 0; font-size: .88rem; color: var(--muted); }
+.track-now b { color: var(--accent); }
 @media (max-width: 640px) {
-  .track { grid-template-columns: 1fr; gap: 12px; }
-  .track li { display: grid; grid-template-columns: 32px 1fr; column-gap: 10px; text-align: left; align-items: center; padding: 0; }
-  .track li::before { left: 15px; right: auto; width: 2px; top: -12px; height: 12px; }
-  .track small { grid-column: 2; margin-top: -4px; }
+  .track li { padding: 0; }
+  .track li b, .track li small { display: none; }
+  .track .dot { width: 28px; height: 28px; font-size: .74rem; }
+  .track li::before { top: 13px; }
+  .track-now { display: block; text-align: center; }
 }
 
 /* board designs */
@@ -221,12 +224,38 @@ dialog.wide { width: min(860px, calc(100vw - 24px)); }
 dialog { border: none; border-radius: 20px; padding: 0; width: min(520px, calc(100vw - 24px)); background: var(--panel); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 dialog::backdrop { background: rgba(0,0,0,.45); }
 dialog form, dialog .dbody { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
-dialog.full { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; margin: 0; background: #111; }
-.zoomer { display: flex; flex-direction: column; height: 100%; }
-.zoomer .bar { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 10px max(12px, env(safe-area-inset-left)); color: #fff; }
-.zoomer .bar .btn { background: rgba(255,255,255,.12); color: #fff; border-color: transparent; }
-.zoomer .scroll { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; text-align: center; }
-.zoomer .scroll img { width: 100%; max-width: none; background: #fff; display: inline-block; }
+dialog.full { width: 100vw; max-width: 100vw; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; margin: 0; background: #1A0510; color: #fff; overflow: hidden; }
+
+/* full view: one page, full screen, pinch or +/- to zoom, tap to comment */
+.fv { display: flex; flex-direction: column; height: 100%; position: relative; }
+.fv-bar, .fv-foot { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 10px max(12px, env(safe-area-inset-left)); flex: none; }
+.fv-foot { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+.fv-bar b { flex: 1; text-align: center; font-size: .92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fv .btn { background: rgba(255,255,255,.12); color: #fff; border-color: transparent; min-width: 44px; min-height: 44px; padding: 8px 14px; box-shadow: none; }
+.fv .btn:disabled { opacity: .3; }
+.fv-hint { flex: 1; text-align: center; font-size: .84rem; color: rgba(255,255,255,.85); }
+.fv-scroll { position: relative; flex: 1; overflow: auto; display: flex; padding: 12px; touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.fv-page { position: relative; margin: auto; flex: none; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+.fv-page img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.fv-page.tap { cursor: crosshair; }
+.fv-page .pin { width: 30px; height: 30px; margin: -15px 0 0 -15px; font-size: .8rem; }
+.fv-page .pin.new { background: var(--accent); animation: flash 1s ease infinite; }
+.fv-sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--panel); color: var(--ink); border-radius: 20px 20px 0 0; padding: 18px 16px max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 40px rgba(0,0,0,.35); }
+.fv-sheet .btn { background: var(--panel); color: var(--ink); border-color: var(--line); }
+.fv-sheet .btn.primary { background: var(--grad); color: #fff; border-color: transparent; }
+.fv-sheet .btn.ghost { background: transparent; color: var(--bad); border-color: transparent; }
+.fv-sheet textarea { min-height: 84px; }
+
+/* phone: action bar fixed at the bottom of the customer's page */
+.mbar { display: none; }
+@media (max-width: 760px) {
+  .mbar { display: flex; gap: 8px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 10px 12px max(10px, env(safe-area-inset-bottom)); background: rgba(253,252,252,.96); backdrop-filter: blur(8px); border-top: 1px solid var(--line); box-shadow: 0 -6px 20px rgba(109,28,56,.08); }
+  .mbar .btn { flex: 1; min-height: 48px; }
+  .wrap.has-mbar { padding-bottom: 96px; }
+  .wrap.has-mbar ~ #toast { bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .panel { padding: 16px; border-radius: 16px; }
+  .stage-hint .btn { width: 100%; }
+}
 #toast { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: .9rem; z-index: 99; max-width: calc(100vw - 32px); opacity: 0; transition: opacity .2s; pointer-events: none; }
 #toast.show { opacity: 1; }
 #toast.bad { background: var(--bad); color: #fff; }
@@ -851,16 +880,131 @@ function confirmDialog(title, body, okLabel, okClass = "primary") {
       });
   });
 }
-function zoomPage(p, fileId, label) {
-  openDialog(`<div class="zoomer"><div class="bar"><b>${esc(label)}</b><div class="row">
-      <button class="btn" data-z="-1" aria-label="Zoom out">−</button><button class="btn" data-z="1" aria-label="Zoom in">+</button>
-      <button class="btn" data-close>Close</button></div></div>
-      <div class="scroll"><img data-file="${esc(fileId)}" alt="${esc(label)}"></div></div>`, d => {
-    const img = $("img", d);
-    let z = Math.round(Math.min(100, 900 / Math.max(1, innerWidth) * 100));
-    img.style.width = z + "%";
-    $$("[data-z]", d).forEach(b => b.addEventListener("click", () => { z = Math.max(50, Math.min(400, z + (+b.dataset.z) * 50)); img.style.width = z + "%"; }));
-    hydrate(d, p);
+// Phones and tablets get the full view when a page is tapped; a mouse can place pins straight on the page.
+const narrow = () => matchMedia("(max-width: 760px), (pointer: coarse)").matches;
+
+// Full-screen view of a draft's pages: pinch or +/- to zoom, arrows or swipe to change page.
+// o: { project, draft, start, pins() -> corrections list, editable, n (draft number for new corrections), onClose(changed) }
+function fullView(o) {
+  const p = o.project, cfg = p.config;
+  const keys = cfg.pages.map(x => x.key).filter(k => o.draft.pages[k]);
+  // pinched: the current touch used two fingers, so lifting them must not add a correction.
+  let i = Math.max(0, keys.indexOf(o.start)), z = 1, changed = false, pinched = false, swipe = null;
+  openDialog(`<div class="fv">
+    <div class="fv-bar"><button class="btn" data-close aria-label="Close full view">✕</button><b id="fvTitle"></b>
+      <span class="row" style="gap:6px"><button class="btn" data-z="-1" aria-label="Zoom out">−</button><button class="btn" data-z="1" aria-label="Zoom in">+</button></span></div>
+    <div class="fv-scroll" id="fvScroll"><div class="fv-page ${o.editable ? "tap" : ""}" id="fvPage"><img id="fvImg" alt="" draggable="false"><div id="fvPins"></div></div></div>
+    <div class="fv-foot"><button class="btn" id="fvPrev" aria-label="Previous page">‹</button>
+      <span class="fv-hint">${o.editable ? "Tap the spot that needs a change" : "Pinch or use + to zoom"}</span>
+      <button class="btn" id="fvNext" aria-label="Next page">›</button></div>
+    <form class="fv-sheet" id="fvSheet" hidden></form>
+  </div>`, d => {
+    const scroll = $("#fvScroll", d), page = $("#fvPage", d), img = $("#fvImg", d), sheet = $("#fvSheet", d);
+    const key = () => keys[i], meta = () => o.draft.pages[key()];
+    // Width of the page at zoom 1: the whole page fits the screen.
+    const fitW = () => {
+      const m = meta(), ratio = m && m.w ? m.w / m.h : 148 / 210;
+      return Math.max(120, Math.min(scroll.clientWidth - 24, (scroll.clientHeight - 24) * ratio));
+    };
+    // Zoom around a point on screen (cx, cy relative to the scroll box), keeping that point still.
+    const zoomTo = (nz, cx = scroll.clientWidth / 2, cy = scroll.clientHeight / 2) => {
+      nz = Math.max(1, Math.min(5, nz));
+      const ow = page.offsetWidth || 1, oh = page.offsetHeight || 1;
+      const fx = (scroll.scrollLeft + cx - page.offsetLeft) / ow, fy = (scroll.scrollTop + cy - page.offsetTop) / oh;
+      z = nz; page.style.width = Math.round(fitW() * z) + "px";
+      scroll.scrollLeft = page.offsetLeft + fx * page.offsetWidth - cx;
+      scroll.scrollTop = page.offsetTop + fy * page.offsetHeight - cy;
+    };
+    const pinsHTML = (extra) => o.pins().filter(m => m.page === key() && m.x !== null && m.x !== undefined).concat(extra || [])
+      .map(m => `<button type="button" class="pin ${m.kind}" style="left:${m.x}%;top:${m.y}%" data-num="${m.num || ""}" title="${esc(m.text || "")}">${m.num || "+"}</button>`).join("");
+    const drawPins = extra => {
+      $("#fvPins", d).innerHTML = pinsHTML(extra);
+      $$("#fvPins .pin[data-num]", d).forEach(b => b.addEventListener("click", e => {
+        e.stopPropagation();
+        const m = o.pins().find(x => x.num === +b.dataset.num); if (!m) return;
+        if (m.kind === "pending" && o.editable) openSheet(m, m.pi);
+        else openSheet(m, null, true);
+      }));
+    };
+    const show = () => {
+      $("#fvTitle", d).textContent = `${slotLabel(cfg, key())} · ${i + 1} of ${keys.length}`;
+      $("#fvPrev", d).disabled = i === 0; $("#fvNext", d).disabled = i === keys.length - 1;
+      const m = meta(); page.style.aspectRatio = m && m.w ? `${m.w} / ${m.h}` : "148 / 210";
+      z = 1; page.style.width = Math.round(fitW()) + "px"; img.removeAttribute("src");
+      imageSrc(p, meta().preview).then(src => { if (keys[i] === key()) img.src = src; }).catch(() => { img.alt = "Couldn't load this page"; });
+      closeSheet(); drawPins();
+    };
+    function closeSheet() { sheet.hidden = true; sheet.innerHTML = ""; drawPins(); }
+    // The correction box slides up over the bottom of the screen; the page stays in view above it.
+    function openSheet(item, index, readOnly) {
+      const editing = index !== null && index !== undefined;
+      if (!readOnly && !editing) drawPins([{ ...item, kind: "new" }]);
+      sheet.innerHTML = readOnly
+        ? `<b>Correction ${item.num} · ${esc(item.kind === "done" ? "fixed" : "sent")}</b><p style="white-space:pre-wrap">${esc(item.text)}</p>
+           <div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-sheet-close>Close</button></div>`
+        : `<b>${editing ? "Edit correction" : "What should change here?"}</b>
+           <textarea name="text" rows="3" maxlength="2000" required placeholder="e.g. The groom's father's name should be spelled …">${esc(item.text || "")}</textarea>
+           <div class="row" style="justify-content:flex-end">${editing ? `<button type="button" class="btn ghost" id="fvDel" style="margin-right:auto">Delete</button>` : ""}
+             <button type="button" class="btn" data-sheet-close>Cancel</button><button class="btn primary">${editing ? "Save" : "Add correction"}</button></div>`;
+      sheet.hidden = false;
+      $("[data-sheet-close]", sheet).addEventListener("click", closeSheet);
+      if (readOnly) return;
+      const ta = $("textarea", sheet); setTimeout(() => ta.focus(), 50);
+      sheet.onsubmit = e => {
+        e.preventDefault();
+        const text = ta.value.trim(); if (!text) return;
+        const list = store.get(pendingKey(o.n), []);
+        const it = { page: item.page, x: item.x, y: item.y, text };
+        if (editing) list[index] = it; else list.push(it);
+        store.set(pendingKey(o.n), list); changed = true;
+        closeSheet(); toast(editing ? "Saved." : "Added. Send all corrections together when you're done.");
+      };
+      const del = $("#fvDel", sheet);
+      del && del.addEventListener("click", () => {
+        const list = store.get(pendingKey(o.n), []); list.splice(index, 1); store.set(pendingKey(o.n), list);
+        changed = true; closeSheet();
+      });
+    }
+    img.addEventListener("click", e => {
+      if (!o.editable || !sheet.hidden || pinched) return;
+      const r = img.getBoundingClientRect();
+      const x = Math.round((e.clientX - r.left) / r.width * 1000) / 10, y = Math.round((e.clientY - r.top) / r.height * 1000) / 10;
+      openSheet({ page: key(), x, y }, null);
+    });
+    // Two fingers zoom; one finger pans (the browser scrolls) or, at zoom 1, swipes to the next page.
+    let pinch = null;
+    scroll.addEventListener("touchstart", e => {
+      if (e.touches.length === 1) pinched = false;
+      if (e.touches.length === 2) {
+        pinched = true;
+        const [a, b] = e.touches, r = scroll.getBoundingClientRect();
+        pinch = { d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), z, cx: (a.clientX + b.clientX) / 2 - r.left, cy: (a.clientY + b.clientY) / 2 - r.top };
+        swipe = null;
+      } else if (e.touches.length === 1 && z === 1) swipe = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }, { passive: true });
+    scroll.addEventListener("touchmove", e => {
+      if (!pinch || e.touches.length !== 2) return;
+      e.preventDefault();
+      const [a, b] = e.touches;
+      zoomTo(pinch.z * Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / pinch.d, pinch.cx, pinch.cy);
+    }, { passive: false });
+    scroll.addEventListener("touchend", e => {
+      if (pinch && e.touches.length < 2) pinch = null;
+      if (swipe && e.changedTouches.length) {
+        const dx = e.changedTouches[0].clientX - swipe.x, dy = e.changedTouches[0].clientY - swipe.y;
+        if (Math.abs(dx) > 70 && Math.abs(dx) > 2 * Math.abs(dy) && sheet.hidden) {
+          if (dx < 0 && i < keys.length - 1) { i++; show(); } else if (dx > 0 && i > 0) { i--; show(); }
+        }
+        swipe = null;
+      }
+    });
+    $$("[data-z]", d).forEach(b => b.addEventListener("click", () => zoomTo(z * (+b.dataset.z > 0 ? 1.6 : 1 / 1.6))));
+    $("#fvPrev", d).addEventListener("click", () => { if (i > 0) { i--; show(); } });
+    $("#fvNext", d).addEventListener("click", () => { if (i < keys.length - 1) { i++; show(); } });
+    const fit = () => { page.style.width = Math.round(fitW() * z) + "px"; };
+    addEventListener("resize", fit);
+    dlg.addEventListener("close", () => { removeEventListener("resize", fit); if (o.onClose) o.onClose(changed); }, { once: true });
+    requestAnimationFrame(show);
   }, true);
 }
 
@@ -874,7 +1018,7 @@ function corrections(p, n, pending = []) {
 }
 
 function mountViewer(el, o) {
-  // o: { project, draft, getPins(), onTap(slot, x, y), onPin(item), tapHint }
+  // o: { project, draft, getPins(), onTap(slot, x, y), onPin(item), onOpen(slot), tapHint }
   const cfg = o.project.config;
   const views = [...cfg.views, { label: "All pages", pages: cfg.pages.map(x => x.key), all: true }];
   let vi = Math.min(o.view || 0, views.length - 1);
@@ -891,19 +1035,24 @@ function mountViewer(el, o) {
       const ratio = pg && pg.w ? `${pg.w} / ${pg.h}` : "148 / 210";
       const mine = pins.filter(m => m.page === k && m.x !== null && m.x !== undefined);
       return `<div class="pgwrap"><div class="pg ${pg ? "" : "blank"} ${o.onTap && pg ? "tappable" : ""}" data-slot="${esc(k)}" style="aspect-ratio:${ratio}">
-          ${pg ? `<img data-file="${esc(pg.preview)}" alt="${esc(slotLabel(cfg, k))}" draggable="false">
+          ${pg ? `<img data-file="${esc(pg.preview)}" alt="${esc(slotLabel(cfg, k))}" draggable="false" style="${o.onOpen ? "cursor:zoom-in" : ""}">
           <button class="zoom-btn" data-zoom="${esc(k)}" aria-label="Zoom ${esc(slotLabel(cfg, k))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg></button>` : "Not uploaded"}
           ${mine.map(m => `<button class="pin ${m.kind}" style="left:${m.x}%;top:${m.y}%" data-pin="${m.num}" title="${esc(m.text)}">${m.num}</button>`).join("")}
         </div><div class="pglabel">${esc(slotLabel(cfg, k))}${pg && pg.qr ? " " + qrChip(pg.qr) : ""}</div></div>`;
-    }).join("")}</div>${o.tapHint && !v.all ? `<p class="stage-hint">${o.tapHint}</p>` : ""}`;
+    }).join("")}</div>${o.tapHint ? `<div class="stage-hint"><span>${narrow() && o.onOpen ? o.tapHintPhone || o.tapHint : o.tapHint}</span>
+      ${o.onOpen ? `<button type="button" class="btn" data-full>⤢ Open full view</button>` : ""}</div>` : ""}`;
     hydrate(stage, o.project);
-    $$(".pg.tappable", stage).forEach(pgEl => pgEl.addEventListener("click", e => {
-      if (e.target.closest("button")) return;
+    $$(".pg", stage).forEach(pgEl => pgEl.addEventListener("click", e => {
+      if (e.target.closest("button") || !o.draft.pages[pgEl.dataset.slot]) return;
+      // On a phone a page is too small to point at: open it full screen, where tapping adds the correction.
+      if (o.onOpen && (narrow() || !o.onTap)) { o.onOpen(pgEl.dataset.slot); return; }
+      if (!o.onTap) return;
       const r = pgEl.getBoundingClientRect();
       const x = Math.round((e.clientX - r.left) / r.width * 1000) / 10, y = Math.round((e.clientY - r.top) / r.height * 1000) / 10;
       o.onTap(pgEl.dataset.slot, x, y);
     }));
-    $$("[data-zoom]", stage).forEach(b => b.addEventListener("click", () => zoomPage(o.project, o.draft.pages[b.dataset.zoom].preview, slotLabel(cfg, b.dataset.zoom))));
+    $$("[data-zoom]", stage).forEach(b => b.addEventListener("click", () => o.onOpen && o.onOpen(b.dataset.zoom)));
+    $$("[data-full]", stage).forEach(b => b.addEventListener("click", () => o.onOpen && o.onOpen(v.pages[0])));
     $$("[data-pin]", stage).forEach(b => b.addEventListener("click", () => {
       const it = pins.find(m => m.num === +b.dataset.pin); if (it && o.onPin) o.onPin(it);
     }));
@@ -966,8 +1115,10 @@ function trackerHTML(p) {
     ["Delivered", d.status === "delivered" ? fmtDay(d.deliveredAt) : "", d.status === "delivered"]
   ];
   const now = steps.findIndex(x => !x[2]);
+  const cur = steps[now < 0 ? steps.length - 1 : now];
   return `<ol class="track" aria-label="Order progress">${steps.map(([t, sub, done], i) =>
-    `<li class="${done ? "done" : i === now ? "now" : ""}"><span class="dot">${done ? "✓" : i + 1}</span><b>${esc(t)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</li>`).join("")}</ol>`;
+    `<li class="${done ? "done" : i === now ? "now" : ""}"><span class="dot">${done ? "✓" : i + 1}</span><b>${esc(t)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</li>`).join("")}</ol>
+    <p class="track-now">Step ${now < 0 ? steps.length : now + 1} of ${steps.length}: <b>${esc(cur[0])}</b>${cur[1] ? " · " + esc(cur[1]) : ""}</p>`;
 }
 const designRequests = p => p.messages.filter(m => m.type === "design").sort((a, b) => a.time < b.time ? 1 : -1);
 // The customer's board design, with buttons to switch to a catalogue design or their own.
@@ -1783,7 +1934,8 @@ function drawSharedDraft(n) {
       <form id="reply" class="field" style="gap:8px"><textarea name="text" rows="2" placeholder="Reply to ${esc(p.customer)}…" required></textarea>
         <div class="row" style="justify-content:flex-end"><button class="btn">Send reply</button></div></form>
     </section></div>`;
-  const viewer = mountViewer($("#viewer"), { project: p, draft: d, getPins: () => list, onPin: m => flashItem(m.num) });
+  const viewer = mountViewer($("#viewer"), { project: p, draft: d, getPins: () => list, onPin: m => flashItem(m.num),
+    tapHint: "Tap a page to see it full screen.", onOpen: slot => fullView({ project: p, draft: d, start: slot, pins: () => list, editable: false }) });
   $$(".clist .citem[data-page]", body).forEach(li => li.addEventListener("click", e => {
     if (e.target.closest("label")) return;
     viewer.show(li.dataset.page, +li.dataset.num);
@@ -1885,12 +2037,30 @@ function drawCustomer() {
       </div>
     </div>`;
 
+  const openFull = slot => fullView({
+    project: p, draft: d, start: slot, n, editable: canEdit,
+    pins: () => corrections(p, n, canEdit ? store.get(pendingKey(n), []) : []),
+    onClose: changed => { if (changed) drawCustomer(); }
+  });
   C.viewer = mountViewer($("#viewer"), {
     project: p, draft: d, view: C.viewIndex, getPins: () => list,
-    tapHint: canEdit ? "Tap on the design to mark a correction. Use 🔍 to zoom in." : "Use 🔍 to zoom in.",
+    tapHint: canEdit ? "Click on the design to mark a correction, or open the full view." : "Tap a page to see it full screen.",
+    tapHintPhone: canEdit ? "Tap a page to open it full screen, then tap the spot that needs a change." : "Tap a page to see it full screen.",
     onTap: canEdit ? (slot, x, y) => composeCorrection({ page: slot, x, y }) : null,
+    onOpen: openFull,
     onPin: m => m.kind === "pending" ? composeCorrection(pending[m.pi], m.pi) : flashItem(m.num)
   });
+  // Phones: the two main actions stay at the bottom of the screen.
+  if (canEdit) {
+    app.classList.add("has-mbar");
+    app.insertAdjacentHTML("beforeend", `<div class="mbar">
+      <button class="btn" id="mFull">⤢ Full view</button>
+      ${pending.length ? `<button class="btn primary" id="mSend">Send ${pending.length} correction${pending.length === 1 ? "" : "s"}</button>`
+        : `<button class="btn ok" id="mApprove">Approve</button>`}</div>`);
+    $("#mFull").addEventListener("click", () => openFull(cfg.views[C.viewIndex] ? cfg.views[C.viewIndex].pages[0] : cfg.pages[0].key));
+    $("#mSend") && $("#mSend").addEventListener("click", () => $("#sendCorr").click());
+    $("#mApprove") && $("#mApprove").addEventListener("click", () => $("#approve").click());
+  } else app.classList.remove("has-mbar");
   $$("[data-v]", $("#viewer")).forEach(b => b.addEventListener("click", () => C.viewIndex = +b.dataset.v));
   $("#draftSel") && $("#draftSel").addEventListener("change", e => { C.view = +e.target.value; drawCustomer(); });
   $("#toLatest") && $("#toLatest").addEventListener("click", e => { e.preventDefault(); C.view = last.n; drawCustomer(); });
