@@ -238,6 +238,7 @@ dialog.full { width: 100vw; max-width: 100vw; height: 100vh; height: 100dvh; max
 .fv-page { position: relative; margin: auto; flex: none; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
 .fv-page img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .fv-page.tap { cursor: crosshair; }
+.fv-page.loading::after { content: "Loading page…"; position: absolute; inset: 0; display: grid; place-items: center; color: #8a7f86; font-size: .9rem; }
 .fv-page .pin { width: 30px; height: 30px; margin: -15px 0 0 -15px; font-size: .8rem; }
 .fv-page .pin.new { background: var(--accent); animation: flash 1s ease infinite; }
 .fv-sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--panel); color: var(--ink); border-radius: 20px 20px 0 0; padding: 18px 16px max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 40px rgba(0,0,0,.35); }
@@ -900,6 +901,7 @@ function fullView(o) {
     <form class="fv-sheet" id="fvSheet" hidden></form>
   </div>`, d => {
     const scroll = $("#fvScroll", d), page = $("#fvPage", d), img = $("#fvImg", d), sheet = $("#fvSheet", d);
+    img.onload = () => page.classList.remove("loading");
     const key = () => keys[i], meta = () => o.draft.pages[key()];
     // Width of the page at zoom 1: the whole page fits the screen.
     const fitW = () => {
@@ -930,8 +932,8 @@ function fullView(o) {
       $("#fvTitle", d).textContent = `${slotLabel(cfg, key())} · ${i + 1} of ${keys.length}`;
       $("#fvPrev", d).disabled = i === 0; $("#fvNext", d).disabled = i === keys.length - 1;
       const m = meta(); page.style.aspectRatio = m && m.w ? `${m.w} / ${m.h}` : "148 / 210";
-      z = 1; page.style.width = Math.round(fitW()) + "px"; img.removeAttribute("src");
-      imageSrc(p, meta().preview).then(src => { if (keys[i] === key()) img.src = src; }).catch(() => { img.alt = "Couldn't load this page"; });
+      z = 1; page.style.width = Math.round(fitW()) + "px"; img.removeAttribute("src"); page.classList.add("loading");
+      imageSrc(p, meta().preview).then(src => { if (keys[i] === key()) img.src = src; }).catch(() => { page.classList.remove("loading"); img.alt = "Couldn't load this page"; });
       closeSheet(); drawPins();
     };
     function closeSheet() { sheet.hidden = true; sheet.innerHTML = ""; drawPins(); }
